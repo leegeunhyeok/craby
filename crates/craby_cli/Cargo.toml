@@ -1,0 +1,6 @@
+[package]
+name = "craby_cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

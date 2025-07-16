@@ -1,0 +1,10 @@
+[workspace]
+members = [
+    "crates/*",
+    "packages/cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"

@@ -1,0 +1,6 @@
+[package]
+name = "craby_codegen"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

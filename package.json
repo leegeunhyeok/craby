@@ -1,0 +1,12 @@
+{
+  "name": "craby",
+  "workspaces": [
+    "examples/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "yarn@4.9.2"
+}
