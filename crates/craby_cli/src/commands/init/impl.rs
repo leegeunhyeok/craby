@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use crate::{
     commands::init::validators,
@@ -7,7 +7,7 @@ use crate::{
 use craby_common::env::is_rustup_installed;
 use craby_core::build::setup::setup_project;
 use inquire::Text;
-use log::{info, warn};
+use log::{debug, info, warn};
 use owo_colors::OwoColorize;
 
 pub struct InitOptions {
@@ -26,9 +26,35 @@ pub fn r#impl(opts: InitOptions) -> anyhow::Result<()> {
     let crates_template = opts.template_base_path.join("crates");
     let data = BTreeMap::from([("crate_name", crate_name.as_str())]);
 
+    fs::create_dir_all(opts.project_root.join(".craby"))?;
     render_template(&root_template, &opts.project_root, &data)?;
     render_template(&crates_template, &opts.project_root.join("crates"), &data)?;
     info!("Template generation completed");
+
+    let gitignore = opts.project_root.join(".gitignore");
+    if gitignore.exists() {
+        let content = fs::read_to_string(&gitignore)?;
+        let mut append_contents = vec![];
+
+        if !content.contains("target/") {
+            append_contents.push("target/".to_string());
+        }
+
+        if !content.contains(".craby") {
+            append_contents.push(".craby".to_string());
+            debug!("`.craby` directory added to .gitignore");
+        }
+
+        if append_contents.len() > 0 {
+            debug!("{} added to .gitignore", append_contents.join(", "));
+            fs::write(
+                &gitignore,
+                format!("{}\n\n# Craby\n{}", content, append_contents.join("\n")),
+            )?;
+        }
+    } else {
+        fs::write(&gitignore, "# Craby\n.craby\ntarget/")?;
+    }
 
     if is_rustup_installed() {
         info!("Setting up the Rust project for Craby 🦀");
