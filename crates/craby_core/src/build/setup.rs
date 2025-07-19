@@ -1,7 +1,7 @@
 use std::process::Command;
 
-use super::constants;
 use anyhow::Error;
+use craby_common::constants;
 
 pub fn setup_project() -> anyhow::Result<()> {
     setup_rust()?;
@@ -20,11 +20,11 @@ fn setup_rust() -> anyhow::Result<()> {
                 .output()?;
 
             if !res.status.success() {
-                return Err(anyhow::anyhow!(
+                anyhow::bail!(
                     "Failed to add target: {}\n{}",
                     target,
                     String::from_utf8_lossy(&res.stderr)
-                ));
+                );
             }
 
             Ok::<(), Error>(())

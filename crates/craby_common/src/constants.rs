@@ -7,7 +7,6 @@ pub mod toolchain {
         // iOS
         "aarch64-apple-ios",
         "aarch64-apple-ios-sim",
-        "x86_64-apple-ios",
     ];
 }
 
@@ -16,3 +15,5 @@ pub mod android {
 }
 
 pub mod ios {}
+
+pub const IMPL_MOD_NAME: &str = "impls";

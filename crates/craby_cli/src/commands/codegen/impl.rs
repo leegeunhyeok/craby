@@ -1,0 +1,68 @@
+use std::{fs, path::PathBuf};
+
+use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
+use craby_common::{constants, env::is_initialized, utils::sanitize_str};
+use log::{debug, info};
+
+pub struct CodegenOptions {
+    pub project_root: PathBuf,
+    pub lib_name: String,
+    pub java_package_name: String,
+    pub schemas: Vec<String>,
+}
+
+pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
+    if !is_initialized(&opts.project_root) {
+        anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
+    }
+
+    info!("{} module schema(s) found", opts.schemas.len());
+
+    let lib_name = sanitize_str(&opts.lib_name);
+    let mut lib_codes = vec![];
+    let mut android_ffi_codes = vec![];
+    let mut ios_ffi_codes = vec![];
+    let generator = CodeGenerator::new();
+
+    opts.schemas.into_iter().try_for_each(|schema| {
+        let schema = serde_json::from_str::<Schema>(&schema)?;
+        info!("Generating {} module...", schema.module_name);
+
+        lib_codes.push(generator.generate_module(&schema));
+        android_ffi_codes.push(generator.generate_android_ffi_module(
+            &schema,
+            &lib_name,
+            &opts.java_package_name,
+        ));
+        ios_ffi_codes.push(generator.generate_ios_ffi_module(&schema, &lib_name));
+
+        Ok::<(), anyhow::Error>(())
+    })?;
+
+    lib_codes.push(format!("mod {};", constants::IMPL_MOD_NAME));
+
+    let lib_code = lib_codes.join("\n\n");
+    let android_code = android_ffi_codes.join("\n\n");
+    let ios_code = ios_ffi_codes.join("\n\n");
+
+    write_rs(&opts.project_root, "lib", lib_code + "\n")?;
+    write_rs(&opts.project_root, "android", android_code + "\n")?;
+    write_rs(&opts.project_root, "ios", ios_code + "\n")?;
+
+    info!("Codegen completed successfully 🎉");
+
+    Ok(())
+}
+
+fn write_rs(project_root: &PathBuf, crate_name: &str, code: String) -> Result<(), anyhow::Error> {
+    let rs_file = project_root
+        .join("crates")
+        .join(crate_name)
+        .join("src")
+        .join("lib.rs");
+
+    fs::write(&rs_file, code)?;
+    debug!("Code written to: {}", rs_file.display());
+
+    Ok(())
+}

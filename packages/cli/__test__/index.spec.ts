@@ -37,5 +37,9 @@ describe('bindings', () => {
     it('`init` should be a function', () => {
       expect(typeof mod.init).toBe('function');
     });
+
+    it('`codegen` should be a function', () => {
+      expect(typeof mod.codegen).toBe('function');
+    });
   });
 });

@@ -4,7 +4,7 @@ use crate::{
     commands::init::validators,
     utils::{template::render_template, terminal::with_spinner},
 };
-use craby_common::env::is_rustup_installed;
+use craby_common::{env::is_rustup_installed, utils::sanitize_str};
 use craby_core::build::setup::setup_project;
 use inquire::Text;
 use log::{debug, info, warn};
@@ -13,12 +13,12 @@ use owo_colors::OwoColorize;
 pub struct InitOptions {
     pub project_root: PathBuf,
     pub template_base_path: PathBuf,
-    pub library_name: String,
+    pub lib_name: String,
 }
 
 pub fn r#impl(opts: InitOptions) -> anyhow::Result<()> {
     let crate_name = Text::new("Enter the crate name")
-        .with_default(&opts.library_name)
+        .with_default(&sanitize_str(&opts.lib_name))
         .with_validator(validators::CrateNameValidator)
         .prompt()?;
 
@@ -57,7 +57,7 @@ pub fn r#impl(opts: InitOptions) -> anyhow::Result<()> {
     }
 
     if is_rustup_installed() {
-        info!("Setting up the Rust project for Craby 🦀");
+        info!("Setting up the Rust project");
         with_spinner("Setting up the project, please wait...", setup_project)?;
         info!("Rust project setup completed");
     } else {

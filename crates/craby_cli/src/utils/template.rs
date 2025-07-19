@@ -1,5 +1,5 @@
 use handlebars::Handlebars;
-use log::{debug, info, warn};
+use log::{debug, warn};
 use owo_colors::OwoColorize;
 use std::{
     collections::BTreeMap,

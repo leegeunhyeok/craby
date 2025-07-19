@@ -1,5 +1,4 @@
-import path from 'node:path';
-import fs from 'node:fs';
+import { getCodegenConfig } from './get-codegen-config';
 
 export function isValidProject(projectRoot: string) {
   try {
@@ -10,9 +9,5 @@ export function isValidProject(projectRoot: string) {
 }
 
 function isValidProjectImpl(projectRoot: string) {
-  const packageJsonPath = path.join(projectRoot, 'package.json');
-  const rawPackageJson = fs.readFileSync(packageJsonPath, 'utf-8');
-  const packageJson = JSON.parse(rawPackageJson);
-
-  return 'codegenConfig' in packageJson;
+  return Boolean(getCodegenConfig(projectRoot));
 }

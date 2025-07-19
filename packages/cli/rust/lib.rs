@@ -32,10 +32,36 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::init::InitOptions {
         project_root: opts.project_root.into(),
         template_base_path: opts.template_base_path.into(),
-        library_name: opts.library_name,
+        lib_name: opts.library_name,
     };
 
     match craby_cli::commands::init::r#impl(opts) {
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
+#[napi(object)]
+pub struct CodegenOptions {
+    pub project_root: String,
+    pub library_name: String,
+    pub java_package_name: String,
+    pub schemas: Vec<String>,
+}
+
+#[napi]
+pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
+    let opts = craby_cli::commands::codegen::CodegenOptions {
+        project_root: opts.project_root.into(),
+        lib_name: opts.library_name,
+        java_package_name: opts.java_package_name,
+        schemas: opts.schemas,
+    };
+
+    match craby_cli::commands::codegen::r#impl(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),

@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-anyhow     = { workspace = true }
-log        = { workspace = true }
-serde_json = { workspace = true }
+craby_common = { path = "../craby_common" }
+cbindgen     = "0.29.0"
+anyhow       = { workspace = true }
+log          = { workspace = true }
+serde_json   = { workspace = true }
