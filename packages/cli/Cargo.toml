@@ -4,6 +4,7 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [lib]
+path = "rust/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -11,11 +12,7 @@ crate-type = ["cdylib"]
 napi = { version = "2.12.2", default-features = false, features = ["napi4"] }
 napi-derive = "2.12.2"
 craby_cli = { path = "../../crates/craby_cli" }
-craby_codegen = { path = "../../crates/craby_codegen" }
+log = { workspace = true }
 
 [build-dependencies]
 napi-build = "2.0.1"
-
-[profile.release]
-lto = true
-strip = "symbols"

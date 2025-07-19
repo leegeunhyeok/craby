@@ -1,0 +1,11 @@
+import { program } from '@commander-js/extra-typings';
+import { command as initCommand } from './commands/init';
+import { version } from '../package.json';
+
+export function run() {
+  const cli = program.name('craby').version(version);
+
+  cli.addCommand(initCommand);
+
+  cli.parse();
+}

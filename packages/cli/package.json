@@ -1,10 +1,45 @@
 {
   "name": "@craby/cli",
   "version": "0.0.0",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "license": "MIT",
+  "type": "module",
   "bin": {
     "craby": "./bin.js"
+  },
+  "scripts": {
+    "dev": "yarn build:debug && ./bin.js",
+    "artifacts": "napi artifacts",
+    "build": "yarn build:napi && tsdown",
+    "build:debug": "yarn build:napi:debug && tsdown",
+    "build:napi": "napi build --platform --release napi",
+    "build:napi:debug": "napi build --platform napi",
+    "prepublishOnly": "napi prepublish -t npm",
+    "version": "napi version",
+    "test": "vitest --run"
+  },
+  "files": [
+    "bin.js",
+    "dist",
+    "template",
+    "napi",
+    "!napi/*.node"
+  ],
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "@react-native/codegen": "^0.80.1",
+    "commander": "^14.0.0",
+    "es-toolkit": "^1.39.7",
+    "glob": "^11.0.3"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^2.18.4",
+    "@types/node": "^22",
+    "tsdown": "^0.12.9",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">= 18"
   },
   "napi": {
     "name": "cli",
@@ -22,25 +57,5 @@
         "aarch64-pc-windows-msvc"
       ]
     }
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@napi-rs/cli": "^2.18.4",
-    "vitest": "^3.2.4"
-  },
-  "ava": {
-    "timeout": "3m"
-  },
-  "engines": {
-    "node": ">= 10"
-  },
-  "scripts": {
-    "dev": "yarn node ./bin.js",
-    "artifacts": "napi artifacts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "version": "napi version",
-    "test:bindings": "vitest --run"
   }
 }

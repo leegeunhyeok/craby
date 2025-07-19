@@ -1,0 +1,12 @@
+[package]
+name = "{{ crate_name }}_android"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jni = { workspace = true }
+{{ crate_name }} = { path = "../lib" }
+
+[lib]
+name = "{{ crate_name }}"
+crate-type = ["cdylib"]

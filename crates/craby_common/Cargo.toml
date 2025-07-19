@@ -1,0 +1,9 @@
+[package]
+name = "craby_common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+env_logger = { workspace = true }
+log        = { workspace = true }
+owo-colors = { workspace = true }

@@ -4,3 +4,14 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+craby_codegen = { path = "../craby_codegen" }
+craby_core    = { path = "../craby_core" }
+craby_common  = { path = "../craby_common" }
+clap          = { version = "4.5.41", features = ["derive"] }
+handlebars    = { version = "6.3.2", features = ["walkdir"] }
+walkdir       = "2.5.0"
+inquire       = "0.7.5"
+anyhow        = { workspace = true }
+log           = { workspace = true }
+owo-colors    = { workspace = true }
+indicatif = "0.18.0"
