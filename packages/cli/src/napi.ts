@@ -1,6 +1,6 @@
 import { assert } from 'es-toolkit';
 
-type Mod = typeof import('../napi/index');
+type Mod = typeof import('../napi/index.cjs');
 let mod: (Mod & { default: Mod }) | null = null;
 
 export function getBindings() {
@@ -9,5 +9,5 @@ export function getBindings() {
 }
 
 export async function loadBindings() {
-  return (mod = await import('../napi/index')).default;
+  return (mod = await import('../napi/index.cjs')).default;
 }

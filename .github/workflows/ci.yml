@@ -200,7 +200,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
@@ -238,7 +238,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-x86_64-unknown-linux-gnu
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
@@ -282,7 +282,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-x86_64-unknown-linux-musl
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
@@ -309,7 +309,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-aarch64-unknown-linux-gnu
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
@@ -350,7 +350,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-aarch64-unknown-linux-musl
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
@@ -394,7 +394,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bindings-armv7-unknown-linux-gnueabihf
-          path: ${{ env.PACKAGE_PATH }}
+          path: ${{ env.PACKAGE_PATH }}/napi
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
