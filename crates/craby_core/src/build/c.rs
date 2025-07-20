@@ -1,25 +1,17 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
-use craby_common::constants::TEMP_DIR;
+use craby_common::utils::{
+    fs::clean_binding_headers,
+    path::{binding_header_dir, crate_dir},
+};
 use log::{debug, info};
 
 pub fn generate_c_bindings(project_root: &Path, lib_name: &str) -> Result<PathBuf, anyhow::Error> {
-    let tmp_dir = project_root.join(TEMP_DIR);
-    let lib_crate_path = project_root.join("crates").join("ios");
-    let header_dir = tmp_dir.join("include");
+    let lib_crate_path = crate_dir(&project_root.to_path_buf(), "ios");
+    let header_dir = binding_header_dir(&project_root.to_path_buf());
     let header_path = header_dir.join(format!("lib{}.h", lib_name));
 
-    let files = fs::read_dir(header_dir)?;
-    for file in files {
-        let file = file?;
-        if file.file_name().to_str().unwrap().ends_with(".h") {
-            debug!("Removing existing header file {}", file.path().display());
-            fs::remove_file(file.path())?;
-        }
-    }
+    clean_binding_headers(&project_root.to_path_buf())?;
 
     let bindings = cbindgen::generate(lib_crate_path)?;
     let written = bindings.write_to_file(&header_path);

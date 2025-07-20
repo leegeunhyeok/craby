@@ -55,3 +55,26 @@ pub mod path {
         tmp_dir(project_root).join("include")
     }
 }
+
+pub mod fs {
+    use std::{fs, path::PathBuf};
+
+    use log::debug;
+
+    use super::path::binding_header_dir;
+
+    pub fn clean_binding_headers(project_root: &PathBuf) -> Result<(), anyhow::Error> {
+        let header_dir = binding_header_dir(project_root);
+        let files = fs::read_dir(header_dir)?;
+
+        for file in files {
+            let file = file?;
+            if file.file_name().to_str().unwrap().ends_with(".h") {
+                debug!("Removing existing header file {}", file.path().display());
+                fs::remove_file(file.path())?;
+            }
+        }
+
+        Ok(())
+    }
+}

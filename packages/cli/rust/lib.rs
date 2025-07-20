@@ -92,8 +92,6 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
     }
 }
 
-
-
 #[napi(object)]
 pub struct ShowOptions {
     pub project_root: String,
@@ -110,6 +108,26 @@ pub fn show(opts: ShowOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::show::r#impl(opts) {
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
+#[napi(object)]
+pub struct CleanOptions {
+    pub project_root: String,
+}
+
+#[napi]
+pub fn clean(opts: CleanOptions) -> napi::Result<()> {
+    let opts = craby_cli::commands::clean::CleanOptions {
+        project_root: opts.project_root.into(),
+    };
+
+    match craby_cli::commands::clean::r#impl(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
