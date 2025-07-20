@@ -1,7 +1,8 @@
 {
   "name": "craby-calculator",
   "version": "0.1.0",
-  "description": "test",
+  "type": "module",
+  "description": "Calculator module",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
@@ -32,6 +33,7 @@
     "!**/.*"
   ],
   "scripts": {
+    "prepack": "yarn prepare",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
@@ -92,5 +94,18 @@
     "android": {
       "javaPackageName": "com.calculator"
     }
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
   }
 }

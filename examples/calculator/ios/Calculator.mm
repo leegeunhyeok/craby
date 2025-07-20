@@ -1,10 +1,11 @@
 #import "Calculator.h"
+#import "libcrabycalculator.h"
 
 @implementation Calculator
 RCT_EXPORT_MODULE()
 
 - (NSNumber *)multiply:(double)a b:(double)b {
-    NSNumber *result = @(a * b);
+    NSNumber *result = @(multiply(a, b));
 
     return result;
 }

@@ -7,6 +7,12 @@ import com.facebook.react.module.annotations.ReactModule
 class CalculatorModule(reactContext: ReactApplicationContext) :
   NativeCalculatorSpec(reactContext) {
 
+  init {
+    System.loadLibrary("crabycalculator")
+  }
+
+  private external fun nativeMultiply(a: Double, b: Double): Double
+
   override fun getName(): String {
     return NAME
   }
@@ -14,7 +20,7 @@ class CalculatorModule(reactContext: ReactApplicationContext) :
   // Example method
   // See https://reactnative.dev/docs/native-modules-android
   override fun multiply(a: Double, b: Double): Double {
-    return a * b
+    return nativeMultiply(a, b);
   }
 
   companion object {

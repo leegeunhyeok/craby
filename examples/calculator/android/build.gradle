@@ -60,6 +60,8 @@ android {
         "generated/java",
         "generated/jni"
       ]
+
+      jniLibs.srcDirs += ["src/main/jniLibs"]
     }
   }
 }

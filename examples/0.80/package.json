@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.80.1",
+    "craby-calculator": "workspace:*",
     "react": "19.1.0",
     "react-native": "0.80.1"
   },

@@ -1,0 +1,12 @@
+[package]
+name = "craby_calculator_android"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jni = { workspace = true }
+craby_calculator = { path = "../lib" }
+
+[lib]
+name = "crabycalculator"
+crate-type = ["cdylib"]
