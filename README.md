@@ -1,3 +1,238 @@
+<div align="center">
+
+<img width="360" src="./logo.png" alt="logo">
+
 # craby
 
 Type-safe Rust for TurboModules—auto-generated, fully integrated
+
+</div>
+
+## Overview
+
+**craby** is a type-safe Rust development tool for React Native TurboModules. It automatically generates Rust code based on TypeScript & Flow schemas and provides fully integrated Android/iOS native bindings.
+
+### Key Features
+
+- 🔄 **Auto Code Generation**: Automatically generate Rust code from TypeScript TurboModule & Flow schemas
+- 🛡️ **Type Safety**: Prevent runtime errors with compile-time type validation
+- 📱 **Cross-Platform**: Support for both Android and iOS
+- ⚡ **High Performance**: Optimized performance with Rust-written native code
+- 🔧 **Developer Experience**: Simple CLI commands for project setup and building
+
+## Quick Start
+
+### Installation
+
+```bash
+# NPM
+npm install -d @craby/cli
+
+# pnpm
+pnpm install -d @craby/cli
+
+# Yarn
+yarn add -d @craby/cli
+```
+
+### Setup
+
+```bash
+# In your React Native TurboModule project directory
+craby init
+```
+
+### Generate Code
+
+```bash
+craby codegen
+```
+
+### Build
+
+```bash
+craby build
+```
+
+## Commands
+
+### `craby init`
+
+Initializes a new craby project. Creates:
+
+- Rust crate structure (`crates/`)
+- Android/iOS native bindings
+- Build configuration files
+
+### `craby codegen`
+
+Automatically generates Rust code based on TypeScript & Flow schemas.
+
+### `craby build`
+
+Compiles Rust code and generates native binaries.
+
+### `craby show`
+
+Displays project information and schemas.
+
+### `craby doctor`
+
+Checks project configuration and dependencies.
+
+### `craby clean`
+
+Cleans up temporary generated files.
+
+## Project Structure
+
+```
+.
+├── src/
+│   ├── index.ts
+│   └── NativeModule.ts   # TurboModule spec definition
+├── crates/
+│   ├── lib/              # Common Rust library
+│   ├── android/          # Android native bindings
+│   └── ios/              # iOS native bindings
+├── android/              # Android project files
+├── ios/                  # iOS project files
+└── package.json          # Project configuration
+```
+
+## Configuration
+
+### package.json Configuration
+
+```json
+{
+  "codegenConfig": {
+    "name": "YourModuleSpec",
+    "type": "modules",
+    "jsSrcsDir": "src",
+    "android": {
+      "javaPackageName": "com.yourmodule"
+    }
+  }
+}
+```
+
+- `jsSrcsDir`, `android.javaPackageName` are required.
+
+## Examples
+
+```typescript
+// src/NativeModule.ts
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
+
+export interface Spec extends TurboModule {
+  add(a: number, b: number): number;
+  subtract(a: number, b: number): number;
+}
+
+export default TurboModuleRegistry.getEnforcing<Spec>('Calculator');
+```
+
+```typescript
+// src/index.ts
+import Calculator from './NativeCalculator';
+
+export function add(a: number, b: number): number {
+  return Calculator.add(a, b);
+}
+
+export function subtract(a: number, b: number): number {
+  return Calculator.subtract(a, b);
+}
+```
+
+```rust
+// crates/lib/src/impls.rs
+pub fn add(a: f64, b: f64) -> f64 {
+    a + b
+}
+
+pub fn multiply(a: f64, b: f64) -> f64 {
+    a * b
+}
+```
+
+### Android Setup and Usage
+
+Open `android/build.gradle` file and add the following line:
+
+```java
+android {
+  // ...
+
+  sourceSets {
+    main {
+      // Add this line
+      jniLibs.srcDirs += ["src/main/jniLibs"]
+    }
+  }
+}
+```
+
+```kotlin
+@ReactModule(name = MathModule.NAME)
+class MathModule(reactContext: ReactApplicationContext) :
+  NativeMathModuleSpec(reactContext) {
+
+  init {
+    // Load static library to use native methods
+    System.loadLibrary("caculator")
+  }
+
+  // Declare the native method
+  private external fun nativeAdd(a: Double, b: Double): Double
+
+  // ...
+
+  override fun add(a: Double, b: Double): Double {
+    // Call the native method
+    return nativeAdd(a, b);
+  }
+}
+```
+
+### iOS Setup and Usage
+
+Open `<ModuleName>.podspec` file and add the following line:
+
+```rb
+Pod::Spec.new do |s|
+  # Add this line to use Rust module
+  s.vendored_frameworks = "ios/framework/libcalculator.xcframework"
+end
+```
+
+```objc
+import "CalculatorModule.h"
+import "libcalculator.h" // Add this line
+
+@implementation MathModule
+RCT_EXPORT_MODULE()
+
+- (NSNumber *)add:(double *)a b:(double *)b {
+  // Call the native method
+  NSNumber *result = @(add(a, b));
+  return result;
+}
+
+// ...
+
+@end
+```
+
+## Development Environment
+
+### Requirements
+
+- Node.js 18+
+- Rust (latest stable version)
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
