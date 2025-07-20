@@ -11,16 +11,29 @@ class CalculatorModule(reactContext: ReactApplicationContext) :
     System.loadLibrary("crabycalculator")
   }
 
+  private external fun nativeAdd(a: Double, b: Double): Double
+  private external fun nativeSubtract(a: Double, b: Double): Double
   private external fun nativeMultiply(a: Double, b: Double): Double
+  private external fun nativeDivide(a: Double, b: Double): Double
 
   override fun getName(): String {
     return NAME
   }
 
-  // Example method
-  // See https://reactnative.dev/docs/native-modules-android
+  override fun add(a: Double, b: Double): Double {
+    return nativeAdd(a, b);
+  }
+
+  override fun subtract(a: Double, b: Double): Double {
+    return nativeSubtract(a, b);
+  }
+
   override fun multiply(a: Double, b: Double): Double {
     return nativeMultiply(a, b);
+  }
+
+  override fun divide(a: Double, b: Double): Double {
+    return nativeDivide(a, b);
   }
 
   companion object {
