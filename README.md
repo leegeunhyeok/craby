@@ -4,7 +4,7 @@
 
 # craby
 
-Type-safe Rust for TurboModules—auto-generated, fully integrated
+Type-safe Rust for React Native TurboModules—auto-generated, fully integrated
 
 </div>
 
