@@ -21,10 +21,10 @@ pub fn r#impl(opts: BuildOptions) -> anyhow::Result<()> {
     info!("Building Cargo projects...");
     build::cargo::build_targets(&opts.project_root)?;
 
-    info!("Generating C bindings for {}...", lib_name);
+    info!("Generating C bindings...");
     let output = build::c::generate_c_bindings(&opts.project_root, &lib_name)?;
 
-    info!("Creating xcframework for {}...", lib_name);
+    info!("Creating xcframework...");
     build::xcode::create_xcframework(CreateXcframeworkOptions {
         project_root: opts.project_root,
         header_path: output,

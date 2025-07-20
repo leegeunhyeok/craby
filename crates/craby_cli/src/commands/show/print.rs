@@ -20,9 +20,9 @@ pub fn print_schema(schema: &Schema) {
         });
     // TODO: Impl
     println!("├─ Event Emitters (0)");
-    println!("│  {}", "(None)".bright_black());
+    println!("│  {}", "(None)".dimmed());
     println!("├─ Type Aliases (0)");
-    println!("│  {}", "(None)".bright_black());
+    println!("│  {}", "(None)".dimmed());
     println!("└─ Enums (0)");
-    println!("   {}", "(None)".bright_black());
+    println!("   {}", "(None)".dimmed());
 }

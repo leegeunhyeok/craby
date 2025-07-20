@@ -7,7 +7,7 @@ pub fn print_guide(lib_name: &String) {
 }
 
 fn print_usage(lib_name: &String) {
-    println!("\nAndroid usage:\n");
+    println!("\nAndroid setup and usage:\n");
     println!(
         "Open `{}` file and add the following line:\n",
         "android/build.gradle".underline()
@@ -30,7 +30,6 @@ fn print_usage(lib_name: &String) {
         r#"@ReactModule(name = MathModule.NAME)
 class MathModule(reactContext: ReactApplicationContext) :
   NativeMathModuleSpec(reactContext) {{
-
   
   init {{
     // Load static library to use native methods
@@ -53,7 +52,7 @@ class MathModule(reactContext: ReactApplicationContext) :
     highlight_code(&content, "java");
     println!("```\n");
 
-    println!("iOS usage:\n");
+    println!("iOS setup and usage:\n");
     println!(
         "Open `{}` file and add the following line:\n",
         "<ModuleName>.podspec".underline()

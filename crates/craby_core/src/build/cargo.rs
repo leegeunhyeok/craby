@@ -1,7 +1,11 @@
 use std::{path::Path, process::Command};
 
-use craby_common::constants;
+use craby_common::{
+    constants,
+    utils::path::{android_jni_libs_dir, crate_manifest_path},
+};
 use log::{debug, error, info};
+use owo_colors::OwoColorize;
 
 pub fn build_targets(project_root: &Path) -> Result<(), anyhow::Error> {
     build_ios(project_root)?;
@@ -11,8 +15,7 @@ pub fn build_targets(project_root: &Path) -> Result<(), anyhow::Error> {
 }
 
 fn build_ios(project_root: &Path) -> Result<(), anyhow::Error> {
-    let manifest_path = project_root
-        .join("crates/ios/Cargo.toml")
+    let manifest_path = crate_manifest_path(&project_root.to_path_buf(), "ios")
         .to_string_lossy()
         .to_string();
     debug!("Manifest path: {}", manifest_path);
@@ -22,7 +25,8 @@ fn build_ios(project_root: &Path) -> Result<(), anyhow::Error> {
             continue;
         }
 
-        info!("Building for iOS (target: {})", target);
+        let target_label = format!("({})", target);
+        info!("Building for iOS {}", target_label.dimmed());
 
         let res = Command::new("cargo")
             .args([
@@ -45,26 +49,23 @@ fn build_ios(project_root: &Path) -> Result<(), anyhow::Error> {
 }
 
 fn build_android(project_root: &Path) -> Result<(), anyhow::Error> {
-    let manifest_path = project_root
-        .join("crates/android/Cargo.toml")
-        .to_string_lossy()
-        .to_string();
-    let output_dir = project_root
-        .join("android/src/main/jniLibs")
-        .to_string_lossy()
-        .to_string();
+    let manifest_path = crate_manifest_path(&project_root.to_path_buf(), "android");
+    let output_dir = android_jni_libs_dir(&project_root.to_path_buf());
 
     let mut cmd = Command::new("cargo");
-    let cmd = cmd.args([
+    let args = [
         "ndk",
         "--manifest-path",
-        manifest_path.as_str(),
+        manifest_path.to_str().unwrap(),
         "-o",
-        output_dir.as_str(),
-    ]);
+        output_dir.to_str().unwrap(),
+    ];
+    let cmd = cmd.args(args);
+    debug!("cargo ndk args: {:?}", args);
 
     constants::android::ABI_TARGETS.iter().for_each(|target| {
-        cmd.arg("-t").arg(target);
+        debug!("cargo ndk target: {}", target);
+        cmd.args(["-t", target]);
     });
 
     info!("Building for Android with NDK...");

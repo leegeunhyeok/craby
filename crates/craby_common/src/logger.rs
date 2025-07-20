@@ -8,8 +8,8 @@ static INIT: Once = Once::new();
 
 fn to_level_str(level: Level) -> String {
     match level {
-        Level::Trace => "TRACE".bright_black().to_string(),
-        Level::Debug => "DEBUG".bright_black().to_string(),
+        Level::Trace => "TRACE".dimmed().to_string(),
+        Level::Debug => "DEBUG".dimmed().to_string(),
         Level::Info => "INFO".cyan().to_string(),
         Level::Warn => "WARN".yellow().to_string(),
         Level::Error => "ERROR".red().to_string(),

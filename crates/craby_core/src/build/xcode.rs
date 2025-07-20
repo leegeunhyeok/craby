@@ -1,6 +1,13 @@
 use std::{fs, path::PathBuf, process::Command};
 
-use craby_common::constants;
+use craby_common::{
+    constants,
+    env::Platform,
+    utils::{
+        path::{binding_header_dir, ios_framework_path},
+        to_lib_name,
+    },
+};
 use log::debug;
 
 pub struct CreateXcframeworkOptions {
@@ -11,12 +18,16 @@ pub struct CreateXcframeworkOptions {
 
 #[cfg(target_os = "macos")]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
+    use craby_common::{
+        env::Platform,
+        utils::{
+            path::{crate_target_dir, ios_framework_path},
+            to_lib_name,
+        },
+    };
+
     if can_use_xcode() {
-        let xcframework_path = opts
-            .project_root
-            .join("ios")
-            .join("framework")
-            .join(format!("lib{}.xcframework", opts.lib_name));
+        let xcframework_path = ios_framework_path(&opts.project_root, &opts.lib_name);
 
         if xcframework_path.exists() {
             fs::remove_dir_all(&xcframework_path)?;
@@ -24,23 +35,19 @@ pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::
         }
 
         let mut cmd = Command::new("xcodebuild");
-        let cmd = cmd
-            .arg("-create-xcframework")
-            .arg("-output")
-            .arg(xcframework_path);
+        let cmd = cmd.args([
+            "-create-xcframework",
+            "-output",
+            xcframework_path.to_str().unwrap(),
+        ]);
 
         get_ios_targets().for_each(|target| {
-            let lib = opts
-                .project_root
-                .join("target")
-                .join(target)
-                .join("release")
-                .join(format!("lib{}.a", opts.lib_name));
+            let lib = crate_target_dir(&opts.project_root, &target)
+                .join(to_lib_name(&opts.lib_name, Platform::iOS));
 
             cmd.arg("-library")
-                .arg(lib)
-                .arg("-headers")
-                .arg(opts.header_path.clone());
+                .args(["-library", lib.to_str().unwrap()])
+                .args(["-headers", opts.header_path.to_str().unwrap()]);
         });
 
         // xcodebuild -create-xcframework \
@@ -91,11 +98,7 @@ fn generate_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Er
     let targets = get_ios_targets();
     let headers_path = "Headers";
     let target_dir = opts.project_root.join("target");
-    let xcframework = opts
-        .project_root
-        .join("ios")
-        .join("framework")
-        .join(format!("lib{}.xcframework", opts.lib_name));
+    let xcframework = ios_framework_path(&opts.project_root, &opts.lib_name);
 
     if xcframework.exists() {
         fs::remove_dir_all(&xcframework)?;
@@ -117,11 +120,7 @@ fn generate_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Er
         let lib: String = format!("lib{}.a", opts.lib_name);
         let lib_header = format!("lib{}.h", opts.lib_name);
         let from = target_dir.join(&target).join("release").join(&lib);
-        let from_header = opts
-            .project_root
-            .join(".craby")
-            .join("include")
-            .join(&lib_header);
+        let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
 
         let lib_target = if target.contains("sim") {
             "ios-arm64-simulator"
@@ -144,7 +143,10 @@ fn generate_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Er
 }
 
 fn info_plist_content(lib_name: &str, headers_path: &str) -> String {
-    let lib_value = format!("      <string>lib{}.a</string>", lib_name);
+    let lib_value = format!(
+        "      <string>{}</string>",
+        to_lib_name(&lib_name.to_string(), Platform::iOS)
+    );
     let headers_value = format!("      <string>{}</string>", headers_path);
 
     [

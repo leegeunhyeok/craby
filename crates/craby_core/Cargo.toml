@@ -9,3 +9,4 @@ cbindgen     = "0.29.0"
 anyhow       = { workspace = true }
 log          = { workspace = true }
 serde_json   = { workspace = true }
+owo-colors   = { workspace = true }

@@ -37,7 +37,7 @@ pub fn render_template(
         if dest_path.exists() && !dest_path.is_dir() {
             warn!(
                 "Skipped generating {:?} because the file already exists",
-                dest_path.to_string_lossy().bright_black()
+                dest_path.to_string_lossy().dimmed()
             );
             continue;
         }

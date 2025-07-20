@@ -17,3 +17,4 @@ pub mod android {
 pub mod ios {}
 
 pub const IMPL_MOD_NAME: &str = "impls";
+pub const TEMP_DIR: &str = ".craby";

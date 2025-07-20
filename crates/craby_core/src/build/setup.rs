@@ -15,9 +15,7 @@ fn setup_rust() -> anyhow::Result<()> {
         .iter()
         .try_for_each(|target| {
             let res = Command::new("rustup")
-                .arg("target")
-                .arg("add")
-                .arg(target)
+                .args(["target", "add", target])
                 .output()?;
 
             if !res.status.success() {
@@ -30,6 +28,17 @@ fn setup_rust() -> anyhow::Result<()> {
 
             Ok::<(), Error>(())
         })?;
+
+    let res = Command::new("cargo")
+        .args(["install", "cargo-ndk"])
+        .output()?;
+
+    if !res.status.success() {
+        anyhow::bail!(
+            "Failed to install cargo-ndk\n{}",
+            String::from_utf8_lossy(&res.stderr)
+        );
+    }
 
     Ok(())
 }
