@@ -10,6 +10,6 @@ fi
 echo "Building for $RUST_TARGET"
 rustup target add $RUST_TARGET
 yarn napi build --platform --target $RUST_TARGET --release napi
-yarn tsdown
+yarn tsup
 
 echo "Done!"

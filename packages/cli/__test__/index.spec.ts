@@ -4,7 +4,7 @@ describe('bindings', () => {
   let mod: any;
 
   beforeAll(async () => {
-    mod = await import('../napi/index.js');
+    mod = await import('../napi/index.cjs');
   });
 
   describe('common', () => {

@@ -7,7 +7,7 @@
     "craby": "./bin.js"
   },
   "scripts": {
-    "dev": "napi build --platform napi && tsdown && ./bin.js",
+    "dev": "napi build --platform napi && tsup && ./bin.js",
     "artifacts": "napi artifacts",
     "build": "./scripts/build.sh",
     "prepublishOnly": "napi prepublish -t npm",
@@ -17,8 +17,8 @@
   "files": [
     "bin.js",
     "dist",
-    "templates",
     "napi",
+    "templates",
     "!napi/*.node"
   ],
   "dependencies": {
@@ -31,7 +31,7 @@
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",
     "@types/node": "^22",
-    "tsdown": "^0.12.9",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },
