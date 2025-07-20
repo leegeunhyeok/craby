@@ -10,13 +10,12 @@
     "dev": "yarn build && ./bin.js",
     "artifacts": "napi artifacts",
     "build": "./scripts/build.sh",
-    "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version",
     "test": "vitest --run"
   },
   "files": [
     "bin.js",
-    "dist",
+    "built",
     "napi",
     "templates",
     "!napi/*.node"
