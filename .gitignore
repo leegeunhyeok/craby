@@ -200,4 +200,4 @@ Cargo.lock
 #!.yarn/cache
 .pnp.*
 
-packages/cli/napi
+packages/cli/napi/*.node

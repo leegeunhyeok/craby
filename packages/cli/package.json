@@ -7,7 +7,7 @@
     "craby": "./bin.js"
   },
   "scripts": {
-    "dev": "napi build --platform napi && tsup && ./bin.js",
+    "dev": "yarn build && ./bin.js",
     "artifacts": "napi artifacts",
     "build": "./scripts/build.sh",
     "prepublishOnly": "napi prepublish -t npm",
