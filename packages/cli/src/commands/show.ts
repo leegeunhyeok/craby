@@ -1,10 +1,10 @@
 import { Command } from '@commander-js/extra-typings';
+import { assert } from 'es-toolkit';
 import { getSchemaInfo } from '../codegen/get-schema-info';
 import { isValidProject } from '../utils/is-valid-project';
 import { getBindings } from '../napi';
 import { withVerbose } from '../utils/with-verbose';
 import { logger } from '../logger';
-import { assert } from 'es-toolkit';
 
 const command = withVerbose(
   new Command().name('show').action(() => {

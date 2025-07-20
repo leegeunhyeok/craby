@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
 use craby_common::{constants, env::is_initialized, utils::sanitize_str};
-use log::{debug, info};
+use log::{debug, info, warn};
 
 pub struct CodegenOptions {
     pub project_root: PathBuf,
@@ -27,6 +27,11 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
     opts.schemas.into_iter().try_for_each(|schema| {
         let schema = serde_json::from_str::<Schema>(&schema)?;
         info!("Generating {} module...", schema.module_name);
+
+        if schema.r#type == "Component" {
+            warn!("Component is not supported yet. Skipping...");
+            return Ok(());
+        }
 
         lib_codes.push(generator.generate_module(&schema));
         android_ffi_codes.push(generator.generate_android_ffi_module(

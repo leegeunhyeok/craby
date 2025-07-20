@@ -41,5 +41,21 @@ describe('bindings', () => {
     it('`codegen` should be a function', () => {
       expect(typeof mod.codegen).toBe('function');
     });
+
+    it('`build` should be a function', () => {
+      expect(typeof mod.build).toBe('function');
+    });
+
+    it('`show` should be a function', () => {
+      expect(typeof mod.show).toBe('function');
+    });
+
+    it('`doctor` should be a function', () => {
+      expect(typeof mod.doctor).toBe('function');
+    });
+
+    it('`clean` should be a function', () => {
+      expect(typeof mod.clean).toBe('function');
+    });
   });
 });

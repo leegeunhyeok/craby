@@ -117,6 +117,26 @@ pub fn show(opts: ShowOptions) -> napi::Result<()> {
 }
 
 #[napi(object)]
+pub struct DoctorOptions {
+    pub project_root: String,
+}
+
+#[napi]
+pub fn doctor(opts: DoctorOptions) -> napi::Result<()> {
+    let opts = craby_cli::commands::doctor::DoctorOptions {
+        project_root: opts.project_root.into(),
+    };
+
+    match craby_cli::commands::doctor::r#impl(opts) {
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
+#[napi(object)]
 pub struct CleanOptions {
     pub project_root: String,
 }

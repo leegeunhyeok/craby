@@ -19,14 +19,14 @@ pub struct CreateXcframeworkOptions {
 #[cfg(target_os = "macos")]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
     use craby_common::{
-        env::Platform,
+        env::{is_xcode_installed, Platform},
         utils::{
             path::{crate_target_dir, ios_framework_path},
             to_lib_name,
         },
     };
 
-    if can_use_xcode() {
+    if is_xcode_installed() {
         let xcframework_path = ios_framework_path(&opts.project_root, &opts.lib_name);
 
         if xcframework_path.exists() {
@@ -75,13 +75,6 @@ pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::
 #[cfg(not(target_os = "macos"))]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
     generate_xcframework(opts)?;
-}
-
-fn can_use_xcode() -> bool {
-    match Command::new("xcodebuild").arg("-version").status() {
-        Ok(status) => status.success(),
-        Err(_) => false,
-    }
 }
 
 fn get_ios_targets() -> impl Iterator<Item = String> {
