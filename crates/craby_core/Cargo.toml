@@ -1,0 +1,12 @@
+[package]
+name = "craby_core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+craby_common = { path = "../craby_common" }
+cbindgen     = "0.29.0"
+anyhow       = { workspace = true }
+log          = { workspace = true }
+serde_json   = { workspace = true }
+owo-colors   = { workspace = true }

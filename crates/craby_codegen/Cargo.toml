@@ -4,3 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+craby_common = { path = "../craby_common" }
+uuid         = { version = "1.17.0", features = ["v4"] }
+anyhow       = { workspace = true }
+log          = { workspace = true }
+serde        = { workspace = true, features = ["derive"] }
+serde_json   = { workspace = true }
+serde_derive = { workspace = true }

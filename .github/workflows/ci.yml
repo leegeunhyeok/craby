@@ -34,39 +34,39 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              yarn workspace @craby/cli build --target x86_64-apple-darwin
+              RUST_TARGET=x86_64-apple-darwin yarn workspace @craby/cli build
 
           - host: windows-latest
             build: |
-              yarn workspace @craby/cli build --target x86_64-pc-windows-msvc
+              RUST_TARGET=x86_64-pc-windows-msvc yarn workspace @craby/cli build
             target: x86_64-pc-windows-msvc
 
           - host: windows-latest
             build: |
-              yarn workspace @craby/cli build --target i686-pc-windows-msvc
+              RUST_TARGET=i686-pc-windows-msvc yarn workspace @craby/cli build
             target: i686-pc-windows-msvc
 
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
-              yarn workspace @craby/cli build --target x86_64-unknown-linux-gnu
+              RUST_TARGET=x86_64-unknown-linux-gnu yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: yarn workspace @craby/cli build --target x86_64-unknown-linux-musl
+            build: RUST_TARGET=x86_64-unknown-linux-musl yarn workspace @craby/cli build
 
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
-              yarn workspace @craby/cli build --target aarch64-apple-darwin
+              RUST_TARGET=aarch64-apple-darwin yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |
-              yarn workspace @craby/cli build --target aarch64-unknown-linux-gnu
+              RUST_TARGET=aarch64-unknown-linux-gnu yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
@@ -74,7 +74,7 @@ jobs:
               sudo apt-get update
               sudo apt-get install gcc-arm-linux-gnueabihf -y
             build: |
-              yarn workspace @craby/cli build --target armv7-unknown-linux-gnueabihf
+              RUST_TARGET=armv7-unknown-linux-gnueabihf yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -82,12 +82,12 @@ jobs:
             build: |
               set -e &&
               rustup target add aarch64-unknown-linux-musl &&
-              yarn workspace @craby/cli build --target aarch64-unknown-linux-musl
+              RUST_TARGET=aarch64-unknown-linux-musl yarn workspace @craby/cli build
 
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             build: |
-              yarn workspace @craby/cli build --target aarch64-pc-windows-msvc
+              RUST_TARGET=aarch64-pc-windows-msvc yarn workspace @craby/cli build
 
     name: stable - ${{ matrix.settings.target }} - node@22
     runs-on: ${{ matrix.settings.host }}
@@ -160,7 +160,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: ${{ env.PACKAGE_PATH }}/${{ env.APP_NAME }}.*.node
+          path: ${{ env.PACKAGE_PATH }}/napi/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
 
   test-macOS-windows-binding:
@@ -205,7 +205,7 @@ jobs:
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
       - name: Test bindings
-        run: yarn workspace @craby/cli test:bindings
+        run: yarn workspace @craby/cli test
 
   test-linux-x64-gnu-binding:
     name: Test bindings on Linux-x64-gnu - node@${{ matrix.node }}
@@ -247,7 +247,7 @@ jobs:
           docker run --rm \
           -v $(pwd):/build -w /build \
           node:${{ matrix.node }}-slim \
-          sh -c "corepack enable && yarn workspace @craby/cli test:bindings"
+          sh -c "corepack enable && yarn workspace @craby/cli test"
 
   test-linux-x64-musl-binding:
     name: Test bindings on x86_64-unknown-linux-musl - node@${{ matrix.node }}
@@ -291,7 +291,7 @@ jobs:
           docker run --rm \
           -v $(pwd):/build -w /build \
           node:${{ matrix.node }}-alpine \
-          sh -c "corepack enable && yarn workspace @craby/cli test:bindings"
+          sh -c "corepack enable && yarn workspace @craby/cli test"
 
   test-linux-aarch64-gnu-binding:
     name: Test bindings on aarch64-unknown-linux-gnu - node@${{ matrix.node }}
@@ -332,7 +332,7 @@ jobs:
           options: '--platform linux/arm64 -v ${{ github.workspace }}:/build -w /build'
           run: |
             corepack enable
-            yarn workspace @craby/cli test:bindings
+            yarn workspace @craby/cli test
 
   test-linux-aarch64-musl-binding:
     name: Test bindings on aarch64-unknown-linux-musl - node@${{ matrix.node }}
@@ -374,7 +374,7 @@ jobs:
           run: |
             set -e
             corepack enable
-            yarn workspace @craby/cli test:bindings
+            yarn workspace @craby/cli test
             echo "Test exited with $?"
             yarn workspace @craby/cli exec ls -la
 
@@ -416,10 +416,10 @@ jobs:
           options: '--platform linux/arm/v7 -v ${{ github.workspace }}:/build -w /build'
           run: |
             corepack enable
-            yarn workspace @craby/cli test:bindings
+            yarn workspace @craby/cli test
 
-  publish:
-    name: Publish
+  publish-bindings:
+    name: Publish bindings
     runs-on: ubuntu-latest
     needs:
       - test-macOS-windows-binding

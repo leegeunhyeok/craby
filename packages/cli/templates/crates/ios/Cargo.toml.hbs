@@ -1,0 +1,12 @@
+[package]
+name = "{{ crate_name }}_ios"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+objc = { workspace = true }
+{{ crate_name }} = { path = "../lib" }
+
+[lib]
+name = "{{ lib_name }}"
+crate-type = ["staticlib"]

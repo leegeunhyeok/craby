@@ -3,5 +3,7 @@
 /.yarn/plugins/**/*  binary
 /.pnp.*              binary linguist-generated
 
-/packages/cli/index.js linguist-vendored
-/examples/**/*         linguist-vendored
+/crates/craby_cli/template/**/*   linguist-vendored
+/packages/cli/index.js            linguist-vendored
+/packages/cli/template/**/*       linguist-vendored
+/examples/**/*                    linguist-vendored
