@@ -288,6 +288,7 @@ impl FunctionSpec {
     pub fn to_android_ffi_fn(
         &self,
         lib_name: &String,
+        mod_name: &String,
         java_package_name: &String,
         class_name: &String,
     ) -> String {
@@ -326,14 +327,14 @@ impl FunctionSpec {
                     name = jni_fn_name,
                     params_sig = params_sig,
                     ret_annotation = ret_annotation,
-                    body = format!("{}::{}({})", lib_name, self.name, params),
+                    body = format!("{}::{}::{}({})", lib_name,mod_name, self.name, params),
                 )
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
     }
 
-    pub fn to_ios_ffi_fn(&self, lib_name: &String) -> String {
+    pub fn to_ios_ffi_fn(&self, lib_name: &String, mod_name: &String) -> String {
         let code = self.to_rs_fn(0);
         let code = code.replace(
             format!("pub fn {}", self.name).as_str(),
@@ -341,7 +342,7 @@ impl FunctionSpec {
         );
         let code = code.replace(
             format!("{}::{}", constants::IMPL_MOD_NAME, self.name).as_str(),
-            format!("{}::{}", lib_name.as_str(), self.name).as_str(),
+            format!("{}::{}::{}", lib_name.as_str(), mod_name, self.name).as_str(),
         );
 
         ["#[no_mangle]".to_string(), code].join("\n")

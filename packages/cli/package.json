@@ -20,7 +20,7 @@
   "files": [
     "bin.js",
     "dist",
-    "template",
+    "templates",
     "napi",
     "!napi/*.node"
   ],

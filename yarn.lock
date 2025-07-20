@@ -5995,6 +5995,7 @@ __metadata:
     "@types/jest": "npm:^29.5.13"
     "@types/react": "npm:^19.1.0"
     "@types/react-test-renderer": "npm:^19.1.0"
+    craby-calculator: "workspace:*"
     eslint: "npm:^8.19.0"
     jest: "npm:^29.6.3"
     prettier: "npm:2.8.8"
@@ -6005,7 +6006,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"craby-calculator@workspace:examples/calculator":
+"craby-calculator@workspace:*, craby-calculator@workspace:examples/calculator":
   version: 0.0.0-use.local
   resolution: "craby-calculator@workspace:examples/calculator"
   dependencies:

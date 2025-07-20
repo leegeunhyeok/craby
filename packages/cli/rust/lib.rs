@@ -70,6 +70,28 @@ pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     }
 }
 
+#[napi(object)]
+pub struct BuildOptions {
+    pub project_root: String,
+    pub library_name: String,
+}
+
+#[napi]
+pub fn build(opts: BuildOptions) -> napi::Result<()> {
+    let opts = craby_cli::commands::build::BuildOptions {
+        project_root: opts.project_root.into(),
+        lib_name: opts.library_name,
+    };
+
+    match craby_cli::commands::build::r#impl(opts) {
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
 #[napi]
 pub fn trace(message: String) {
     trace!("{}", message);

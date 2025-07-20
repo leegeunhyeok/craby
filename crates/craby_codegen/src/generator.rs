@@ -1,4 +1,4 @@
-use craby_common::utils::sanitize_str;
+use craby_common::{constants::IMPL_MOD_NAME, utils::sanitize_str};
 
 use crate::types::schema::Schema;
 
@@ -18,7 +18,12 @@ impl CodeGenerator {
             .collect::<Vec<_>>();
         let mod_name = sanitize_str(&schema.module_name);
 
-        format!("pub mod {} {{\n{}\n}}", mod_name, methods.join("\n\n"))
+        format!(
+            "pub mod {} {{\n    use crate::{};\n\n{}\n}}",
+            mod_name,
+            IMPL_MOD_NAME,
+            methods.join("\n\n")
+        )
     }
 
     pub fn generate_android_ffi_module(
@@ -27,23 +32,25 @@ impl CodeGenerator {
         lib_name: &String,
         java_package_name: &String,
     ) -> String {
+        let mod_name = sanitize_str(&schema.module_name);
         let class_name = format!("{}Module", &schema.module_name);
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_android_ffi_fn(lib_name, java_package_name, &class_name))
+            .map(|spec| spec.to_android_ffi_fn(lib_name, &mod_name, java_package_name, &class_name))
             .collect::<Vec<_>>();
 
         format!("use jni::sys::*;\n\n{}", methods.join("\n\n"))
     }
 
     pub fn generate_ios_ffi_module(&self, schema: &Schema, lib_name: &String) -> String {
+        let mod_name = sanitize_str(&schema.module_name);
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_ios_ffi_fn(lib_name))
+            .map(|spec| spec.to_ios_ffi_fn(lib_name, &mod_name))
             .collect::<Vec<_>>();
 
         methods.join("\n\n")
@@ -104,6 +111,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn multiply(a: f64, b: f64) -> f64 {",
                 "        impls::multiply(a, b)",
                 "    }",
@@ -156,6 +165,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn log_message(message: String) {",
                 "        impls::log_message(message)",
                 "    }",
@@ -215,6 +226,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn greet(name: String, age: Option<f64>) -> String {",
                 "        impls::greet(name, age)",
                 "    }",
@@ -281,6 +294,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn handle_value(enum_param: String, union_param: f64) {",
                 "        impls::handle_value(enum_param, union_param)",
                 "    }",
@@ -339,6 +354,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn nullable_test(nullable_param: Option<f64>) -> Option<String> {",
                 "        impls::nullable_test(nullable_param)",
                 "    }",
@@ -398,6 +415,8 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
+                "    use crate::impls;",
+                "",
                 "    pub fn multiply(a: f64, b: f64) -> f64 {",
                 "        impls::multiply(a, b)",
                 "    }",
@@ -464,7 +483,7 @@ mod tests {
                 "",
                 "#[no_mangle]",
                 "pub extern \"C\" fn Java_com_example_MyModuleModule_nativeMultiply(_env: JNIEnv, _class: jobject, a: f64, b: f64) -> f64 {",
-                "    lib::multiply(a, b)",
+                "    lib::my_module::multiply(a, b)",
                 "}",
             ]
             .join("\n")
@@ -522,7 +541,7 @@ mod tests {
             [
                 "#[no_mangle]",
                 "pub extern \"C\" fn multiply(a: f64, b: f64) -> f64 {",
-                "    lib::multiply(a, b)",
+                "    lib::my_module::multiply(a, b)",
                 "}",
             ]
             .join("\n")

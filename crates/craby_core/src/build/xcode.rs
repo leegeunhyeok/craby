@@ -1,24 +1,33 @@
 use std::{fs, path::PathBuf, process::Command};
 
 use craby_common::constants;
-use log::{debug, warn};
+use log::debug;
 
 pub struct CreateXcframeworkOptions {
-    project_root: PathBuf,
-    header_path: PathBuf,
-    lib_name: String,
+    pub project_root: PathBuf,
+    pub header_path: PathBuf,
+    pub lib_name: String,
 }
 
 #[cfg(target_os = "macos")]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
     if can_use_xcode() {
+        let xcframework_path = opts
+            .project_root
+            .join("ios")
+            .join("framework")
+            .join(format!("lib{}.xcframework", opts.lib_name));
+
+        if xcframework_path.exists() {
+            fs::remove_dir_all(&xcframework_path)?;
+            debug!("Cleaned up existing xcframework");
+        }
+
         let mut cmd = Command::new("xcodebuild");
-        let cmd = cmd.arg("-create-xcframework").arg("-output").arg(
-            opts.project_root
-                .join("ios")
-                .join("framework")
-                .join(format!("lib{}.xcframework", opts.lib_name)),
-        );
+        let cmd = cmd
+            .arg("-create-xcframework")
+            .arg("-output")
+            .arg(xcframework_path);
 
         get_ios_targets().for_each(|target| {
             let lib = opts
@@ -49,7 +58,7 @@ pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::
             );
         }
     } else {
-        warn!("xcodebuild: command not found. falling back to manual xcframework generation");
+        debug!("xcodebuild: command not found. falling back to manual xcframework generation");
         generate_xcframework(opts)?;
     }
 
@@ -96,23 +105,39 @@ fn generate_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Er
     fs::create_dir_all(&xcframework)?;
     fs::create_dir_all(xcframework.join("ios-arm64").join(headers_path))?;
     fs::create_dir_all(xcframework.join("ios-arm64-simulator").join(headers_path))?;
+    debug!("Created xcframework directories");
 
     fs::write(
         xcframework.join("Info.plist"),
         info_plist_content(&opts.lib_name, &headers_path),
     )?;
+    debug!("Wrote Info.plist");
 
     for target in targets {
-        let lib = format!("lib{}.a", opts.lib_name);
+        let lib: String = format!("lib{}.a", opts.lib_name);
+        let lib_header = format!("lib{}.h", opts.lib_name);
         let from = target_dir.join(&target).join("release").join(&lib);
+        let from_header = opts
+            .project_root
+            .join(".craby")
+            .join("include")
+            .join(&lib_header);
 
-        if target.contains("sim") {
-            fs::copy(from, xcframework.join("ios-arm64-simulator").join(&lib))?;
-            debug!("Copied {} to ios-arm64-simulator", &lib);
+        let lib_target = if target.contains("sim") {
+            "ios-arm64-simulator"
         } else {
-            fs::copy(from, xcframework.join("ios-arm64").join(&lib))?;
-            debug!("Copied {} to ios-arm64", &lib);
-        }
+            "ios-arm64"
+        };
+
+        debug!("Copying {} to {}", &lib, lib_target);
+        fs::copy(from, xcframework.join(lib_target).join(&lib))?;
+        fs::copy(
+            from_header,
+            xcframework
+                .join(lib_target)
+                .join(headers_path)
+                .join(lib_header),
+        )?;
     }
 
     Ok(())
@@ -159,6 +184,8 @@ fn info_plist_content(lib_name: &str, headers_path: &str) -> String {
         "        <string>arm64</string>",
         "      </array>",
         "      <key>SupportedPlatform</key>",
+        "      <string>ios</string>",
+        "      <key>SupportedPlatformVariant</key>",
         "      <string>simulator</string>",
         "    </dict>",
         "  </array>",

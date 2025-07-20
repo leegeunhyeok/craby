@@ -21,10 +21,14 @@ pub fn r#impl(opts: InitOptions) -> anyhow::Result<()> {
         .with_default(&sanitize_str(&opts.lib_name))
         .with_validator(validators::CrateNameValidator)
         .prompt()?;
+    let lib_name = crate_name.replace("_", "");
 
     let root_template = opts.template_base_path.join("root");
     let crates_template = opts.template_base_path.join("crates");
-    let data = BTreeMap::from([("crate_name", crate_name.as_str())]);
+    let data = BTreeMap::from([
+        ("crate_name", crate_name.as_str()),
+        ("lib_name", lib_name.as_str()),
+    ]);
 
     fs::create_dir_all(opts.project_root.join(".craby"))?;
     render_template(&root_template, &opts.project_root, &data)?;
