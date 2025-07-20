@@ -4,6 +4,7 @@
 /.pnp.*              binary linguist-generated
 
 /crates/craby_cli/template/**/*   linguist-vendored
-/packages/cli/index.js            linguist-vendored
-/packages/cli/template/**/*       linguist-vendored
+/packages/cli/built/**/*          linguist-vendored
+/packages/cli/napi/**/*           linguist-vendored
+/packages/cli/templates/**/*      linguist-vendored
 /examples/**/*                    linguist-vendored

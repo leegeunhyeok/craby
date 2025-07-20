@@ -1,6 +1,6 @@
 {
   "name": "@craby/cli",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -40,6 +40,7 @@
   "napi": {
     "name": "cli",
     "triples": {
+      "defaults": false,
       "additional": [
         "x86_64-apple-darwin",
         "x86_64-pc-windows-msvc",
