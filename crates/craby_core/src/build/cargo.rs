@@ -67,7 +67,7 @@ fn build_android(project_root: &Path) -> Result<(), anyhow::Error> {
         cmd.arg("-t").arg(target);
     });
 
-    info!("Building Android with NDK...");
+    info!("Building for Android with NDK...");
     let res = cmd.args(["build", "--release"]).output()?;
 
     if !res.status.success() {

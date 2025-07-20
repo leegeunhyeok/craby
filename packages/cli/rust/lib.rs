@@ -92,6 +92,32 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
     }
 }
 
+
+
+#[napi(object)]
+pub struct ShowOptions {
+    pub project_root: String,
+    pub library_name: String,
+    pub schemas: Vec<String>,
+}
+
+#[napi]
+pub fn show(opts: ShowOptions) -> napi::Result<()> {
+    let opts = craby_cli::commands::show::ShowOptions {
+        project_root: opts.project_root.into(),
+        lib_name: opts.library_name,
+        schemas: opts.schemas,
+    };
+
+    match craby_cli::commands::show::r#impl(opts) {
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
+}
+
 #[napi]
 pub fn trace(message: String) {
     trace!("{}", message);

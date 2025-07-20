@@ -1,8 +1,6 @@
 use owo_colors::OwoColorize;
-use syntect::{
-    easy::HighlightLines, highlighting::ThemeSet, parsing::SyntaxSet,
-    util::as_24_bit_terminal_escaped,
-};
+
+use crate::utils::terminal::highlight_code;
 
 pub fn print_guide(lib_name: &String) {
     print_usage(lib_name);
@@ -15,17 +13,18 @@ fn print_usage(lib_name: &String) {
         "android/build.gradle".underline()
     );
     let content = r#"android {
-  // ...
+// ...
 
   sourceSets {
     main {
-      // ...
+      // Add this line
       jniLibs.srcDirs += ["src/main/jniLibs"]
     }
   }
-}
-"#;
+}"#;
+    println!("```gradle");
     highlight_code(&content.to_string(), "gradle");
+    println!("```\n");
 
     let content = format!(
         r#"@ReactModule(name = MathModule.NAME)
@@ -47,11 +46,12 @@ class MathModule(reactContext: ReactApplicationContext) :
     // Call the native method
     return nativeMultiply(a, b);
   }}
-}}
-"#,
+}}"#,
         lib_name
     );
+    println!("```kt");
     highlight_code(&content, "java");
+    println!("```\n");
 
     println!("iOS usage:\n");
     println!(
@@ -67,8 +67,10 @@ class MathModule(reactContext: ReactApplicationContext) :
 end"#,
         lib_name
     );
+    println!("```rb");
     highlight_code(&content, "rb");
-    println!("\n");
+    println!("```\n");
+
     let content = format!(
         r#"import "MathModule.h"
 import "lib{}.h" // Add this line
@@ -84,23 +86,10 @@ RCT_EXPORT_MODULE()
 
 // ...
 
-@end
-"#,
+@end"#,
         lib_name
     );
+    println!("```objc");
     highlight_code(&content, "mm");
-}
-
-fn highlight_code(code: &String, ext: &str) {
-    let ss = SyntaxSet::load_defaults_newlines();
-    let ts = ThemeSet::load_defaults();
-    let t = &ts.themes["base16-ocean.dark"];
-    let syntax = ss.find_syntax_by_extension(ext).unwrap();
-    let mut h = HighlightLines::new(syntax, t);
-
-    for line in code.split("\n") {
-        let ranges: Vec<_> = h.highlight_line(line, &ss).unwrap();
-        print!("{}", as_24_bit_terminal_escaped(&ranges[..], false));
-        println!();
-    }
+    println!("```\n");
 }

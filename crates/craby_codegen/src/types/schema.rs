@@ -248,7 +248,7 @@ impl Parameter {
 }
 
 impl FunctionSpec {
-    pub fn to_rs_fn(&self, ident: usize) -> String {
+    pub fn to_rs_fn_sig(&self) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
@@ -260,23 +260,31 @@ impl FunctionSpec {
                     .map(|p| p.to_rs_param())
                     .collect::<Vec<_>>()
                     .join(", ");
+                let ret_annotation = if return_type == "()" {
+                    String::new()
+                } else {
+                    format!(" -> {}", return_type)
+                };
+                format!("fn {}({}){}", self.name, params_sig, ret_annotation)
+            }
+            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
+        }
+    }
+
+    pub fn to_rs_fn(&self, ident: usize) -> String {
+        match &self.type_annotation {
+            TypeAnnotation::FunctionTypeAnnotation { params, .. } => {
                 let params = params
                     .iter()
                     .map(|p| p.name.clone())
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let ret_annotation = if return_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", return_type)
-                };
+                let fn_sig = self.to_rs_fn_sig();
 
                 format!(
-                    "{ident}pub fn {name}({params_sig}){ret_annotation} {{\n    {ident}{body}\n{ident}}}",
-                    name = self.name,
-                    params_sig = params_sig,
-                    ret_annotation = ret_annotation,
+                    "{ident}pub {fn_sig} {{\n    {ident}{body}\n{ident}}}",
+                    fn_sig = fn_sig,
                     body = format!("{}::{}({})", constants::IMPL_MOD_NAME, self.name, params),
                     ident = " ".repeat(ident)
                 )

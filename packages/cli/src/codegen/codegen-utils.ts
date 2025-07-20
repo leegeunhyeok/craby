@@ -7,7 +7,7 @@
  * @format
  */
 
-import { getRequire } from 'src/utils/get-require';
+import { getRequire } from '../utils/get-require';
 
 /**
  * Wrapper required to abstract away from the actual codegen.
