@@ -4,6 +4,8 @@ use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
 use craby_common::{constants, env::is_initialized, utils::sanitize_str};
 use log::{debug, info, warn};
 
+use crate::utils::schema::print_schema;
+
 pub struct CodegenOptions {
     pub project_root: PathBuf,
     pub lib_name: String,
@@ -18,31 +20,42 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
 
     info!("{} module schema(s) found", opts.schemas.len());
 
+    let total_mods = opts.schemas.len();
     let lib_name = sanitize_str(&opts.lib_name);
     let mut lib_codes = vec![];
     let mut android_ffi_codes = vec![];
     let mut ios_ffi_codes = vec![];
     let generator = CodeGenerator::new();
 
-    opts.schemas.into_iter().try_for_each(|schema| {
-        let schema = serde_json::from_str::<Schema>(&schema)?;
-        info!("Generating {} module...", schema.module_name);
+    opts.schemas
+        .into_iter()
+        .enumerate()
+        .try_for_each(|(i, schema)| {
+            let schema = serde_json::from_str::<Schema>(&schema)?;
+            println!(
+                "Generating {} module... ({}/{})",
+                schema.module_name,
+                i + 1,
+                total_mods
+            );
 
-        if schema.r#type == "Component" {
-            warn!("Component is not supported yet. Skipping...");
-            return Ok(());
-        }
+            if schema.r#type == "Component" {
+                warn!("Component is not supported yet. Skipping...");
+                return Ok(());
+            }
 
-        lib_codes.push(generator.generate_module(&schema));
-        android_ffi_codes.push(generator.generate_android_ffi_module(
-            &schema,
-            &lib_name,
-            &opts.java_package_name,
-        ));
-        ios_ffi_codes.push(generator.generate_ios_ffi_module(&schema, &lib_name));
+            print_schema(&schema);
 
-        Ok::<(), anyhow::Error>(())
-    })?;
+            lib_codes.push(generator.generate_module(&schema));
+            android_ffi_codes.push(generator.generate_android_ffi_module(
+                &schema,
+                &lib_name,
+                &opts.java_package_name,
+            ));
+            ios_ffi_codes.push(generator.generate_ios_ffi_module(&schema, &lib_name));
+
+            Ok::<(), anyhow::Error>(())
+        })?;
 
     lib_codes.push(format!("mod {};", constants::IMPL_MOD_NAME));
 

@@ -20,8 +20,6 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
 
     println!("\n{}", "Common".bold().dimmed());
     assert_with_status("TurboModule Configuration", || {
-        let cfg = package_json.get("codegenConfig");
-
         match package_json.get("codegenConfig") {
             Some(cfg) => match serde_json::from_str::<LibraryConfig>(&cfg.to_string()) {
                 Ok(lib_cfg) => match lib_cfg {
