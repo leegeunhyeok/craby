@@ -7,12 +7,9 @@
     "craby": "./bin.js"
   },
   "scripts": {
-    "dev": "yarn build:debug && ./bin.js",
+    "dev": "napi build --platform napi && tsdown && ./bin.js",
     "artifacts": "napi artifacts",
-    "build": "yarn build:napi && tsdown",
-    "build:debug": "yarn build:napi:debug && tsdown",
-    "build:napi": "napi build --platform --release napi",
-    "build:napi:debug": "napi build --platform napi",
+    "build": "./scripts/build.sh",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version",
     "test": "vitest --run"

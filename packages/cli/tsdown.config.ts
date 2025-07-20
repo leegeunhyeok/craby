@@ -16,6 +16,7 @@ export default defineConfig({
     const nodeFiles = files.filter((file) => file.endsWith('.node'));
 
     for (const file of nodeFiles) {
+      console.log('Copying binary file:', file);
       await fs.copyFile(path.resolve('napi', file), path.resolve('dist', file));
     }
   },

@@ -34,39 +34,39 @@ jobs:
           - host: macos-latest
             target: x86_64-apple-darwin
             build: |
-              yarn workspace @craby/cli build --target x86_64-apple-darwin
+              RUST_TARGET=x86_64-apple-darwin yarn workspace @craby/cli build
 
           - host: windows-latest
             build: |
-              yarn workspace @craby/cli build --target x86_64-pc-windows-msvc
+              RUST_TARGET=x86_64-pc-windows-msvc yarn workspace @craby/cli build
             target: x86_64-pc-windows-msvc
 
           - host: windows-latest
             build: |
-              yarn workspace @craby/cli build --target i686-pc-windows-msvc
+              RUST_TARGET=i686-pc-windows-msvc yarn workspace @craby/cli build
             target: i686-pc-windows-msvc
 
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
-              yarn workspace @craby/cli build --target x86_64-unknown-linux-gnu
+              RUST_TARGET=x86_64-unknown-linux-gnu yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: yarn workspace @craby/cli build --target x86_64-unknown-linux-musl
+            build: RUST_TARGET=x86_64-unknown-linux-musl yarn workspace @craby/cli build
 
           - host: macos-latest
             target: aarch64-apple-darwin
             build: |
-              yarn workspace @craby/cli build --target aarch64-apple-darwin
+              RUST_TARGET=aarch64-apple-darwin yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: |
-              yarn workspace @craby/cli build --target aarch64-unknown-linux-gnu
+              RUST_TARGET=aarch64-unknown-linux-gnu yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
@@ -74,7 +74,7 @@ jobs:
               sudo apt-get update
               sudo apt-get install gcc-arm-linux-gnueabihf -y
             build: |
-              yarn workspace @craby/cli build --target armv7-unknown-linux-gnueabihf
+              RUST_TARGET=armv7-unknown-linux-gnueabihf yarn workspace @craby/cli build
 
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
@@ -82,12 +82,12 @@ jobs:
             build: |
               set -e &&
               rustup target add aarch64-unknown-linux-musl &&
-              yarn workspace @craby/cli build --target aarch64-unknown-linux-musl
+              RUST_TARGET=aarch64-unknown-linux-musl yarn workspace @craby/cli build
 
           - host: windows-latest
             target: aarch64-pc-windows-msvc
             build: |
-              yarn workspace @craby/cli build --target aarch64-pc-windows-msvc
+              RUST_TARGET=aarch64-pc-windows-msvc yarn workspace @craby/cli build
 
     name: stable - ${{ matrix.settings.target }} - node@22
     runs-on: ${{ matrix.settings.host }}

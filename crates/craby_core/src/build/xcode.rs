@@ -75,6 +75,7 @@ pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::
 #[cfg(not(target_os = "macos"))]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
     generate_xcframework(opts)?;
+    Ok(())
 }
 
 fn get_ios_targets() -> impl Iterator<Item = String> {
