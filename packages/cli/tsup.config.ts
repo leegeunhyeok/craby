@@ -4,7 +4,7 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  outDir: './dist',
+  outDir: './built',
   format: 'esm',
   target: 'node20',
   sourcemap: false,
@@ -19,17 +19,6 @@ export default defineConfig({
       await fs.promises.rename(
         path.resolve('napi/index.js'),
         path.resolve('napi/index.cjs')
-      );
-    }
-
-    const files = await fs.promises.readdir(path.resolve('napi'));
-    const nodeFiles = files.filter((file) => file.endsWith('.node'));
-
-    for (const file of nodeFiles) {
-      console.log('Copying binary file:', file);
-      await fs.promises.copyFile(
-        path.resolve('napi', file),
-        path.resolve('dist', file)
       );
     }
   },
