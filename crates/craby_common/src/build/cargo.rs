@@ -1,11 +1,12 @@
 use std::{path::Path, process::Command};
 
-use craby_common::{
+use log::{debug, error, info};
+use owo_colors::OwoColorize;
+
+use crate::{
     constants,
     utils::path::{android_jni_libs_dir, crate_manifest_path},
 };
-use log::{debug, error, info};
-use owo_colors::OwoColorize;
 
 pub fn build_targets(project_root: &Path) -> Result<(), anyhow::Error> {
     build_ios(project_root)?;

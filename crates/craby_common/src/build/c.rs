@@ -1,10 +1,11 @@
 use std::path::{Path, PathBuf};
 
-use craby_common::utils::{
+use log::{debug, info};
+
+use crate::utils::{
     fs::clean_binding_headers,
     path::{binding_header_dir, crate_dir},
 };
-use log::{debug, info};
 
 pub fn generate_c_bindings(project_root: &Path, lib_name: &str) -> Result<PathBuf, anyhow::Error> {
     let lib_crate_path = crate_dir(&project_root.to_path_buf(), "ios");

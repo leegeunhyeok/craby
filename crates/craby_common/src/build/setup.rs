@@ -1,7 +1,8 @@
 use std::process::Command;
 
 use anyhow::Error;
-use craby_common::constants;
+
+use crate::constants;
 
 pub fn setup_project() -> anyhow::Result<()> {
     setup_rust()?;

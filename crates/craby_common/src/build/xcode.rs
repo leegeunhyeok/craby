@@ -1,6 +1,8 @@
 use std::{fs, path::PathBuf, process::Command};
 
-use craby_common::{
+use log::debug;
+
+use crate::{
     constants,
     env::Platform,
     utils::{
@@ -8,7 +10,6 @@ use craby_common::{
         to_lib_name,
     },
 };
-use log::debug;
 
 pub struct CreateXcframeworkOptions {
     pub project_root: PathBuf,
@@ -18,7 +19,7 @@ pub struct CreateXcframeworkOptions {
 
 #[cfg(target_os = "macos")]
 pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
-    use craby_common::{
+    use crate::{
         env::{is_xcode_installed, Platform},
         utils::{
             path::{crate_target_dir, ios_framework_path},

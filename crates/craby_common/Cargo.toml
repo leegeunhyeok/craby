@@ -6,7 +6,9 @@ edition.workspace = true
 [dependencies]
 convert_case = "0.8.0"
 regex        = "1.11.1"
+cbindgen     = "0.29.0"
 anyhow       = { workspace = true }
 env_logger   = { workspace = true }
 log          = { workspace = true }
+serde_json   = { workspace = true }
 owo-colors   = { workspace = true }
