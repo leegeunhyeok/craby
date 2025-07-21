@@ -2,6 +2,7 @@
 name = "napi_craby_cli"
 edition = { workspace = true }
 version = { workspace = true }
+publish = false
 
 [lib]
 path = "rust/lib.rs"

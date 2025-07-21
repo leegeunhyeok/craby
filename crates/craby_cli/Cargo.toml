@@ -2,6 +2,10 @@
 name = "craby_cli"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+description = "Craby CLI"
+license = "MIT"
+repository = "https://github.com/leegeunhyeok/craby"
 
 [dependencies]
 craby_codegen  = { path = "../craby_codegen" }
