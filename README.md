@@ -8,6 +8,9 @@ Type-safe Rust for React Native TurboModules—auto-generated, fully integrated
 
 </div>
 
+> [!NOTE]
+> This project is under development
+
 ## Overview
 
 **craby** is a type-safe Rust development tool for React Native TurboModules. It automatically generates Rust code based on TypeScript/Flow schemas and provides fully integrated Android/iOS native bindings.
