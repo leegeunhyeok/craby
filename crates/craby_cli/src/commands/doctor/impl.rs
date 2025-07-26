@@ -4,6 +4,7 @@ use craby_codegen::types::schema::{AndroidConfig, LibraryConfig};
 use craby_common::{
     constants::toolchain::TARGETS,
     env::{get_installed_targets, is_cargo_ndk_installed, is_xcode_installed},
+    utils::{android::is_gradle_configured, ios::is_podspec_configured},
 };
 use log::debug;
 use owo_colors::OwoColorize;
@@ -77,6 +78,15 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
             Err(anyhow::anyhow!("`cargo-ndk` is not installed"))
         }
     });
+    assert_with_status("Build configuration", || {
+        if is_gradle_configured(&opts.project_root)? {
+            Ok(Status::Ok)
+        } else {
+            Err(anyhow::anyhow!(
+                "`android/build.gradle` is not configured correctly"
+            ))
+        }
+    });
 
     println!("\n{}", "iOS".bold().dimmed());
     assert_with_status("XCode", || {
@@ -87,6 +97,15 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
                 "`xcodebuild` command not found. {}",
                 "(The xcframework will be generated manually instead)".dimmed()
             )))
+        }
+    });
+    assert_with_status("Build configuration", || {
+        if is_podspec_configured(&opts.project_root)? {
+            Ok(Status::Ok)
+        } else {
+            Err(anyhow::anyhow!(
+                "`<LibraryName>.podspec` is not configured correctly"
+            ))
         }
     });
 
