@@ -8,7 +8,7 @@ use craby_common::{
 use log::debug;
 use owo_colors::OwoColorize;
 
-use crate::commands::doctor::assert::assert_with_status;
+use crate::commands::doctor::assert::{assert_with_status, Status};
 
 pub struct DoctorOptions {
     pub project_root: PathBuf,
@@ -30,7 +30,7 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
                                 java_package_name: Some(_),
                             }),
                         ..
-                    } => Ok(()),
+                    } => Ok(Status::Ok),
                     _ => Err(anyhow::anyhow!(
                         "`codegenConfig.jsSrcsDir` and `codegenConfig.android.javaPackageName` are required"
                     )),
@@ -54,7 +54,7 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
             format!("Toolchain Target {}", target_label.dimmed()).as_str(),
             || {
                 if installed_targets.contains(&target.to_string()) {
-                    Ok(())
+                    Ok(Status::Ok)
                 } else {
                     Err(anyhow::anyhow!("Not installed"))
                 }
@@ -64,7 +64,7 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
 
     println!("\n{}", "Android".bold().dimmed());
     assert_with_status("ANDROID_HOME", || match std::env::var("ANDROID_HOME") {
-        Ok(_) => Ok(()),
+        Ok(_) => Ok(Status::Ok),
         Err(e) => Err(anyhow::anyhow!(
             "`ANDROID_HOME` environment variable is not set: {}",
             e
@@ -72,7 +72,7 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
     });
     assert_with_status("cargo-ndk", || {
         if is_cargo_ndk_installed() {
-            Ok(())
+            Ok(Status::Ok)
         } else {
             Err(anyhow::anyhow!("`cargo-ndk` is not installed"))
         }
@@ -81,12 +81,12 @@ pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
     println!("\n{}", "iOS".bold().dimmed());
     assert_with_status("XCode", || {
         if is_xcode_installed() {
-            Ok(())
+            Ok(Status::Ok)
         } else {
-            Err(anyhow::anyhow!(
+            Ok(Status::Warn(format!(
                 "`xcodebuild` command not found. {}",
                 "(The xcframework will be generated manually instead)".dimmed()
-            ))
+            )))
         }
     });
 
