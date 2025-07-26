@@ -300,7 +300,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/parser@npm:^7.1.0, @babel/parser@npm:^7.14.7, @babel/parser@npm:^7.20.7, @babel/parser@npm:^7.23.9, @babel/parser@npm:^7.25.3, @babel/parser@npm:^7.27.2, @babel/parser@npm:^7.28.0":
+"@babel/parser@npm:^7, @babel/parser@npm:^7.1.0, @babel/parser@npm:^7.14.7, @babel/parser@npm:^7.20.7, @babel/parser@npm:^7.23.9, @babel/parser@npm:^7.25.3, @babel/parser@npm:^7.27.2, @babel/parser@npm:^7.28.0":
   version: 7.28.0
   resolution: "@babel/parser@npm:7.28.0"
   dependencies:
@@ -1755,6 +1755,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@craby/cli@workspace:packages/cli"
   dependencies:
+    "@babel/parser": "npm:^7.28.0"
     "@commander-js/extra-typings": "npm:^14.0.0"
     "@napi-rs/cli": "npm:^2.18.4"
     "@react-native/codegen": "npm:^0.80.1"

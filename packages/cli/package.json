@@ -21,6 +21,7 @@
     "!napi/*.node"
   ],
   "dependencies": {
+    "@babel/parser": "^7.28.0",
     "@commander-js/extra-typings": "^14.0.0",
     "@react-native/codegen": "^0.80.1",
     "commander": "^14.0.0",
