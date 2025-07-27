@@ -85,6 +85,11 @@
     "jsSrcsDir": "src",
     "android": {
       "javaPackageName": "com.calculatorcpp"
+    },
+    "ios": {
+      "modulesProvider": {
+        "NativeCalculatorCpp": "NativeCalculatorCppProvider"
+      }
     }
   }
 }
