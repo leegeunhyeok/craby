@@ -24,6 +24,7 @@ fn print_usage(lib_name: &String) {
 }"#;
     println!("```gradle");
     highlight_code(&content.to_string(), "gradle");
+    println!();
     println!("```\n");
 
     let content = format!(
@@ -50,6 +51,7 @@ class MathModule(reactContext: ReactApplicationContext) :
     );
     println!("```kt");
     highlight_code(&content, "java");
+    println!();
     println!("```\n");
 
     println!("iOS setup and usage:\n");
@@ -68,6 +70,7 @@ end"#,
     );
     println!("```rb");
     highlight_code(&content, "rb");
+    println!();
     println!("```\n");
 
     let content = format!(
@@ -90,5 +93,6 @@ RCT_EXPORT_MODULE()
     );
     println!("```objc");
     highlight_code(&content, "mm");
+    println!();
     println!("```\n");
 }

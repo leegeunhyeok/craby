@@ -31,7 +31,6 @@ pub fn highlight_code(code: &String, ext: &str) {
         let mut h = HighlightLines::new(syntax, t);
         let ranges: Vec<_> = h.highlight_line(line, &ss).unwrap();
         print!("{}", as_24_bit_terminal_escaped(&ranges[..], false));
-        println!();
     }
 
     // Reset color

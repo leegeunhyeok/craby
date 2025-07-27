@@ -11,8 +11,10 @@ repository = "https://github.com/leegeunhyeok/craby"
 convert_case = "0.8.0"
 regex        = "1.11.1"
 cbindgen     = "0.29.0"
+toml         = "0.9.2"
 anyhow       = { workspace = true }
 env_logger   = { workspace = true }
 log          = { workspace = true }
+serde        = { workspace = true }
 serde_json   = { workspace = true }
 owo-colors   = { workspace = true }

@@ -1,9 +1,10 @@
 use craby_codegen::types::schema::Schema;
+use craby_common::config::CompleteCrabyConfig;
 use owo_colors::OwoColorize;
 
 use crate::utils::terminal::highlight_code;
 
-pub fn print_schema(schema: &Schema) {
+pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
     println!("├─ Methods ({})", schema.spec.methods.len());
     schema
         .spec
@@ -16,7 +17,19 @@ pub fn print_schema(schema: &Schema) {
             } else {
                 print!("│   ├─ ");
             }
-            highlight_code(&method.to_rs_fn_sig(), "rs");
+
+            if config.is_excluded_method(&method.name) {
+                println!(
+                    "{} {}",
+                    method.to_rs_fn_sig().dimmed(),
+                    "(excluded)".yellow()
+                );
+            } else if config.is_included_method(&method.name) {
+                highlight_code(&method.to_rs_fn_sig(), "rs");
+                println!();
+            } else {
+                println!("{} {}", method.name, "(not included)".dimmed());
+            }
         });
     // TODO: Impl
     println!("├─ Event Emitters (0)");

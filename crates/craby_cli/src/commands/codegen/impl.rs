@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
-use craby_common::{constants, env::is_initialized, utils::sanitize_str};
+use craby_common::{config::load_config, constants, env::is_initialized, utils::sanitize_str};
 use log::{debug, info, warn};
 
 use crate::utils::schema::print_schema;
@@ -17,6 +17,9 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
     if !is_initialized(&opts.project_root) {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
     }
+
+    let config = load_config(&opts.project_root)?;
+    let config = config.into_complete();
 
     info!("{} module schema(s) found", opts.schemas.len());
 
@@ -44,7 +47,7 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
                 return Ok(());
             }
 
-            print_schema(&schema);
+            print_schema(&schema, &config);
 
             lib_codes.push(generator.generate_module(&schema));
             android_ffi_codes.push(generator.generate_android_ffi_module(

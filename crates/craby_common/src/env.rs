@@ -13,6 +13,7 @@ pub fn is_initialized(project_root: &Path) -> bool {
     let crates_dir = project_root.join("crates");
 
     project_root.join(".craby").exists()
+        && project_root.join("craby.toml").exists()
         && project_root.join("Cargo.toml").exists()
         && crates_dir.join("lib").join("Cargo.toml").exists()
         && crates_dir.join("android").join("Cargo.toml").exists()
