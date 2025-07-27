@@ -5843,6 +5843,32 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"craby-calculator-cpp@workspace:examples/calculator-cpp":
+  version: 0.0.0-use.local
+  resolution: "craby-calculator-cpp@workspace:examples/calculator-cpp"
+  dependencies:
+    "@craby/cli": "workspace:*"
+    "@eslint/compat": "npm:^1.2.7"
+    "@eslint/eslintrc": "npm:^3.3.0"
+    "@eslint/js": "npm:^9.22.0"
+    "@react-native-community/cli": "npm:15.0.0-alpha.2"
+    "@react-native/babel-preset": "npm:0.79.2"
+    "@react-native/eslint-config": "npm:^0.78.0"
+    "@types/react": "npm:^19.0.0"
+    del-cli: "npm:^5.1.0"
+    eslint: "npm:^9.22.0"
+    eslint-config-prettier: "npm:^10.1.1"
+    eslint-plugin-prettier: "npm:^5.2.3"
+    prettier: "npm:^3.0.3"
+    react: "npm:19.0.0"
+    react-native: "npm:0.79.2"
+    typescript: "npm:^5.8.3"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "craby-calculator@workspace:*, craby-calculator@workspace:examples/calculator":
   version: 0.0.0-use.local
   resolution: "craby-calculator@workspace:examples/calculator"
