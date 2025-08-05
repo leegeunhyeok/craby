@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "craby-calculator": "workspace:*",
+    "basic-module": "workspace:*",
     "react": "19.1.0",
     "react-native": "0.80.1"
   },

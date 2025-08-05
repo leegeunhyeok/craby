@@ -1,0 +1,12 @@
+[package]
+name = "basic_module_android"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+jni = { workspace = true }
+basic_module = { path = "../lib" }
+
+[lib]
+name = "basicmodule"
+crate-type = ["cdylib"]

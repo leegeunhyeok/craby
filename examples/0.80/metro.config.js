@@ -14,7 +14,7 @@ const config = {
   watchFolders: [root],
   resolver: {
     extraNodeModules: {
-      'craby-calculator': path.join(root, 'calculator/src'),
+      'basic-module': path.join(root, 'basic-module/src'),
     },
   },
 };

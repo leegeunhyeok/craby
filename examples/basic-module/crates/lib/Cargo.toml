@@ -1,0 +1,6 @@
+[package]
+name = "basic_module"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

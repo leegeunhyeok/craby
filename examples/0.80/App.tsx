@@ -8,44 +8,66 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { add, subtract, multiply, divide } from 'craby-calculator';
+import { numeric, string, boolean } from 'basic-module';
 
-const App = () => {
-  const [a, setA] = useState('');
-  const [b, setB] = useState('');
+export function App() {
+  const [numericInput, setNumericInput] = useState('');
+  const [stringInput, setStringInput] = useState('');
+  const [booleanInput, setBooleanInput] = useState(false);
   const [results, setResults] = useState<{
-    add: string | null;
-    sub: string | null;
-    mul: string | null;
-    div: string | null;
+    numeric: number | null;
+    string: string | null;
+    boolean: boolean | null;
   }>({
-    add: null,
-    sub: null,
-    mul: null,
-    div: null,
+    numeric: null,
+    string: null,
+    boolean: null,
   });
 
   useEffect(() => {
-    const n1 = parseFloat(a);
-    const n2 = parseFloat(b);
-
-    if (isNaN(n1) || isNaN(n2)) {
-      console.warn('Invalid numbers');
-      return;
+    // Test numeric function
+    const numValue = parseFloat(numericInput);
+    if (!isNaN(numValue)) {
+      try {
+        setResults(prev => ({ ...prev, numeric: numeric(numValue) }));
+      } catch (error) {
+        console.warn('Numeric function error:', error);
+        setResults(prev => ({ ...prev, numeric: null }));
+      }
+    } else {
+      setResults(prev => ({ ...prev, numeric: null }));
     }
+  }, [numericInput]);
 
-    setResults({
-      add: add(n1, n2).toFixed(2),
-      sub: subtract(n1, n2).toFixed(2),
-      mul: multiply(n1, n2).toFixed(2),
-      div: divide(n1, n2).toFixed(2),
-    });
-  }, [a, b]);
+  useEffect(() => {
+    // Test string function
+    if (stringInput.trim()) {
+      try {
+        setResults(prev => ({ ...prev, string: string(stringInput) }));
+      } catch (error) {
+        console.warn('String function error:', error);
+        setResults(prev => ({ ...prev, string: null }));
+      }
+    } else {
+      setResults(prev => ({ ...prev, string: null }));
+    }
+  }, [stringInput]);
+
+  useEffect(() => {
+    // Test boolean function
+    try {
+      setResults(prev => ({ ...prev, boolean: boolean(booleanInput) }));
+    } catch (error) {
+      console.warn('Boolean function error:', error);
+      setResults(prev => ({ ...prev, boolean: null }));
+    }
+  }, [booleanInput]);
 
   const clear = () => {
-    setA('');
-    setB('');
-    setResults({ add: null, sub: null, mul: null, div: null });
+    setNumericInput('');
+    setStringInput('');
+    setBooleanInput(false);
+    setResults({ numeric: null, string: null, boolean: null });
   };
 
   return (
@@ -61,127 +83,155 @@ const App = () => {
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Welcome to React Native</Text>
+      <Text style={styles.title}>Basic Module Tester</Text>
 
       {/* Description */}
       <Text style={styles.description}>
-        Type-safe Rust for TurboModules—auto-generated, fully integrated
+        Test numeric, string, boolean, and array functions from basic-module
       </Text>
 
       {/* Input Section */}
       <View style={styles.inputCard}>
         <View style={styles.inputHeader}>
-          <Text style={styles.inputTitle}>Enter Numbers</Text>
+          <Text style={styles.inputTitle}>Test Inputs</Text>
         </View>
 
         <TextInput
           style={styles.input}
-          placeholder="First number"
-          value={a}
-          onChangeText={text => setA(text.replace(/[^0-9.]/g, ''))}
+          placeholder="Numeric input (e.g., 42)"
+          value={numericInput}
+          onChangeText={text => setNumericInput(text.replace(/[^0-9.-]/g, ''))}
           keyboardType="numeric"
           placeholderTextColor="#999"
         />
 
         <TextInput
           style={styles.input}
-          placeholder="Second number"
-          value={b}
-          onChangeText={text => setB(text.replace(/[^0-9.]/g, ''))}
-          keyboardType="numeric"
+          placeholder="String input (e.g., Hello World)"
+          value={stringInput}
+          onChangeText={setStringInput}
           placeholderTextColor="#999"
         />
 
+        <View style={styles.booleanContainer}>
+          <Text style={styles.booleanLabel}>Boolean input:</Text>
+          <TouchableOpacity
+            style={[styles.booleanButton, booleanInput && styles.booleanButtonActive]}
+            onPress={() => setBooleanInput(!booleanInput)}
+          >
+            <Text style={[styles.booleanButtonText, booleanInput && styles.booleanButtonTextActive]}>
+              {booleanInput ? 'true' : 'false'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.clearButton} onPress={clear}>
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>Clear All</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Calculator Cards */}
-      <CalculatorCard
-        a={a}
-        b={b}
-        title="Addition"
-        func="add"
-        result={results.add}
-        operation="+"
+      {/* Test Result Cards */}
+      <TestCard
+        title="Numeric Function"
+        funcName="numeric(number)"
+        input={numericInput}
+        result={results.numeric}
         color="#10B981"
+        type="number"
       />
 
-      <CalculatorCard
-        a={a}
-        b={b}
-        title="Subtraction"
-        func="sub"
-        result={results.sub}
-        operation="-"
+      <TestCard
+        title="String Function"
+        funcName="string(string)"
+        input={stringInput}
+        result={results.string}
         color="#3B82F6"
+        type="string"
       />
 
-      <CalculatorCard
-        a={a}
-        b={b}
-        title="Multiplication"
-        func="mul"
-        result={results.mul}
-        operation="×"
+      <TestCard
+        title="Boolean Function"
+        funcName="boolean(boolean)"
+        input={booleanInput.toString()}
+        result={results.boolean}
         color="#8B5CF6"
-      />
-
-      <CalculatorCard
-        a={a}
-        b={b}
-        title="Division"
-        func="div"
-        result={results.div}
-        operation="÷"
-        color="#F59E0B"
+        type="boolean"
       />
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Developed by @leegeunhyeok</Text>
+        <Text style={styles.footerText}>Basic Module Function Tester</Text>
       </View>
     </ScrollView>
   );
 };
 
-const CalculatorCard = ({
-  a,
-  b,
+function TestCard({
   title,
-  func,
+  funcName,
+  input,
   result,
-  operation,
   color,
+  type,
 }: {
-  a: string;
-  b: string;
   title: string;
-  func: string;
-  result: string | null;
-  operation: string;
+  funcName: string;
+  input: string;
+  result: any;
   color: string;
-}) => (
-  <View style={styles.card}>
-    <View style={styles.cardContent}>
-      <View style={styles.cardLeft}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSubtitle}>{func}(a, b)</Text>
-      </View>
-      <View style={styles.cardRight}>
-        <Text style={[styles.cardResult, { color }]}>
-          {result !== null ? result : '—'}
-        </Text>
-        <Text style={styles.cardOperation}>
-          {result !== null ? `${a} ${operation} ${b}` : 'Result'}
-        </Text>
+  type: string;
+}) {
+  const formatResult = (value: any, dataType: string) => {
+    if (value === null) return '—';
+    
+    switch (dataType) {
+      case 'array':
+        return Array.isArray(value) ? `[${value.join(', ')}]` : String(value);
+      case 'string':
+        return `"${value}"`;
+      case 'boolean':
+        return String(value);
+      case 'number':
+        return String(value);
+      default:
+        return String(value);
+    }
+  };
+
+  const formatInput = (value: any, dataType: string) => {
+    if (!value) return 'No input';
+    
+    switch (dataType) {
+      case 'array':
+        return `[${value}]`;
+      case 'string':
+        return `"${value}"`;
+      default:
+        return value;
+    }
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardContent}>
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardTitle}>{title}</Text>
+          <Text style={styles.cardSubtitle}>{funcName}</Text>
+        </View>
+        <View style={styles.cardRight}>
+          <Text style={[styles.cardResult, { color }]}>
+            {formatResult(result, type)}
+          </Text>
+          <Text style={styles.cardOperation}>
+            {input ? `Input: ${formatInput(input, type)}` : 'No input'}
+          </Text>
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -202,9 +252,6 @@ const styles = StyleSheet.create({
     height: 80,
     aspectRatio: 1,
     marginBottom: 24,
-  },
-  logoText: {
-    fontSize: 60,
   },
   title: {
     fontSize: 28,
@@ -232,10 +279,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  inputIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
   inputTitle: {
     fontSize: 16,
     fontWeight: '500',
@@ -249,6 +292,37 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#D1D5DB',
+  },
+  booleanContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  booleanLabel: {
+    fontSize: 16,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  booleanButton: {
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    padding: 12,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+  },
+  booleanButtonActive: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+  booleanButtonText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  booleanButtonTextActive: {
+    color: '#FFF',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -268,12 +342,6 @@ const styles = StyleSheet.create({
     color: '#374151',
     fontSize: 16,
     fontWeight: '500',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '500',
-    marginBottom: 20,
-    color: '#000',
   },
   card: {
     width: '100%',
@@ -333,5 +401,3 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
-
-export default App;

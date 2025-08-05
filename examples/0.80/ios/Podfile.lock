@@ -1,6 +1,5 @@
 PODS:
-  - boost (1.84.0)
-  - Calculator (0.1.0):
+  - Basic (0.1.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -29,6 +28,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - boost (1.84.0)
   - DoubleConversion (1.1.6)
   - fast_float (8.0.0)
   - FBLazyVector (0.80.1)
@@ -2155,8 +2155,8 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - Basic (from `../../basic-module`)
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
-  - Calculator (from `../../calculator`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -2236,10 +2236,10 @@ SPEC REPOS:
     - SocketRocket
 
 EXTERNAL SOURCES:
+  Basic:
+    :path: "../../basic-module"
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
-  Calculator:
-    :path: "../../calculator"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   fast_float:
@@ -2385,8 +2385,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
+  Basic: 52ca8a2666192a3ad92003e440f65ef054bd9124
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
-  Calculator: 70d1c3a2965075bf68c6805ff29dfa088d7e7c15
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427

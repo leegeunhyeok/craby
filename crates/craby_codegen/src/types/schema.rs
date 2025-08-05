@@ -181,7 +181,7 @@ impl TypeAnnotation {
                 _ => unimplemented!("Unknown reserved type: {}", name),
             },
 
-            // String types
+            // String types (TODO: iOS: const char*, Android: jstring)
             TypeAnnotation::StringTypeAnnotation => Type::String,
             TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
             TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,

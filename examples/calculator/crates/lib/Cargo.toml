@@ -1,6 +1,0 @@
-[package]
-name = "craby_calculator"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
