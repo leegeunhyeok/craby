@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use craby_common::constants;
+use craby_common::{constants, utils::sanitize_str};
 use serde::{Deserialize, Serialize};
 
 use crate::utils::to_jni_fn_name;
@@ -283,7 +283,7 @@ impl Parameter {
 }
 
 impl FunctionSpec {
-    pub fn to_rs_fn_sig(&self) -> String {
+    pub fn to_rs_fn_sig(&self, sanitize: bool) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
@@ -300,13 +300,22 @@ impl FunctionSpec {
                 } else {
                     format!(" -> {}", return_type)
                 };
-                format!("fn {}({}){}", self.name, params_sig, ret_annotation)
+                format!(
+                    "fn {}({}){}",
+                    if sanitize {
+                        sanitize_str(&self.name)
+                    } else {
+                        self.name.clone()
+                    },
+                    params_sig,
+                    ret_annotation
+                )
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
     }
 
-    pub fn to_rs_fn(&self, ident: usize) -> String {
+    pub fn to_rs_fn(&self, ident: usize, sanitize: bool) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation { params, .. } => {
                 let params = params
@@ -315,12 +324,17 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let fn_sig = self.to_rs_fn_sig();
+                let fn_sig = self.to_rs_fn_sig(sanitize);
 
                 format!(
                     "{ident}pub {fn_sig} {{\n    {ident}{body}\n{ident}}}",
                     fn_sig = fn_sig,
-                    body = format!("{}::{}({})", constants::IMPL_MOD_NAME, self.name, params),
+                    body = format!(
+                        "{}::{}({})",
+                        constants::IMPL_MOD_NAME,
+                        sanitize_str(&self.name),
+                        params
+                    ),
                     ident = " ".repeat(ident)
                 )
             }
@@ -370,7 +384,7 @@ impl FunctionSpec {
                     name = jni_fn_name,
                     params_sig = params_sig,
                     ret_annotation = ret_annotation,
-                    body = format!("{}::{}::{}({})", lib_name,mod_name, self.name, params),
+                    body = format!("{}::{}::{}({})", lib_name, mod_name, sanitize_str(&self.name), params),
                 )
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
@@ -378,14 +392,15 @@ impl FunctionSpec {
     }
 
     pub fn to_ios_ffi_fn(&self, lib_name: &String, mod_name: &String) -> String {
-        let code = self.to_rs_fn(0);
+        let sanitized_name = sanitize_str(&self.name);
+        let code = self.to_rs_fn(0, false);
         let code = code.replace(
             format!("pub fn {}", self.name).as_str(),
             format!("pub extern \"C\" fn {}", self.name).as_str(),
         );
         let code = code.replace(
-            format!("{}::{}", constants::IMPL_MOD_NAME, self.name).as_str(),
-            format!("{}::{}::{}", lib_name.as_str(), mod_name, self.name).as_str(),
+            format!("{}::{}", constants::IMPL_MOD_NAME, sanitized_name).as_str(),
+            format!("{}::{}::{}", lib_name.as_str(), mod_name, sanitized_name).as_str(),
         );
 
         ["#[no_mangle]".to_string(), code].join("\n")

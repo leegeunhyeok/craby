@@ -24,11 +24,11 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
             if config.is_excluded_method(&method.name) {
                 println!(
                     "{} {}",
-                    method.to_rs_fn_sig().dimmed(),
+                    method.to_rs_fn_sig(true).dimmed(),
                     "(excluded)".yellow()
                 );
             } else if config.is_included_method(&method.name) {
-                highlighter.highlight_code(&method.to_rs_fn_sig(), "rs");
+                highlighter.highlight_code(&method.to_rs_fn_sig(true), "rs");
             } else {
                 println!("{} {}", method.name, "(not included)".dimmed());
             }

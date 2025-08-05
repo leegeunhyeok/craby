@@ -14,7 +14,7 @@ impl CodeGenerator {
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_rs_fn(4))
+            .map(|spec| spec.to_rs_fn(4, true))
             .collect::<Vec<_>>();
         let mod_name = sanitize_str(&schema.module_name);
 
