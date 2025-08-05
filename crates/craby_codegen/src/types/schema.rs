@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use craby_common::{constants, utils::sanitize_str};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::to_jni_fn_name;
@@ -175,17 +176,6 @@ pub struct FunctionSpec {
 impl TypeAnnotation {
     pub fn to_rs_type(&self) -> String {
         match self {
-            // Reserved types
-            TypeAnnotation::ReservedTypeAnnotation { name } => match name.as_str() {
-                "RootTag" => Type::Number,
-                _ => unimplemented!("Unknown reserved type: {}", name),
-            },
-
-            // String types (TODO: iOS: const char*, Android: jstring)
-            TypeAnnotation::StringTypeAnnotation => Type::String,
-            TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
-            TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
-
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation => Type::Boolean,
 
@@ -196,54 +186,75 @@ impl TypeAnnotation {
             TypeAnnotation::Int32TypeAnnotation => Type::Number,
             TypeAnnotation::NumberLiteralTypeAnnotation { .. } => Type::Number,
 
-            // Enum
-            TypeAnnotation::EnumDeclaration { member_type, .. } => match member_type.as_str() {
-                "NumberTypeAnnotation" => Type::Number,
-                "StringTypeAnnotation" => Type::String,
-                _ => unimplemented!("Unknown enum type: {}", member_type),
-            },
+            _ => {
+                error!("Unsupported type annotation: {:?}", self);
+                unimplemented!();
+                // match unsuported_type_annotation {
+                //     // Reserved types
+                //     TypeAnnotation::ReservedTypeAnnotation { name } => match name.as_str() {
+                //         "RootTag" => Type::Number,
+                //         _ => unimplemented!("Unknown reserved type: {}", name),
+                //     },
 
-            // Array type
-            TypeAnnotation::ArrayTypeAnnotation { element_type } => {
-                Type::Array(element_type.to_rs_type())
-            }
+                //     // String types (TODO: iOS: const char*, Android: jstring)
+                //     TypeAnnotation::StringTypeAnnotation => Type::String,
+                //     TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
+                //     TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
 
-            // Function type
-            TypeAnnotation::FunctionTypeAnnotation { .. } => {
-                unimplemented!("FunctionTypeAnnotation")
-            }
+                //     // Enum
+                //     TypeAnnotation::EnumDeclaration { member_type, .. } => {
+                //         match member_type.as_str() {
+                //             "NumberTypeAnnotation" => Type::Number,
+                //             "StringTypeAnnotation" => Type::String,
+                //             _ => unimplemented!("Unknown enum type: {}", member_type),
+                //         }
+                //     }
 
-            // Object types
-            TypeAnnotation::GenericObjectTypeAnnotation => {
-                unimplemented!("GenericObjectTypeAnnotation");
-            }
-            TypeAnnotation::ObjectTypeAnnotation { .. } => {
-                unimplemented!("ObjectTypeAnnotation");
-            }
+                //     // Array type
+                //     TypeAnnotation::ArrayTypeAnnotation { element_type } => {
+                //         Type::Array(element_type.to_rs_type())
+                //     }
 
-            // Union type
-            TypeAnnotation::UnionTypeAnnotation { member_type, .. } => match member_type.as_str() {
-                // TODO: Enum type support
-                "NumberTypeAnnotation" => Type::Number,
-                "StringTypeAnnotation" => Type::String,
-                "ObjectTypeAnnotation" => unimplemented!("ObjectTypeAnnotation"),
-                _ => unimplemented!("Unknown union type: {}", member_type),
-            },
+                //     // Function type
+                //     TypeAnnotation::FunctionTypeAnnotation { .. } => {
+                //         unimplemented!("FunctionTypeAnnotation")
+                //     }
 
-            // Mixed type
-            TypeAnnotation::MixedTypeAnnotation => unimplemented!("MixedTypeAnnotation"),
+                //     // Object types
+                //     TypeAnnotation::GenericObjectTypeAnnotation => {
+                //         unimplemented!("GenericObjectTypeAnnotation");
+                //     }
+                //     TypeAnnotation::ObjectTypeAnnotation { .. } => {
+                //         unimplemented!("ObjectTypeAnnotation");
+                //     }
 
-            // Void type
-            TypeAnnotation::VoidTypeAnnotation => Type::Void,
+                //     // Union type
+                //     TypeAnnotation::UnionTypeAnnotation { member_type, .. } => {
+                //         match member_type.as_str() {
+                //             // TODO: Enum type support
+                //             "NumberTypeAnnotation" => Type::Number,
+                //             "StringTypeAnnotation" => Type::String,
+                //             "ObjectTypeAnnotation" => unimplemented!("ObjectTypeAnnotation"),
+                //             _ => unimplemented!("Unknown union type: {}", member_type),
+                //         }
+                //     }
 
-            // Nullable wrapper
-            TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
-                Type::Nullable(type_annotation.to_rs_type())
-            }
+                //     // Mixed type
+                //     TypeAnnotation::MixedTypeAnnotation => unimplemented!("MixedTypeAnnotation"),
 
-            // Type alias
-            TypeAnnotation::TypeAliasTypeAnnotation { .. } => {
-                unimplemented!("TypeAliasTypeAnnotation")
+                //     // Void type
+                //     TypeAnnotation::VoidTypeAnnotation => Type::Void,
+
+                //     // Nullable wrapper
+                //     TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
+                //         Type::Nullable(type_annotation.to_rs_type())
+                //     }
+
+                //     // Type alias
+                //     TypeAnnotation::TypeAliasTypeAnnotation { .. } => {
+                //         unimplemented!("TypeAliasTypeAnnotation")
+                //     }
+                // }
             }
         }
         .to_string()

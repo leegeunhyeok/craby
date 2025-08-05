@@ -12,7 +12,6 @@ class BasicModule(reactContext: ReactApplicationContext) :
   }
 
   private external fun nativeNumericMethod(arg: Double): Double
-  private external fun nativeStringMethod(arg: String): String
   private external fun nativeBooleanMethod(arg: Boolean): Boolean
 
   override fun getName(): String {
@@ -21,10 +20,6 @@ class BasicModule(reactContext: ReactApplicationContext) :
 
   override fun numericMethod(arg: Double): Double {
     return nativeNumericMethod(arg);
-  }
-
-  override fun stringMethod(arg: String): String {
-    return nativeStringMethod(arg);
   }
 
   override fun booleanMethod(arg: Boolean): Boolean {

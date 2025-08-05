@@ -6,10 +6,6 @@ pub mod basic {
         impls::numeric_method(arg)
     }
 
-    pub fn string_method(arg: String) -> String {
-        impls::string_method(arg)
-    }
-
     pub fn boolean_method(arg: bool) -> bool {
         impls::boolean_method(arg)
     }

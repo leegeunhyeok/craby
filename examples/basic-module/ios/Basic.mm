@@ -10,12 +10,6 @@ RCT_EXPORT_MODULE()
     return result;
 }
 
-- (NSString *)stringMethod:(NSString *)arg {
-    NSString *result = @(stringMethod([arg UTF8String]));
-
-    return result;
-}
-
 - (NSNumber* )booleanMethod:(BOOL)arg {
     NSNumber* result = @(booleanMethod(arg ? true : false));
 

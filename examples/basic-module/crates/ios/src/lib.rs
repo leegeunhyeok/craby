@@ -5,11 +5,6 @@ pub extern "C" fn numericMethod(arg: f64) -> f64 {
 }
 
 #[no_mangle]
-pub extern "C" fn stringMethod(arg: String) -> String {
-    basic_module::basic::string_method(arg)
-}
-
-#[no_mangle]
 pub extern "C" fn booleanMethod(arg: bool) -> bool {
     basic_module::basic::boolean_method(arg)
 }

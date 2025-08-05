@@ -7,11 +7,6 @@ pub extern "C" fn Java_com_basic_BasicModule_nativeNumericMethod(_env: JNIEnv, _
 }
 
 #[no_mangle]
-pub extern "C" fn Java_com_basic_BasicModule_nativeStringMethod(_env: JNIEnv, _class: jobject, arg: String) -> String {
-    basic_module::basic::string_method(arg)
-}
-
-#[no_mangle]
 pub extern "C" fn Java_com_basic_BasicModule_nativeBooleanMethod(_env: JNIEnv, _class: jobject, arg: bool) -> bool {
     basic_module::basic::boolean_method(arg)
 }
