@@ -2,10 +2,13 @@ use craby_codegen::types::schema::Schema;
 use craby_common::config::CompleteCrabyConfig;
 use owo_colors::OwoColorize;
 
-use crate::utils::terminal::highlight_code;
+use crate::utils::terminal::CodeHighlighter;
 
 pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
     println!("├─ Methods ({})", schema.spec.methods.len());
+
+    let highlighter = CodeHighlighter::new();
+
     schema
         .spec
         .methods
@@ -25,8 +28,7 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
                     "(excluded)".yellow()
                 );
             } else if config.is_included_method(&method.name) {
-                highlight_code(&method.to_rs_fn_sig(), "rs");
-                println!();
+                highlighter.highlight_code(&method.to_rs_fn_sig(), "rs");
             } else {
                 println!("{} {}", method.name, "(not included)".dimmed());
             }
