@@ -11,5 +11,8 @@
     "@types/node": "^22",
     "typescript": "^5.8.3"
   },
+  "resolutions": {
+    "rollup": "npm:@rollup/wasm-node@4.46.2"
+  },
   "packageManager": "yarn@4.9.2"
 }
