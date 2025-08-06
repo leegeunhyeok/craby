@@ -4,6 +4,9 @@
     "examples/*",
     "packages/*"
   ],
+  "scripts": {
+    "script:version": "./scripts/version.sh"
+  },
   "devDependencies": {
     "@types/node": "^22",
     "typescript": "^5.8.3"
