@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "yarn build && ./bin.js",
-    "artifacts": "napi artifacts",
+    "artifacts": "napi artifacts --npm-dir npm --output-dir napi",
     "build": "./scripts/build.sh",
     "version": "napi version",
     "test": "vitest --run"
