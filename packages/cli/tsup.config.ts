@@ -17,18 +17,8 @@ export default defineConfig({
   dts: false,
   shims: true,
   clean: true,
-  external: [/\.node$/, '../napi/index.cjs'],
+  external: [/\.node$/, '../napi/index.js'],
   banner: {
     js: CJS_REQUIRE_SHIM,
-  },
-  onSuccess: async () => {
-    const napiModule = path.resolve('napi/index.js');
-
-    if (fs.existsSync(napiModule)) {
-      await fs.promises.rename(
-        path.resolve('napi/index.js'),
-        path.resolve('napi/index.cjs')
-      );
-    }
   },
 });

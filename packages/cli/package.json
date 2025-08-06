@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "yarn build && ./bin.js",
-    "artifacts": "napi artifacts",
+    "artifacts": "napi artifacts --npm-dir npm --output-dir napi",
     "build": "./scripts/build.sh",
     "version": "napi version",
     "test": "vitest --run"
@@ -29,7 +29,7 @@
     "glob": "^11.0.3"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.4",
+    "@napi-rs/cli": "^3.0.4",
     "@types/node": "^22",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
@@ -39,22 +39,20 @@
     "node": ">= 18"
   },
   "napi": {
-    "name": "cli",
-    "triples": {
-      "defaults": false,
-      "additional": [
-        "x86_64-apple-darwin",
-        "x86_64-pc-windows-msvc",
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl",
-        "i686-pc-windows-msvc",
-        "armv7-unknown-linux-gnueabihf",
-        "aarch64-apple-darwin",
-        "aarch64-unknown-linux-gnu",
-        "aarch64-unknown-linux-musl",
-        "aarch64-pc-windows-msvc"
-      ]
-    }
+    "binaryName": "cli",
+    "targets": [
+      "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "x86_64-unknown-linux-gnu",
+      "x86_64-unknown-linux-musl",
+      "i686-pc-windows-msvc",
+      "armv7-unknown-linux-gnueabihf",
+      "aarch64-apple-darwin",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-unknown-linux-musl",
+      "aarch64-pc-windows-msvc"
+    ],
+    "esm": true
   },
   "publishConfig": {
     "access": "public"

@@ -11,9 +11,9 @@ crate-type = ["cdylib"]
 [dependencies]
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 craby_cli   = { path = "../../crates/craby_cli" }
-napi        = { version = "2.12.2", default-features = false, features = ["napi4"] }
-napi-derive = "2.12.2"
+napi        = { version = "3.1.6", default-features = false, features = ["napi10"] }
+napi-derive = "3.1.2"
 log         = { workspace = true }
 
 [build-dependencies]
-napi-build = "2.0.1"
+napi-build = "2.2.3"
