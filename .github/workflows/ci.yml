@@ -176,8 +176,11 @@ jobs:
             whoami
             env
             freebsd-version
+            echo "~~~~ install dependencies ~~~~"
             yarn workspaces focus ${{ env.PACKAGE_NAME }}
-            yarn workspace ${{ env.PACKAGE_NAME }} build
+            echo "~~~~ build ~~~~"
+            yarn workspace ${{ env.PACKAGE_NAME }} exec napi build --platform --esm --output-dir napi --release
+            yarn workspace ${{ env.PACKAGE_NAME }} exec tsup
             rm -rf node_modules
             rm -rf target
             rm -rf .yarn/cache
@@ -230,7 +233,7 @@ jobs:
         run: ls -R ${{ env.PACKAGE_PATH }}
         shell: bash
       - name: Test bindings
-        run: yarn workspace @craby/cli test
+        run: yarn workspace ${{ env.PACKAGE_NAME }} test
 
   test-linux-binding:
     name: Test ${{ matrix.target }} - node@${{ matrix.node }}
@@ -303,8 +306,8 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ${{ steps.docker.outputs.IMAGE }}
-          options: -v $(pwd):/build -w /build --platform ${{ steps.docker.outputs.PLATFORM }}
-          run: sh -c "corepack enable && yarn workspace @craby/cli test"
+          options: -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}
+          run: sh -c "corepack enable && yarn workspace ${{ env.PACKAGE_NAME }} test"
 
 
   publish-bindings:
@@ -329,7 +332,7 @@ jobs:
         with:
           path: ${{ env.PACKAGE_PATH }}/artifacts
       - name: Move artifacts
-        run: yarn workspace @craby/cli artifacts
+        run: yarn workspace ${{ env.PACKAGE_NAME }} artifacts
       - name: List packages
         run: ls -R ${{ env.PACKAGE_PATH }}/npm
         shell: bash
