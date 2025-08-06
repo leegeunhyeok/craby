@@ -13,22 +13,17 @@ import { program } from "@commander-js/extra-typings";
 // src/commands/init.ts
 import path4 from "path";
 import { Command } from "@commander-js/extra-typings";
-import { assert as assert3 } from "es-toolkit";
+import { assert as assert2 } from "es-toolkit";
 
 // src/codegen/get-schema-info.ts
 import fs2 from "fs";
 import path2 from "path";
-import { assert as assert2 } from "es-toolkit";
+import { assert } from "es-toolkit";
 
 // src/napi.ts
-import { assert } from "es-toolkit";
-var mod = null;
+import * as mod from "../napi/index.js";
 function getBindings() {
-  assert(mod, "Bindings not loaded");
-  return mod.default;
-}
-async function loadBindings() {
-  return (mod = await import("../napi/index.cjs")).default;
+  return mod;
 }
 
 // src/logger.ts
@@ -218,9 +213,9 @@ function getSchemaInfo(projectRoot) {
     fs2.readFileSync(path2.join(projectRoot, "package.json"), "utf-8")
   );
   const libraries = extractLibrariesFromJSON(config, projectRoot);
-  assert2(libraries.length === 1, "Invalid library config");
+  assert(libraries.length === 1, "Invalid library config");
   const schemaInfos = generateSchemaInfos(libraries);
-  assert2(schemaInfos.length === 1, "Invalid schema info");
+  assert(schemaInfos.length === 1, "Invalid schema info");
   return schemaInfos[0];
 }
 
@@ -257,7 +252,7 @@ function withVerbose(command7) {
 var command = withVerbose(
   new Command().name("init").action(() => {
     const projectRoot = process.cwd();
-    assert3(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert2(isValidProject(projectRoot), "Invalid TurboModule project");
     getBindings().init({
       projectRoot,
       templateBasePath: path4.resolve(import.meta.dirname, "..", "templates"),
@@ -268,17 +263,17 @@ var command = withVerbose(
 
 // src/commands/codegen.ts
 import { Command as Command2 } from "@commander-js/extra-typings";
-import { assert as assert4 } from "es-toolkit";
+import { assert as assert3 } from "es-toolkit";
 var command2 = withVerbose(
   new Command2().name("codegen").action(() => {
     const projectRoot = process.cwd();
-    assert4(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert3(isValidProject(projectRoot), "Invalid TurboModule project");
     const codegenConfig = getCodegenConfig(projectRoot);
-    assert4(
+    assert3(
       codegenConfig,
       "`codegenConfig` field not found in the `package.json`"
     );
-    assert4(
+    assert3(
       codegenConfig.android?.javaPackageName,
       "`codegenConfig.android.javaPackageName` is required"
     );
@@ -301,11 +296,11 @@ var command2 = withVerbose(
 
 // src/commands/build.ts
 import { Command as Command3 } from "@commander-js/extra-typings";
-import { assert as assert5 } from "es-toolkit";
+import { assert as assert4 } from "es-toolkit";
 var command3 = withVerbose(
   new Command3().name("build").action(() => {
     const projectRoot = process.cwd();
-    assert5(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert4(isValidProject(projectRoot), "Invalid TurboModule project");
     getBindings().build({
       projectRoot,
       libraryName: getSchemaInfo(projectRoot).library.name
@@ -315,11 +310,11 @@ var command3 = withVerbose(
 
 // src/commands/show.ts
 import { Command as Command4 } from "@commander-js/extra-typings";
-import { assert as assert6 } from "es-toolkit";
+import { assert as assert5 } from "es-toolkit";
 var command4 = withVerbose(
   new Command4().name("show").action(() => {
     const projectRoot = process.cwd();
-    assert6(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert5(isValidProject(projectRoot), "Invalid TurboModule project");
     const schemaInfo = getSchemaInfo(projectRoot);
     loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
     const modules = schemaInfo.schema?.modules ?? {};
@@ -347,17 +342,17 @@ var command5 = withVerbose(
 
 // src/commands/clean.ts
 import { Command as Command6 } from "@commander-js/extra-typings";
-import { assert as assert7 } from "es-toolkit";
+import { assert as assert6 } from "es-toolkit";
 var command6 = withVerbose(
   new Command6().name("clean").action(() => {
     const projectRoot = process.cwd();
-    assert7(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert6(isValidProject(projectRoot), "Invalid TurboModule project");
     getBindings().clean({ projectRoot });
   })
 );
 
 // package.json
-var version = "0.1.0-alpha.2";
+var version = "0.1.0-alpha.3";
 
 // src/cli.ts
 function run() {
@@ -373,7 +368,7 @@ function run() {
 
 // src/index.ts
 async function run2() {
-  const { setup } = await loadBindings();
+  const { setup } = getBindings();
   const verbose = Boolean(
     process.argv.find((arg) => arg === "-v" || arg === "--verbose")
   );

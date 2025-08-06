@@ -1,9 +1,9 @@
 import { run as runCli } from './cli';
 import { logger } from './logger';
-import { loadBindings } from './napi';
+import { getBindings } from './napi';
 
 export async function run() {
-  const { setup } = await loadBindings();
+  const { setup } = getBindings();
 
   const verbose = Boolean(
     process.argv.find((arg) => arg === '-v' || arg === '--verbose')

@@ -1,12 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import * as mod from '../napi/index.js';
 
 describe('bindings', () => {
-  let mod: any;
-
-  beforeAll(async () => {
-    mod = await import('../napi/index.cjs');
-  });
-
   describe('common', () => {
     it('`setup` should be a function', () => {
       expect(typeof mod.setup).toBe('function');
