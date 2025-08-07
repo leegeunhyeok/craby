@@ -10,6 +10,8 @@ Type-safe Rust for React Native TurboModules—auto-generated, fully integrated
 
 > [!NOTE]
 > This project is under development
+>
+> Follow [this issue](https://github.com/leegeunhyeok/craby/issues/1) for updates on the upcoming stable release.
 
 ## Overview
 
