@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf, process::Command};
+use std::{fs, path::PathBuf};
+
+#[cfg(target_os = "macos")]
+use std::process::Command;
 
 use log::debug;
 
@@ -44,7 +47,7 @@ pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::
 
         get_ios_targets().for_each(|target| {
             let lib = crate_target_dir(&opts.project_root, &target)
-                .join(to_lib_name(&opts.lib_name, Platform::iOS));
+                .join(to_lib_name(&opts.lib_name, Platform::Ios));
 
             cmd.arg("-library")
                 .args(["-library", lib.to_str().unwrap()])
@@ -140,7 +143,7 @@ fn generate_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Er
 fn info_plist_content(lib_name: &str, headers_path: &str) -> String {
     let lib_value = format!(
         "      <string>{}</string>",
-        to_lib_name(&lib_name.to_string(), Platform::iOS)
+        to_lib_name(&lib_name.to_string(), Platform::Ios)
     );
     let headers_value = format!("      <string>{}</string>", headers_path);
 

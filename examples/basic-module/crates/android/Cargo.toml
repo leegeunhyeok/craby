@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-jni = { workspace = true }
+craby_core = { workspace = true, features = ["android"] }
 basic_module = { path = "../lib" }
 
 [lib]

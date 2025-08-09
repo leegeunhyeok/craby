@@ -2,7 +2,6 @@
 
 set -e
 
-# Get the current version from the package.json
 VERSION=$1
 
 if [ -z "$VERSION" ]; then
@@ -11,6 +10,7 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
+# Get the current version from the package.json
 CURRENT_VERSION=$(jq -r '.version' packages/cli/package.json)
 if [ "$CURRENT_VERSION" == "$VERSION" ]; then
     echo "Version $VERSION is already set"
