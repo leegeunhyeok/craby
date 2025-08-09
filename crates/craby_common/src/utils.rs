@@ -11,7 +11,7 @@ pub fn sanitize_str(value: &str) -> String {
 pub fn to_lib_name(name: &String, platform: Platform) -> String {
     match platform {
         Platform::Android => format!("lib{}.so", name),
-        Platform::iOS => format!("lib{}.a", name),
+        Platform::Ios => format!("lib{}.a", name),
     }
 }
 
