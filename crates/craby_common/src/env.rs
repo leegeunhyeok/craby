@@ -65,8 +65,8 @@ pub fn get_installed_targets() -> Result<Vec<String>, anyhow::Error> {
     Ok(targets)
 }
 
-#[allow(non_camel_case_types)]
+#[derive(Debug, Clone, Copy)]
 pub enum Platform {
     Android,
-    iOS,
+    Ios,
 }

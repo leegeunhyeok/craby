@@ -11,6 +11,6 @@ dependent-version = "fix"
 
 [[pre-release-replacements]]
 file = "Cargo.toml"
-search = '^(craby_[a-zA-Z0-9_]+)\s*=\s*\{([^}]*)path\s*=\s*"[^"]+"(,?[^}]*)?\}'
-replace = '${1} = { version = "{{version}}"${3}}'
+search = '^(craby_[a-zA-Z0-9_]+)\s*=\s*\{\s*path\s*=\s*("[^"]+")((?:\s*,\s*[^}]+)?)\s*\}'
+replace = '${1} = { path = ${2}, version = "{{version}}"${3} }'
 min = 0

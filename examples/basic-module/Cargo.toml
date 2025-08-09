@@ -7,8 +7,8 @@ version = "0.0.0"
 edition = "2021"
 
 [workspace.dependencies]
-jni = "0.21.1"
-objc = "0.2.7"
+# For development
+craby_core = { path = "../../crates/craby_core" }
 
 [profile.release]
 lto = true

@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use craby_common::{constants, utils::sanitize_str};
+use craby_common::{constants, env::Platform, utils::sanitize_str};
 use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::utils::to_jni_fn_name;
 
-use super::types::Type;
+use super::types::{InteropInfo, Type};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SchemaInfo {
@@ -186,6 +186,11 @@ impl TypeAnnotation {
             TypeAnnotation::Int32TypeAnnotation => Type::Number,
             TypeAnnotation::NumberLiteralTypeAnnotation { .. } => Type::Number,
 
+            // String types
+            TypeAnnotation::StringTypeAnnotation => Type::String,
+            TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
+            TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
+
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
                 unimplemented!();
@@ -195,11 +200,6 @@ impl TypeAnnotation {
                 //         "RootTag" => Type::Number,
                 //         _ => unimplemented!("Unknown reserved type: {}", name),
                 //     },
-
-                //     // String types (TODO: iOS: const char*, Android: jstring)
-                //     TypeAnnotation::StringTypeAnnotation => Type::String,
-                //     TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
-                //     TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
 
                 //     // Enum
                 //     TypeAnnotation::EnumDeclaration { member_type, .. } => {
@@ -260,6 +260,85 @@ impl TypeAnnotation {
         .to_string()
     }
 
+    pub fn get_rust_type(&self) -> Type {
+        match self {
+            // Boolean type
+            TypeAnnotation::BooleanTypeAnnotation => Type::Boolean,
+
+            // Number types
+            TypeAnnotation::NumberTypeAnnotation
+            | TypeAnnotation::FloatTypeAnnotation
+            | TypeAnnotation::DoubleTypeAnnotation
+            | TypeAnnotation::Int32TypeAnnotation
+            | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => Type::Number,
+
+            // String types
+            TypeAnnotation::StringTypeAnnotation
+            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
+
+            TypeAnnotation::VoidTypeAnnotation => Type::Void,
+
+            _ => {
+                error!("Unsupported type annotation: {:?}", self);
+                unimplemented!();
+            }
+        }
+    }
+
+    pub fn get_interop_info(&self, platform: Platform) -> InteropInfo {
+        self.get_rust_type().get_interop_info(platform)
+    }
+
+    pub fn to_ffi_type(&self, platform: Platform) -> String {
+        let ffi_type = match platform {
+            Platform::Android => match self {
+                // Boolean type
+                TypeAnnotation::BooleanTypeAnnotation => "bool",
+
+                // Number types
+                TypeAnnotation::NumberTypeAnnotation
+                | TypeAnnotation::FloatTypeAnnotation
+                | TypeAnnotation::DoubleTypeAnnotation
+                | TypeAnnotation::Int32TypeAnnotation
+                | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => "jdouble",
+
+                // String types
+                TypeAnnotation::StringTypeAnnotation
+                | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+                | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "jstring",
+
+                _ => {
+                    error!("Unsupported type annotation: {:?}", self);
+                    unimplemented!();
+                }
+            },
+            Platform::Ios => match self {
+                // Boolean type
+                TypeAnnotation::BooleanTypeAnnotation => "bool",
+
+                // Number types
+                TypeAnnotation::NumberTypeAnnotation
+                | TypeAnnotation::FloatTypeAnnotation
+                | TypeAnnotation::DoubleTypeAnnotation
+                | TypeAnnotation::Int32TypeAnnotation
+                | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => "c_double",
+
+                // String types
+                TypeAnnotation::StringTypeAnnotation
+                | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+                | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "*const c_char",
+
+                _ => {
+                    error!("Unsupported type annotation: {:?}", self);
+                    unimplemented!();
+                }
+            },
+        };
+
+        ffi_type.to_string()
+    }
+
     /// Unwrap nullable type annotations to get the inner type and nullable flag
     pub fn unwrap_nullable(&self) -> (&TypeAnnotation, bool) {
         match self {
@@ -290,6 +369,45 @@ impl Parameter {
         };
 
         format!("{}: {}", self.name, final_type)
+    }
+
+    pub fn to_ffi_param(&self, platform: Platform) -> String {
+        // TODO: Handle nullable parameters
+        let (type_annotation, _nullable) = self.type_annotation.unwrap_nullable();
+        let ffi_type = type_annotation.to_ffi_type(platform);
+
+        format!("{}: {}", self.name, ffi_type)
+    }
+}
+
+impl Schema {
+    pub fn get_interop_imports(&self, platform: Platform) -> Vec<String> {
+        let mut imports = std::collections::HashSet::new();
+
+        for function in &self.spec.methods {
+            if let TypeAnnotation::FunctionTypeAnnotation {
+                return_type_annotation,
+                params,
+            } = &function.type_annotation
+            {
+                // Check return type imports
+                let return_interop = return_type_annotation.get_interop_info(platform);
+                if let Some(import) = return_interop.import_module {
+                    imports.insert(import);
+                }
+
+                // Check parameter imports
+                for param in params {
+                    let (type_annotation, _nullable) = param.type_annotation.unwrap_nullable();
+                    let interop_info = type_annotation.get_interop_info(platform);
+                    if let Some(import) = interop_info.import_module {
+                        imports.insert(import);
+                    }
+                }
+            }
+        }
+
+        imports.into_iter().collect()
     }
 }
 
@@ -353,6 +471,33 @@ impl FunctionSpec {
         }
     }
 
+    pub fn needs_interop(&self, platform: Platform) -> bool {
+        match &self.type_annotation {
+            TypeAnnotation::FunctionTypeAnnotation {
+                return_type_annotation,
+                params,
+            } => {
+                // Check return type interop
+                let return_interop = return_type_annotation.get_interop_info(platform);
+                if return_interop.import_module.is_some() {
+                    return true;
+                }
+
+                // Check parameter interop
+                for param in params {
+                    let (type_annotation, _nullable) = param.type_annotation.unwrap_nullable();
+                    let interop_info = type_annotation.get_interop_info(platform);
+                    if interop_info.import_module.is_some() {
+                        return true;
+                    }
+                }
+
+                false
+            }
+            _ => false,
+        }
+    }
+
     pub fn to_android_ffi_fn(
         &self,
         lib_name: &String,
@@ -365,22 +510,107 @@ impl FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
+                let needs_interop = self.needs_interop(Platform::Android);
                 let jni_fn_name = to_jni_fn_name(&self.name, java_package_name, class_name);
-                let return_type = return_type_annotation.to_rs_type();
+                let return_type = return_type_annotation.to_ffi_type(Platform::Android);
                 let params_sig = params
                     .iter()
-                    .map(|p| p.to_rs_param())
+                    .map(|p| p.to_ffi_param(Platform::Android))
                     .collect::<Vec<_>>()
                     .join(", ");
                 let params_sig = [
-                    "_env: JNIEnv".to_string(),
-                    "_class: jobject".to_string(),
+                    if needs_interop {
+                        "mut env: JNIEnv"
+                    } else {
+                        "_env: JNIEnv"
+                    }
+                    .to_string(),
+                    "_class: JObject".to_string(),
                     params_sig,
                 ]
                 .join(", ");
-                let params = params
+
+                let ret_annotation = if return_type == "()" {
+                    String::new()
+                } else {
+                    format!(" -> {}", return_type)
+                };
+
+                // Generate interop code for parameters
+                let mut param_conversions = Vec::new();
+                let mut converted_params = Vec::new();
+
+                for param in params {
+                    let (type_annotation, _nullable) = param.type_annotation.unwrap_nullable();
+                    let interop_info = type_annotation.get_interop_info(Platform::Android);
+
+                    if let Some(from_ffi_fn) = interop_info.from_ffi_fn {
+                        // String type needs conversion
+                        param_conversions.push(format!(
+                            "    let {} = {}({}, &mut env).unwrap();",
+                            param.name, from_ffi_fn, param.name
+                        ));
+                        converted_params.push(param.name.clone());
+                    } else {
+                        // Direct use for Number, Boolean
+                        converted_params.push(param.name.clone());
+                    }
+                }
+
+                // Generate interop code for return value
+                let return_interop = return_type_annotation.get_interop_info(Platform::Android);
+                let param_conv_str = if param_conversions.is_empty() {
+                    String::new()
+                } else {
+                    format!("{}\n", param_conversions.join("\n"))
+                };
+
+                let body = if let Some(to_ffi_fn) = return_interop.to_ffi_fn {
+                    // String return type needs conversion
+                    format!(
+                        "{}    let ret = {}::{}::{}({});\n    ret.{}(&mut env).unwrap()",
+                        param_conv_str,
+                        lib_name,
+                        mod_name,
+                        sanitize_str(&self.name),
+                        converted_params.join(", "),
+                        to_ffi_fn
+                    )
+                } else {
+                    // Direct return for Number, Boolean, Void
+                    format!(
+                        "{}    {}::{}::{}({})",
+                        param_conv_str,
+                        lib_name,
+                        mod_name,
+                        sanitize_str(&self.name),
+                        converted_params.join(", ")
+                    )
+                };
+
+                format!(
+                    "#[no_mangle]\npub extern \"C\" fn {name}({params_sig}){ret_annotation} {{\n{body}\n}}",
+                    name = jni_fn_name,
+                    params_sig = params_sig,
+                    ret_annotation = ret_annotation,
+                    body = body,
+                )
+            }
+            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
+        }
+    }
+
+    pub fn to_ios_ffi_fn(&self, lib_name: &String, mod_name: &String) -> String {
+        match &self.type_annotation {
+            TypeAnnotation::FunctionTypeAnnotation {
+                return_type_annotation,
+                params,
+            } => {
+                let sanitized_name: String = sanitize_str(&self.name);
+                let return_type = return_type_annotation.to_ffi_type(Platform::Ios);
+                let params_sig = params
                     .iter()
-                    .map(|p| p.name.clone())
+                    .map(|p| p.to_ffi_param(Platform::Ios))
                     .collect::<Vec<_>>()
                     .join(", ");
 
@@ -390,30 +620,67 @@ impl FunctionSpec {
                     format!(" -> {}", return_type)
                 };
 
+                // Generate interop code for parameters
+                let mut param_conversions = Vec::new();
+                let mut converted_params = Vec::new();
+
+                for param in params {
+                    let (type_annotation, _nullable) = param.type_annotation.unwrap_nullable();
+                    let interop_info = type_annotation.get_interop_info(Platform::Ios);
+
+                    if let Some(from_ffi_fn) = interop_info.from_ffi_fn {
+                        // String type needs conversion
+                        param_conversions.push(format!(
+                            "    let {} = {}({}).unwrap();",
+                            param.name, from_ffi_fn, param.name
+                        ));
+                        converted_params.push(param.name.clone());
+                    } else {
+                        // Direct use for Number, Boolean
+                        converted_params.push(param.name.clone());
+                    }
+                }
+
+                // Generate interop code for return value
+                let return_interop = return_type_annotation.get_interop_info(Platform::Ios);
+                let param_conv_str = if param_conversions.is_empty() {
+                    String::new()
+                } else {
+                    format!("{}\n", param_conversions.join("\n"))
+                };
+
+                let body = if let Some(to_ffi_fn) = return_interop.to_ffi_fn {
+                    // String return type needs conversion
+                    format!(
+                        "{}    let ret = {}::{}::{}({});\n    ret.{}().unwrap()",
+                        param_conv_str,
+                        lib_name,
+                        mod_name,
+                        sanitized_name,
+                        converted_params.join(", "),
+                        to_ffi_fn
+                    )
+                } else {
+                    // Direct return for Number, Boolean, Void
+                    format!(
+                        "{}    {}::{}::{}({})",
+                        param_conv_str,
+                        lib_name,
+                        mod_name,
+                        sanitized_name,
+                        converted_params.join(", ")
+                    )
+                };
+
                 format!(
-                    "#[no_mangle]\npub extern \"C\" fn {name}({params_sig}){ret_annotation} {{\n    {body}\n}}",
-                    name = jni_fn_name,
+                    "#[no_mangle]\npub extern \"C\" fn {name}({params_sig}){ret_annotation} {{\n{body}\n}}",
+                    name = self.name,
                     params_sig = params_sig,
                     ret_annotation = ret_annotation,
-                    body = format!("{}::{}::{}({})", lib_name, mod_name, sanitize_str(&self.name), params),
+                    body = body,
                 )
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
-    }
-
-    pub fn to_ios_ffi_fn(&self, lib_name: &String, mod_name: &String) -> String {
-        let sanitized_name = sanitize_str(&self.name);
-        let code = self.to_rs_fn(0, false);
-        let code = code.replace(
-            format!("pub fn {}", self.name).as_str(),
-            format!("pub extern \"C\" fn {}", self.name).as_str(),
-        );
-        let code = code.replace(
-            format!("{}::{}", constants::IMPL_MOD_NAME, sanitized_name).as_str(),
-            format!("{}::{}::{}", lib_name.as_str(), mod_name, sanitized_name).as_str(),
-        );
-
-        ["#[no_mangle]".to_string(), code].join("\n")
     }
 }

@@ -9,5 +9,5 @@ export function boolean(arg: boolean): boolean {
 }
 
 export function string(arg: string): string {
-  return arg; // TODO
+  return Basic.stringMethod(arg);
 }
