@@ -1,3 +1,5 @@
-pub use types::CodegenType;
+pub mod interop;
+pub mod types;
 
-mod types;
+#[cfg(any(feature = "android"))]
+pub use jni;
