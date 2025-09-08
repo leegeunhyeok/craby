@@ -9,4 +9,4 @@ basic_module = { path = "../lib" }
 
 [lib]
 name = "basicmodule"
-crate-type = ["cdylib"]
+crate-type = ["staticlib"]

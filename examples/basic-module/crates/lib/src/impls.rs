@@ -6,7 +6,3 @@ pub fn numeric_method(arg: f64) -> f64 {
 pub fn boolean_method(arg: bool) -> bool {
     !arg
 }
-
-pub fn string_method(arg: String) -> String {
-    arg + "!!!"
-}
