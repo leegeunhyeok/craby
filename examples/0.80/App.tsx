@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { numeric, string, boolean } from 'basic-module';
+import { numeric, boolean } from 'basic-module';
 
 export function App() {
   const [numericInput, setNumericInput] = useState('');
@@ -42,12 +42,12 @@ export function App() {
   useEffect(() => {
     // Test string function
     if (stringInput.trim()) {
-      try {
-        setResults(prev => ({ ...prev, string: string(stringInput) }));
-      } catch (error) {
-        console.warn('String function error:', error);
-        setResults(prev => ({ ...prev, string: null }));
-      }
+      // try {
+      //   setResults(prev => ({ ...prev, string: string(stringInput) }));
+      // } catch (error) {
+      //   console.warn('String function error:', error);
+      //   setResults(prev => ({ ...prev, string: null }));
+      // }
     } else {
       setResults(prev => ({ ...prev, string: null }));
     }

@@ -14,12 +14,12 @@ public:
   CxxBasicModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
 
   static facebook::jsi::Value
-  numericMethod(facebook::jsi::Runtime &rt,
+  JSI__numericMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  booleanMethod(facebook::jsi::Runtime &rt,
+  JSI__booleanMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 

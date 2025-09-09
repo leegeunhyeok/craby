@@ -1,6 +1,7 @@
 // TODO: Codegen
 
 #include "CxxBasicModule.hpp"
+#include "libbasicmodule.h"
 
 using namespace facebook;
 
@@ -10,35 +11,37 @@ CxxBasicModule::CxxBasicModule(std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxBasicModule::kModuleName, jsInvoker) {
 
   methodMap_["numericMethod"] =
-      MethodMetadata{2, &CxxBasicModule::numericMethod};
+      MethodMetadata{1, &CxxBasicModule::JSI__numericMethod};
   methodMap_["booleanMethod"] =
-      MethodMetadata{2, &CxxBasicModule::booleanMethod};
+      MethodMetadata{1, &CxxBasicModule::JSI__booleanMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
 
-jsi::Value CxxBasicModule::numericMethod(jsi::Runtime &rt,
+jsi::Value CxxBasicModule::JSI__numericMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
   auto &thisModule = static_cast<CxxBasicModule &>(turboModule);
-  if (2 == count && args[0].isNumber() && args[1].isNumber()) {
-    // return foo(rt, args[0].asNumber(rt), args[1].asNumber(rt));
+  if (1 == count && args[0].isNumber() && args[1].isNumber()) {
+    auto a = args[0].asNumber();
+    return jsi::Value(numericMethod(a));
   }
 
-  throw jsi::JSError(rt, "Expected 2 arguments (number, number)");
+  throw jsi::JSError(rt, "Expected 1 argument (number)");
 }
 
-jsi::Value CxxBasicModule::booleanMethod(jsi::Runtime &rt,
+jsi::Value CxxBasicModule::JSI__booleanMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
   auto &thisModule = static_cast<CxxBasicModule &>(turboModule);
-  if (2 == count && args[0].isBool() && args[1].isBool()) {
-    // return foo(rt, args[0].asBool(rt), args[1].asBool(rt));
+  if (1 == count && args[0].isBool()) {
+    auto a = args[0].asBool();
+    return jsi::Value(booleanMethod(a));
   }
 
-  throw jsi::JSError(rt, "Expected 2 arguments (boolean, boolean)");
+  throw jsi::JSError(rt, "Expected 1 argument (boolean)");
 }
 
 } // namespace craby::basicmodule

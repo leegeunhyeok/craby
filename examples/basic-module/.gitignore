@@ -82,7 +82,9 @@ android/generated
 # React Native Nitro Modules
 nitrogen/
 
-
 # Craby
 target/
 .craby
+
+# JavaScript build output
+lib/
