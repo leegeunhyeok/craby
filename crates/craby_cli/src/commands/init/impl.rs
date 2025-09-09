@@ -4,7 +4,8 @@ use crate::{
     commands::init::validators,
     utils::{template::render_template, terminal::with_spinner},
 };
-use craby_common::{build::setup::setup_project, env::is_rustup_installed, utils::sanitize_str};
+use craby_build::setup::setup_project;
+use craby_common::{env::is_rustup_installed, utils::sanitize_str};
 use inquire::Text;
 use log::{debug, info, warn};
 use owo_colors::OwoColorize;
@@ -17,7 +18,7 @@ pub struct InitOptions {
 
 pub fn r#impl(opts: InitOptions) -> anyhow::Result<()> {
     let crate_name = Text::new("Enter the crate name")
-        .with_default(&sanitize_str(&opts.lib_name))
+        .with_default(&sanitize_str(&opts.lib_name).to_str())
         .with_validator(validators::CrateNameValidator)
         .prompt()?;
     let lib_name = crate_name.replace("_", "");

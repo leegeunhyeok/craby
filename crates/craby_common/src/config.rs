@@ -6,7 +6,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CrabyConfig {
+    project: ProjectConfig,
     codegen: CodegenConfig,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ProjectConfig {
+    name: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

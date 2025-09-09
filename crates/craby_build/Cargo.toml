@@ -1,0 +1,16 @@
+[package]
+name = "craby_build"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Craby build utilities"
+license = "MIT"
+repository = "https://github.com/leegeunhyeok/craby"
+
+[dependencies]
+craby_common = { path = "../craby_common" }
+cxx-build    = { workspace = true }
+log          = { workspace = true }
+anyhow       = { workspace = true }
+owo-colors   = { workspace = true }
+cbindgen     = "0.29.0"

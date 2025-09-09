@@ -12,12 +12,26 @@ pub fn to_jni_fn_name(fn_name: &String, java_package_name: &String, class_name: 
     .join("_")
 }
 
-fn capitalize_first(s: &str) -> String {
+pub fn capitalize_first(s: &str) -> String {
     let mut chars = s.chars();
     match chars.next() {
         Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
         None => String::new(),
     }
+}
+
+pub fn indent_str(str: String, indent_size: usize) -> String {
+    let indent_str = " ".repeat(indent_size);
+    str.lines()
+        .map(|line| {
+            if line.trim().is_empty() {
+                line.to_string()
+            } else {
+                format!("{}{}", indent_str, line)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 #[cfg(test)]

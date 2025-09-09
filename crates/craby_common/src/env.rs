@@ -16,34 +16,6 @@ pub fn is_initialized(project_root: &Path) -> bool {
         && project_root.join("craby.toml").exists()
         && project_root.join("Cargo.toml").exists()
         && crates_dir.join("lib").join("Cargo.toml").exists()
-        && crates_dir.join("android").join("Cargo.toml").exists()
-        && crates_dir.join("iOS").join("Cargo.toml").exists()
-}
-
-pub fn is_cargo_ndk_installed() -> bool {
-    match std::process::Command::new("cargo")
-        .args(["ndk", "--version"])
-        .status()
-    {
-        Ok(status) => status.success(),
-        Err(e) => {
-            debug!("cargo-ndk not installed: {}", e);
-            false
-        }
-    }
-}
-
-pub fn is_xcode_installed() -> bool {
-    match std::process::Command::new("xcodebuild")
-        .arg("-version")
-        .status()
-    {
-        Ok(status) => status.success(),
-        Err(e) => {
-            debug!("xcodebuild not installed: {}", e);
-            false
-        }
-    }
 }
 
 pub fn get_installed_targets() -> Result<Vec<String>, anyhow::Error> {

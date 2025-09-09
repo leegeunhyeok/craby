@@ -1,12 +1,13 @@
+use craby_common::utils::SanitizedString;
 use owo_colors::OwoColorize;
 
 use crate::utils::terminal::CodeHighlighter;
 
-pub fn print_guide(lib_name: &String) {
+pub fn print_guide(lib_name: &SanitizedString) {
     print_usage(lib_name);
 }
 
-fn print_usage(lib_name: &String) {
+fn print_usage(lib_name: &SanitizedString) {
     let highlighter = CodeHighlighter::new();
 
     println!("\nAndroid setup and usage:\n");
@@ -49,7 +50,7 @@ class SomeModule(reactContext: ReactApplicationContext) :
     return nativeSomeMethod(a, b);
   }}
 }}"#,
-        lib_name
+        lib_name.to_string()
     );
     println!("```kt");
     highlighter.highlight_code(&content, "java");
@@ -68,7 +69,7 @@ class SomeModule(reactContext: ReactApplicationContext) :
   # Add this line to use Rust module
   s.vendored_frameworks = "ios/framework/lib{}.xcframework"
 end"#,
-        lib_name
+        lib_name.to_string()
     );
     println!("```rb");
     highlighter.highlight_code(&content, "rb");
@@ -91,7 +92,7 @@ RCT_EXPORT_MODULE()
 // ...
 
 @end"#,
-        lib_name
+        lib_name.to_string()
     );
     println!("```objc");
     highlighter.highlight_code(&content, "mm");

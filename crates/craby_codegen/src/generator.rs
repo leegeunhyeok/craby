@@ -1,6 +1,7 @@
-use craby_common::{constants::IMPL_MOD_NAME, env::Platform, utils::sanitize_str};
+use craby_common::utils::{sanitize_str, to_impl_mod_name};
+use indoc::formatdoc;
 
-use crate::types::schema::Schema;
+use crate::{types::schema::Schema, utils::indent_str};
 
 pub struct CodeGenerator;
 
@@ -10,68 +11,57 @@ impl CodeGenerator {
     }
 
     pub fn generate_module(&self, schema: &Schema) -> String {
+        let mod_name = sanitize_str(&schema.module_name);
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_rs_fn(4, true))
+            .map(|spec| indent_str(spec.to_rs_func(&mod_name), 4))
             .collect::<Vec<_>>();
-        let mod_name = sanitize_str(&schema.module_name);
+        let impl_mod_name = to_impl_mod_name(&mod_name);
 
-        format!(
-            "pub mod {} {{\n    use crate::{};\n\n{}\n}}",
-            mod_name,
-            IMPL_MOD_NAME,
-            methods.join("\n\n")
-        )
+        formatdoc! {
+          r#"
+          pub mod {mod_name} {{
+              use crate::{impl_mod_name};
+
+          {methods}
+          }}"#,
+          mod_name = mod_name.to_string(),
+          impl_mod_name = impl_mod_name.to_string(),
+          methods = methods.join("\n\n"),
+        }
     }
 
-    pub fn generate_android_ffi_module(
-        &self,
-        schema: &Schema,
-        lib_name: &String,
-        java_package_name: &String,
-    ) -> String {
-        let mod_name = sanitize_str(&schema.module_name);
-        let class_name = format!("{}Module", &schema.module_name);
-        let mut imports = vec![
-            "use craby_core::jni::sys::*;".to_string(),
-            "use craby_core::jni::{objects::JObject, JNIEnv};".to_string(),
-        ];
-
-        let interop_imports = schema.get_interop_imports(Platform::Android);
-        for import in interop_imports {
-            imports.push(format!("use {};", import));
-        }
-
-        let methods = schema
+    pub fn generate_empty_module(&self, schema: &Schema) -> String {
+        schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_android_ffi_fn(lib_name, &mod_name, java_package_name, &class_name))
-            .collect::<Vec<_>>();
+            .map(|spec| {
+                let func_sig = spec.to_rs_func_sig();
 
-        format!(
-            "{imports}\n\n{methods}",
-            imports = imports.join("\n"),
-            methods = methods.join("\n\n")
-        )
+                formatdoc! {
+                  r#"
+                  pub {func_sig} {{
+                      unimplemented!();
+                  }}"#,
+                  func_sig = func_sig,
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n")
     }
 
-    pub fn generate_ios_ffi_module(&self, schema: &Schema, lib_name: &String) -> String {
+    pub fn generate_ffi_module(&self, schema: &Schema) -> String {
         let mod_name = sanitize_str(&schema.module_name);
-        let mut imports = vec!["use std::os::raw::*;".to_string()];
-
-        let interop_imports = schema.get_interop_imports(Platform::Ios);
-        for import in interop_imports {
-            imports.push(format!("use {};", import));
-        }
+        let imports = vec!["use std::os::raw::*;".to_string()];
 
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_ios_ffi_fn(lib_name, &mod_name))
+            .map(|spec| spec.to_ffi_func(&mod_name))
             .collect::<Vec<_>>();
 
         format!(
@@ -136,10 +126,10 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
-                "    use crate::impls;",
+                "    use crate::my_module_impl;",
                 "",
                 "    pub fn multiply(a: f64, b: f64) -> f64 {",
-                "        impls::multiply(a, b)",
+                "        my_module_impl::multiply(a, b)",
                 "    }",
                 "}",
             ]
@@ -381,10 +371,10 @@ mod tests {
             result,
             [
                 "pub mod my_module {",
-                "    use crate::impls;",
+                "    use crate::my_module_impl;",
                 "",
                 "    pub fn multiply(a: f64, b: f64) -> f64 {",
-                "        impls::multiply(a, b)",
+                "        my_module_impl::multiply(a, b)",
                 "    }",
                 "}",
             ]
@@ -393,66 +383,56 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_android_ffi_module() {
+    fn test_generate_empty_module() {
         let json_schema = r#"
-      {
-        "moduleName": "MyModule",
-        "type": "NativeModule",
-        "aliasMap": {},
-        "enumMap": {},
-        "spec": {
-          "eventEmitters": [],
-          "methods": [
-            {
-              "name": "multiply",
-              "optional": false,
-              "typeAnnotation": {
-                "type": "FunctionTypeAnnotation",
-                "returnTypeAnnotation": {
-                  "type": "NumberTypeAnnotation"
-                },
-                "params": [
-                  {
-                    "name": "a",
-                    "optional": false,
-                    "typeAnnotation": {
-                      "type": "NumberTypeAnnotation"
-                    }
+        {
+          "moduleName": "MyModule",
+          "type": "NativeModule",
+          "aliasMap": {},
+          "enumMap": {},
+          "spec": {
+            "eventEmitters": [],
+            "methods": [
+              {
+                "name": "multiply",
+                "optional": false,
+                "typeAnnotation": {
+                  "type": "FunctionTypeAnnotation",
+                  "returnTypeAnnotation": {
+                    "type": "NumberTypeAnnotation"
                   },
-                  {
-                    "name": "b",
-                    "optional": false,
-                    "typeAnnotation": {
-                      "type": "StringTypeAnnotation"
+                  "params": [
+                    {
+                      "name": "a",
+                      "optional": false,
+                      "typeAnnotation": {
+                        "type": "NumberTypeAnnotation"
+                      }
+                    },
+                    {
+                      "name": "b",
+                      "optional": false,
+                      "typeAnnotation": {
+                        "type": "NumberTypeAnnotation"
+                      }
                     }
-                  }
-                ]
+                  ]
+                }
               }
-            }
-          ]
+            ]
+          }
         }
-      }
-      "#;
+        "#;
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_android_ffi_module(
-            &schema,
-            &"lib".to_string(),
-            &"com.example".to_string(),
-        );
+        let result = generator.generate_empty_module(&schema);
 
         assert_eq!(
             result,
             [
-                "use craby_core::jni::sys::*;",
-                "use craby_core::jni::{objects::JObject, JNIEnv};",
-                "use craby_core::android::interop::string::*;",
-                "",
-                "#[no_mangle]",
-                "pub extern \"C\" fn Java_com_example_MyModuleModule_nativeMultiply(mut env: JNIEnv, _class: JObject, a: jdouble, b: jstring) -> jdouble {",
-                "    let b = String::from_native(b, &mut env).unwrap();",
-                "    lib::my_module::multiply(a, b)",
+                "pub fn multiply(a: f64, b: f64) -> f64 {",
+                "    unimplemented!();",
                 "}",
             ]
             .join("\n")
@@ -460,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_ios_ffi_module() {
+    fn test_generate_ffi_module() {
         let json_schema = r#"
       {
         "moduleName": "MyModule",
@@ -503,18 +483,16 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_ios_ffi_module(&schema, &"lib".to_string());
+        let result = generator.generate_ffi_module(&schema);
 
         assert_eq!(
             result,
             [
                 "use std::os::raw::*;",
-                "use craby_core::ios::interop::string::*;",
                 "",
                 "#[no_mangle]",
-                "pub extern \"C\" fn multiply(a: c_double, b: *const c_char) -> c_double {",
-                "    let b = String::from_native(b).unwrap();",
-                "    lib::my_module::multiply(a, b)",
+                "pub extern \"C\" fn multiply(a: f64, b: String) -> f64 {",
+                "    generated::my_module_impl::multiply(a, b)",
                 "}",
             ]
             .join("\n")

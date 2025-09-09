@@ -1,16 +1,19 @@
 use std::path::{Path, PathBuf};
 
+use craby_common::utils::{
+    fs::clean_binding_headers, path::binding_header_dir, to_header_name, SanitizedString,
+};
 use log::{debug, info};
 
-use crate::utils::{
-    fs::clean_binding_headers,
-    path::{binding_header_dir, crate_dir},
-};
+use crate::utils::crate_dir;
 
-pub fn generate_c_bindings(project_root: &Path, lib_name: &str) -> Result<PathBuf, anyhow::Error> {
-    let lib_crate_path = crate_dir(&project_root.to_path_buf(), "ios");
+pub fn generate_c_bindings(
+    project_root: &Path,
+    lib_name: &SanitizedString,
+) -> Result<PathBuf, anyhow::Error> {
+    let lib_crate_path = crate_dir(&project_root.to_path_buf(), "lib");
     let header_dir = binding_header_dir(&project_root.to_path_buf());
-    let header_path = header_dir.join(format!("lib{}.h", lib_name));
+    let header_path = header_dir.join(to_header_name(lib_name));
 
     clean_binding_headers(&project_root.to_path_buf())?;
 

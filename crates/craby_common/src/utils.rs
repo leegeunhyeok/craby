@@ -1,18 +1,40 @@
 use convert_case::{Case, Casing};
 use regex::Regex;
 
-use crate::env::Platform;
+use crate::constants;
 
-pub fn sanitize_str(value: &str) -> String {
-    let re = Regex::new(r"[^a-zA-Z]").unwrap();
-    re.replace_all(&value, "_").to_case(Case::Snake).to_string()
+#[derive(Debug, Clone)]
+pub struct SanitizedString(pub String);
+impl SanitizedString {
+    pub fn to_string(&self) -> String {
+        self.0.clone()
+    }
+
+    pub fn to_str(&self) -> &str {
+        &self.0
+    }
 }
 
-pub fn to_lib_name(name: &String, platform: Platform) -> String {
-    match platform {
-        Platform::Android => format!("lib{}.so", name),
-        Platform::Ios => format!("lib{}.a", name),
-    }
+pub fn sanitize_str(value: &str) -> SanitizedString {
+    let re = Regex::new(r"[^a-zA-Z]").unwrap();
+    let str = re.replace_all(&value, "_").to_case(Case::Snake).to_string();
+    SanitizedString(str)
+}
+
+pub fn to_lib_name(str: &SanitizedString) -> String {
+    format!("lib{}.a", str.0.replace("_", ""))
+}
+
+pub fn to_header_name(str: &SanitizedString) -> String {
+    format!("lib{}.h", str.0.replace("_", ""))
+}
+
+pub fn to_xcframework_name(str: &SanitizedString) -> String {
+    format!("lib{}.xcframework", str.0)
+}
+
+pub fn to_impl_mod_name(str: &SanitizedString) -> String {
+    format!("{}_{}", str.0, constants::IMPL_MOD_SUFFIX)
 }
 
 pub mod path {
@@ -20,16 +42,10 @@ pub mod path {
 
     use crate::constants::TEMP_DIR;
 
+    use super::{to_xcframework_name, SanitizedString};
+
     pub fn tmp_dir(project_root: &PathBuf) -> PathBuf {
         project_root.join(TEMP_DIR)
-    }
-
-    pub fn crate_dir(project_root: &PathBuf, crate_name: &str) -> PathBuf {
-        project_root.join("crates").join(crate_name)
-    }
-
-    pub fn crate_manifest_path(project_root: &PathBuf, crate_name: &str) -> PathBuf {
-        crate_dir(project_root, crate_name).join("Cargo.toml")
     }
 
     pub fn crate_target_dir(project_root: &PathBuf, target: &String) -> PathBuf {
@@ -40,19 +56,11 @@ pub mod path {
         project_root.join("android").join("build.gradle")
     }
 
-    pub fn android_jni_libs_dir(project_root: &PathBuf) -> PathBuf {
-        project_root
-            .join("android")
-            .join("src")
-            .join("main")
-            .join("jniLibs")
-    }
-
-    pub fn ios_framework_path(project_root: &PathBuf, lib_name: &String) -> PathBuf {
+    pub fn ios_framework_path(project_root: &PathBuf, lib_name: &SanitizedString) -> PathBuf {
         project_root
             .join("ios")
             .join("framework")
-            .join(format!("lib{}.xcframework", lib_name))
+            .join(to_xcframework_name(lib_name))
     }
 
     pub fn binding_header_dir(project_root: &PathBuf) -> PathBuf {

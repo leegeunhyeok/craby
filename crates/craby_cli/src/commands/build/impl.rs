@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 use craby_common::{
-    build::{self, xcode::CreateXcframeworkOptions},
     env::is_initialized,
-    utils::sanitize_str,
+    utils::{sanitize_str, SanitizedString},
 };
 use log::info;
 
@@ -15,22 +14,22 @@ pub struct BuildOptions {
 }
 
 pub fn r#impl(opts: BuildOptions) -> anyhow::Result<()> {
-    let lib_name = sanitize_str(&opts.lib_name).replace("_", "");
+    let lib_name = SanitizedString(sanitize_str(&opts.lib_name).to_string());
 
     if !is_initialized(&opts.project_root) {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
     }
 
     info!("Building Cargo projects...");
-    build::cargo::build_targets(&opts.project_root)?;
+    craby_build::cargo::build_targets(&opts.project_root)?;
 
     info!("Generating C bindings...");
-    let output = build::c::generate_c_bindings(&opts.project_root, &lib_name)?;
+    let header_path = craby_build::c::generate_c_bindings(&opts.project_root, &lib_name)?;
 
     info!("Creating xcframework...");
-    build::xcode::create_xcframework(CreateXcframeworkOptions {
+    craby_build::xcode::create_xcframework(craby_build::xcode::CreateXcframeworkOptions {
         project_root: opts.project_root,
-        header_path: output,
+        header_path,
         lib_name: lib_name.clone(),
     })?;
 

@@ -25,7 +25,3 @@ pub mod android {
 }
 
 pub mod ios {}
-
-pub const IMPL_MOD_SUFFIX: &str = "impl";
-pub const GENERATED_MOD: &str = "generated";
-pub const TEMP_DIR: &str = ".craby";

@@ -1,8 +1,5 @@
 {
-  "rust-analyzer.cargo.features": [
-    "android",
-    "ios"
-  ],
+  "rust-analyzer.cargo.features": [],
   "files.associations": {
     "__bit_reference": "cpp",
     "__hash_table": "cpp",
