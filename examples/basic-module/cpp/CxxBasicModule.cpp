@@ -23,7 +23,7 @@ jsi::Value CxxBasicModule::JSI__numericMethod(jsi::Runtime &rt,
                                          const jsi::Value args[],
                                          size_t count) {
   auto &thisModule = static_cast<CxxBasicModule &>(turboModule);
-  if (1 == count && args[0].isNumber() && args[1].isNumber()) {
+  if (1 == count && args[0].isNumber()) {
     auto a = args[0].asNumber();
     return jsi::Value(numericMethod(a));
   }

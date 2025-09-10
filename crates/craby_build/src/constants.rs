@@ -12,16 +12,10 @@ pub mod toolchain {
 }
 
 pub mod android {
-    pub const ABI_TARGETS: &[&str] = &[
-        // Target: aarch64-linux-android
-        "arm64-v8a",
-        // Target: armv7-linux-androideabi
-        "armeabi-v7a",
-        // Target: x86_64-linux-android
-        "x86_64",
-        // Target: i686-linux-android
-        "x86",
-    ];
+    pub const ABI_ARM64_V8A: &str = "arm64-v8a";
+    pub const ABI_ARMEABI_V7A: &str = "armeabi-v7a";
+    pub const ABI_X86_64: &str = "x86_64";
+    pub const ABI_X86: &str = "x86";
 }
 
 pub mod ios {

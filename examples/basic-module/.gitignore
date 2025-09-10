@@ -87,5 +87,4 @@ target/
 .craby
 
 # JavaScript build output
-lib/module/
-lib/typescript/
+lib/

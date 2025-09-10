@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use craby_build::platform::{android as android_build, ios as ios_build};
 use craby_common::{
     env::is_initialized,
     utils::{sanitize_str, SanitizedString},
@@ -26,10 +27,17 @@ pub fn r#impl(opts: BuildOptions) -> anyhow::Result<()> {
     info!("Generating C bindings...");
     let header_path = craby_build::c::generate_c_bindings(&opts.project_root, &lib_name)?;
 
+    info!("Creating Android ABI files...");
+    android_build::create_abi_files(android_build::CreateAbiFilesOptions {
+        project_root: opts.project_root.clone(),
+        header_path: header_path.clone(),
+        lib_name: lib_name.clone(),
+    })?;
+
     info!("Creating xcframework...");
-    craby_build::xcode::create_xcframework(craby_build::xcode::CreateXcframeworkOptions {
-        project_root: opts.project_root,
-        header_path,
+    ios_build::create_xcframework(ios_build::CreateXcframeworkOptions {
+        project_root: opts.project_root.clone(),
+        header_path: header_path.clone(),
         lib_name: lib_name.clone(),
     })?;
 

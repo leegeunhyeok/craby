@@ -11,10 +11,10 @@ find_package(hermes-engine REQUIRED CONFIG)
 # Import the pre-built Craby library
 add_library(basic-module-lib STATIC IMPORTED)
 set_target_properties(basic-module-lib PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/../libs/${ANDROID_ABI}/libbasicmodule.a"
+  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/libbasicmodule.a"
 )
 target_include_directories(basic-module-lib INTERFACE
-  "${CMAKE_SOURCE_DIR}/../libs/${ANDROID_ABI}/include"
+  "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/include"
 )
 
 # Generated C++ source files by the Craby

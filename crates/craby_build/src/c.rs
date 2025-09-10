@@ -1,11 +1,12 @@
-use std::path::{Path, PathBuf};
-
-use craby_common::utils::{
-    fs::clean_binding_headers, path::binding_header_dir, to_header_name, SanitizedString,
+use std::{
+    fs,
+    path::{Path, PathBuf},
 };
+
+use craby_common::utils::{to_header_name, SanitizedString};
 use log::{debug, info};
 
-use crate::utils::crate_dir;
+use crate::utils::{binding_header_dir, crate_dir};
 
 pub fn generate_c_bindings(
     project_root: &Path,
@@ -26,4 +27,19 @@ pub fn generate_c_bindings(
     }
 
     Ok(header_path)
+}
+
+fn clean_binding_headers(project_root: &PathBuf) -> Result<(), anyhow::Error> {
+    let header_dir = binding_header_dir(project_root);
+    let files = fs::read_dir(header_dir)?;
+
+    for file in files {
+        let file = file?;
+        if file.file_name().to_str().unwrap().ends_with(".h") {
+            debug!("Removing existing header file {}", file.path().display());
+            fs::remove_file(file.path())?;
+        }
+    }
+
+    Ok(())
 }
