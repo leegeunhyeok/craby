@@ -1,12 +1,10 @@
 use std::{fs, path::PathBuf};
 
-use craby_codegen::types::schema::{AndroidConfig, LibraryConfig};
 use craby_common::{
     constants::toolchain::TARGETS,
     env::get_installed_targets,
     utils::{android::is_gradle_configured, ios::is_podspec_configured},
 };
-use log::debug;
 use owo_colors::OwoColorize;
 
 use crate::commands::doctor::assert::{assert_with_status, Status};
@@ -18,34 +16,6 @@ pub struct DoctorOptions {
 pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
     let package_json = fs::read_to_string(opts.project_root.join("package.json"))?;
     let package_json = serde_json::from_str::<serde_json::Value>(&package_json)?;
-
-    println!("\n{}", "Common".bold().dimmed());
-    assert_with_status("TurboModule Configuration", || {
-        match package_json.get("codegenConfig") {
-            Some(cfg) => match serde_json::from_str::<LibraryConfig>(&cfg.to_string()) {
-                Ok(lib_cfg) => match lib_cfg {
-                    LibraryConfig {
-                        js_srcs_dir: Some(_),
-                        android:
-                            Some(AndroidConfig {
-                                java_package_name: Some(_),
-                            }),
-                        ..
-                    } => Ok(Status::Ok),
-                    _ => Err(anyhow::anyhow!(
-                        "`codegenConfig.jsSrcsDir` and `codegenConfig.android.javaPackageName` are required"
-                    )),
-                },
-                Err(e) => {
-                    debug!("Parse error: {}", e);
-                    return Err(anyhow::anyhow!("Invalid `codegenConfig` value"));
-                }
-            },
-            None => Err(anyhow::anyhow!(
-                "`codegenConfig` field not found in the `package.json`"
-            )),
-        }
-    });
 
     println!("\n{}", "Rust".bold().dimmed());
     let installed_targets = get_installed_targets()?;

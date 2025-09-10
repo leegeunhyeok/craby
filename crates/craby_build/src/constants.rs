@@ -24,4 +24,7 @@ pub mod android {
     ];
 }
 
-pub mod ios {}
+pub mod ios {
+    pub const HEADERS_PATH: &str = "Headers";
+}
+

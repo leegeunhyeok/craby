@@ -18,7 +18,6 @@ export declare function codegen(opts: CodegenOptions): void
 export interface CodegenOptions {
   projectRoot: string
   libraryName: string
-  javaPackageName: string
   schemas: Array<string>
 }
 

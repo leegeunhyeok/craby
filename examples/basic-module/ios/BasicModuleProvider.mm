@@ -1,16 +1,15 @@
-#import <ReactCommon/CxxTurboModuleUtils.h>
 #import "CxxBasicModule.hpp"
+#import <ReactCommon/CxxTurboModuleUtils.h>
 
-@interface Basic : NSObject
+@interface BasicModuleProvider : NSObject
 @end
 
-@implementation Basic
+@implementation BasicModuleProvider
 + (void)load {
   facebook::react::registerCxxModuleToGlobalModuleMap(
       craby::basicmodule::CxxBasicModule::kModuleName,
       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::basicmodule::CxxBasicModule>(
-            jsInvoker);
+        return std::make_shared<craby::basicmodule::CxxBasicModule>(jsInvoker);
       });
 }
 @end

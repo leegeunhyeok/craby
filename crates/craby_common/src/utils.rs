@@ -30,7 +30,7 @@ pub fn to_header_name(str: &SanitizedString) -> String {
 }
 
 pub fn to_xcframework_name(str: &SanitizedString) -> String {
-    format!("lib{}.xcframework", str.0)
+    format!("lib{}.xcframework", str.0.replace("_", ""))
 }
 
 pub fn to_impl_mod_name(str: &SanitizedString) -> String {

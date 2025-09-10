@@ -1766,6 +1766,7 @@ __metadata:
     tsup: "npm:^8.5.0"
     typescript: "npm:^5.8.3"
     vitest: "npm:^3.2.4"
+    zx: "npm:^8.8.1"
   bin:
     craby: ./bin.js
   languageName: unknown
@@ -15192,5 +15193,14 @@ __metadata:
   version: 2.1.2
   resolution: "yoctocolors-cjs@npm:2.1.2"
   checksum: 10/d731e3ba776a0ee19021d909787942933a6c2eafb2bbe85541f0c59aa5c7d475ce86fcb860d5803105e32244c3dd5ba875b87c4c6bf2d6f297da416aa54e556f
+  languageName: node
+  linkType: hard
+
+"zx@npm:^8.8.1":
+  version: 8.8.1
+  resolution: "zx@npm:8.8.1"
+  bin:
+    zx: build/cli.js
+  checksum: 10/615860a8deeec35d247c9bab3f9ab6c4801eac150cb09a3e09a3c79d1c8429fbaa3f7497cfa933ce8d75b48308ef531067f9a756610d69acf022bafe251bc7c1
   languageName: node
   linkType: hard

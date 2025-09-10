@@ -48,7 +48,6 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
 pub struct CodegenOptions {
     pub project_root: String,
     pub library_name: String,
-    pub java_package_name: String,
     pub schemas: Vec<String>,
 }
 
@@ -57,7 +56,6 @@ pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::codegen::CodegenOptions {
         project_root: opts.project_root.into(),
         lib_name: opts.library_name,
-        java_package_name: opts.java_package_name,
         schemas: opts.schemas,
     };
 

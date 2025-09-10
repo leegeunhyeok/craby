@@ -16,9 +16,12 @@ import { Command } from "@commander-js/extra-typings";
 import { assert as assert2 } from "es-toolkit";
 
 // src/codegen/get-schema-info.ts
-import fs2 from "fs";
-import path2 from "path";
 import { assert } from "es-toolkit";
+
+// src/codegen/generate-schema-infos.ts
+import fs from "fs";
+import path from "path";
+import { glob } from "glob";
 
 // src/napi.ts
 import * as mod from "../napi/index.js";
@@ -46,78 +49,6 @@ var loggerProxy = new Proxy({}, {
     return (message) => getLogger()[prop](message);
   }
 });
-
-// src/codegen/utils.ts
-function extractLibrariesFromJSON(configFile, dependencyPath) {
-  if (configFile.codegenConfig == null) {
-    return [];
-  }
-  loggerProxy.debug(`[Codegen] Found ${configFile.name}`);
-  if (configFile.codegenConfig.libraries == null) {
-    const config = configFile.codegenConfig;
-    return [
-      {
-        name: configFile.name,
-        config,
-        libraryPath: dependencyPath
-      }
-    ];
-  } else {
-    printDeprecationWarningIfNeeded(configFile.name);
-    return extractLibrariesFromConfigurationArray(configFile, dependencyPath);
-  }
-}
-function extractLibrariesFromConfigurationArray(configFile, dependencyPath) {
-  return configFile.codegenConfig.libraries.map((config) => {
-    return {
-      name: config.name,
-      config,
-      libraryPath: dependencyPath
-    };
-  });
-}
-function printDeprecationWarningIfNeeded(dependency) {
-  if (dependency === "react-native") {
-    return;
-  }
-  loggerProxy.warn(`CodegenConfig Deprecated Setup for ${dependency}.
-    The configuration file still contains the codegen in the libraries array.
-    If possible, replace it with a single object.
-  `);
-  loggerProxy.warn(`BEFORE:
-    {
-      // ...
-      "codegenConfig": {
-        "libraries": [
-          {
-            "name": "libName1",
-            "type": "all|components|modules",
-            "jsSrcsRoot": "libName1/js"
-          },
-          {
-            "name": "libName2",
-            "type": "all|components|modules",
-            "jsSrcsRoot": "libName2/src"
-          }
-        ]
-      }
-    }
-
-    AFTER:
-    {
-      "codegenConfig": {
-        "name": "libraries",
-        "type": "all",
-        "jsSrcsRoot": "."
-      }
-    }
-  `);
-}
-
-// src/codegen/generate-schema-infos.ts
-import fs from "fs";
-import path from "path";
-import { glob } from "glob";
 
 // src/utils/get-require.ts
 import Module from "module";
@@ -207,29 +138,35 @@ function getCocoaPodsPlatformKey(platformName) {
   return platformName;
 }
 
+// src/utils/package-json.ts
+import fs2 from "fs";
+import path2 from "path";
+function getPackageJsonPath(projectRoot) {
+  return path2.join(projectRoot, "package.json");
+}
+function getPackageJson(projectRoot) {
+  return JSON.parse(fs2.readFileSync(getPackageJsonPath(projectRoot), "utf8"));
+}
+
 // src/codegen/get-schema-info.ts
-function getSchemaInfo(projectRoot) {
-  const config = JSON.parse(
-    fs2.readFileSync(path2.join(projectRoot, "package.json"), "utf-8")
-  );
-  const libraries = extractLibrariesFromJSON(config, projectRoot);
-  assert(libraries.length === 1, "Invalid library config");
-  const schemaInfos = generateSchemaInfos(libraries);
+async function getSchemaInfo(projectRoot) {
+  const packageJson = getPackageJson(projectRoot);
+  const schemaInfos = generateSchemaInfos([{
+    name: packageJson.name,
+    config: {
+      name: packageJson.name,
+      type: "modules",
+      jsSrcsDir: "src"
+    },
+    libraryPath: projectRoot
+  }]);
   assert(schemaInfos.length === 1, "Invalid schema info");
   return schemaInfos[0];
 }
 
-// src/utils/get-codegen-config.ts
+// src/utils/is-valid-project.ts
 import fs3 from "fs";
 import path3 from "path";
-function getCodegenConfig(projectRoot) {
-  const packageJsonPath = path3.join(projectRoot, "package.json");
-  const rawPackageJson = fs3.readFileSync(packageJsonPath, "utf8");
-  const packageJson = JSON.parse(rawPackageJson);
-  return packageJson.codegenConfig ?? null;
-}
-
-// src/utils/is-valid-project.ts
 function isValidProject(projectRoot) {
   try {
     return isValidProjectImpl(projectRoot);
@@ -238,7 +175,7 @@ function isValidProject(projectRoot) {
   }
 }
 function isValidProjectImpl(projectRoot) {
-  return Boolean(getCodegenConfig(projectRoot));
+  return Boolean(fs3.existsSync(path3.join(projectRoot, "craby.toml")));
 }
 
 // src/utils/with-verbose.ts
@@ -265,19 +202,10 @@ var command = withVerbose(
 import { Command as Command2 } from "@commander-js/extra-typings";
 import { assert as assert3 } from "es-toolkit";
 var command2 = withVerbose(
-  new Command2().name("codegen").action(() => {
+  new Command2().name("codegen").action(async () => {
     const projectRoot = process.cwd();
     assert3(isValidProject(projectRoot), "Invalid TurboModule project");
-    const codegenConfig = getCodegenConfig(projectRoot);
-    assert3(
-      codegenConfig,
-      "`codegenConfig` field not found in the `package.json`"
-    );
-    assert3(
-      codegenConfig.android?.javaPackageName,
-      "`codegenConfig.android.javaPackageName` is required"
-    );
-    const schemaInfo = getSchemaInfo(projectRoot);
+    const schemaInfo = await getSchemaInfo(projectRoot);
     loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
     const modules = schemaInfo.schema?.modules ?? {};
     const moduleNames = Object.keys(modules);
@@ -288,7 +216,6 @@ var command2 = withVerbose(
     getBindings().codegen({
       projectRoot,
       libraryName: schemaInfo.library.name,
-      javaPackageName: codegenConfig.android.javaPackageName,
       schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
     });
   })
@@ -298,12 +225,12 @@ var command2 = withVerbose(
 import { Command as Command3 } from "@commander-js/extra-typings";
 import { assert as assert4 } from "es-toolkit";
 var command3 = withVerbose(
-  new Command3().name("build").action(() => {
+  new Command3().name("build").action(async () => {
     const projectRoot = process.cwd();
-    assert4(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert4(isValidProject(projectRoot), "Invalid Craby project");
     getBindings().build({
       projectRoot,
-      libraryName: getSchemaInfo(projectRoot).library.name
+      libraryName: (await getSchemaInfo(projectRoot)).library.name
     });
   })
 );

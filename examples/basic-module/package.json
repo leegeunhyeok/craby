@@ -80,14 +80,6 @@
     "react": "*",
     "react-native": "*"
   },
-  "codegenConfig": {
-    "name": "BasicSpec",
-    "type": "modules",
-    "jsSrcsDir": "src",
-    "android": {
-      "javaPackageName": "com.basic"
-    }
-  },
   "react-native-builder-bob": {
     "source": "src",
     "output": "lib",

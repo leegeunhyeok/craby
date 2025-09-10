@@ -6,13 +6,13 @@ import { withVerbose } from '../utils/with-verbose';
 import { isValidProject } from '../utils/is-valid-project';
 
 const command = withVerbose(
-  new Command().name('build').action(() => {
+  new Command().name('build').action(async () => {
     const projectRoot = process.cwd();
-    assert(isValidProject(projectRoot), 'Invalid TurboModule project');
+    assert(isValidProject(projectRoot), 'Invalid Craby project');
 
     getBindings().build({
       projectRoot,
-      libraryName: getSchemaInfo(projectRoot).library.name,
+      libraryName: (await getSchemaInfo(projectRoot)).library.name,
     });
   })
 );

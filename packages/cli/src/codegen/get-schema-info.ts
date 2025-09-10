@@ -1,18 +1,18 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { assert } from 'es-toolkit';
-import { extractLibrariesFromJSON } from './utils';
 import { generateSchemaInfos } from './generate-schema-infos';
+import { getPackageJson } from 'src/utils/package-json';
 
-export function getSchemaInfo(projectRoot: string) {
-  const config = JSON.parse(
-    fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf-8')
-  );
-
-  const libraries = extractLibrariesFromJSON(config, projectRoot);
-  assert(libraries.length === 1, 'Invalid library config');
-
-  const schemaInfos = generateSchemaInfos(libraries);
+export async function getSchemaInfo(projectRoot: string) {
+  const packageJson = getPackageJson(projectRoot);
+  const schemaInfos = generateSchemaInfos([{
+    name: packageJson.name,
+    config: {
+      name: packageJson.name,
+      type: 'modules',
+      jsSrcsDir: 'src',
+    },
+    libraryPath: projectRoot,
+  }]);
   assert(schemaInfos.length === 1, 'Invalid schema info');
 
   return schemaInfos[0]!;

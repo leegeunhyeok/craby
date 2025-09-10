@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use craby_common::{
     constants::GENERATED_MOD,
-    env::Platform,
     utils::{sanitize_str, to_impl_mod_name, SanitizedString},
 };
 use indoc::formatdoc;
@@ -10,40 +9,6 @@ use log::error;
 use serde::{Deserialize, Serialize};
 
 use super::types::Type;
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SchemaInfo {
-    pub library: Library,
-    #[serde(rename = "supportedApplePlatforms")]
-    pub supported_apple_platforms: HashMap<String, String>,
-    pub schema: SchemaMap,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct SchemaMap {
-    pub modules: HashMap<String, Schema>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Library {
-    pub name: String,
-    pub config: LibraryConfig,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct LibraryConfig {
-    pub name: Option<String>,
-    pub r#type: Option<String>,
-    #[serde(rename = "jsSrcsDir")]
-    pub js_srcs_dir: Option<String>,
-    pub android: Option<AndroidConfig>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct AndroidConfig {
-    #[serde(rename = "javaPackageName")]
-    pub java_package_name: Option<String>,
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Schema {

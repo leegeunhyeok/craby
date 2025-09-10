@@ -14,7 +14,6 @@ use crate::utils::schema::print_schema;
 pub struct CodegenOptions {
     pub project_root: PathBuf,
     pub lib_name: String,
-    pub java_package_name: String,
     pub schemas: Vec<String>,
 }
 

@@ -1,4 +1,5 @@
-import { getCodegenConfig } from './get-codegen-config';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export function isValidProject(projectRoot: string) {
   try {
@@ -9,5 +10,5 @@ export function isValidProject(projectRoot: string) {
 }
 
 function isValidProjectImpl(projectRoot: string) {
-  return Boolean(getCodegenConfig(projectRoot));
+  return Boolean(fs.existsSync(path.join(projectRoot, 'craby.toml')));
 }
