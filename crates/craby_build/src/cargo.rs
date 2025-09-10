@@ -1,12 +1,13 @@
 use std::{path::Path, process::Command};
 
+use craby_common::constants::crate_manifest_path;
 use log::{debug, error, info};
 use owo_colors::OwoColorize;
 
-use crate::{constants, utils::crate_manifest_path};
+use crate::constants;
 
 pub fn build_targets(project_root: &Path) -> Result<(), anyhow::Error> {
-    let manifest_path = crate_manifest_path(&project_root.to_path_buf(), "lib")
+    let manifest_path = crate_manifest_path(&project_root.to_path_buf())
         .to_string_lossy()
         .to_string();
     debug!("Manifest path: {}", manifest_path);

@@ -1,4 +1,4 @@
-use craby_common::utils::SanitizedString;
+use craby_common::utils::string::SanitizedString;
 use owo_colors::OwoColorize;
 
 use crate::utils::terminal::CodeHighlighter;

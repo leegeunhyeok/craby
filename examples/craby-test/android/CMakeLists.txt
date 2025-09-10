@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.13)
+
+project(craby-craby-test)
+
+set (CMAKE_VERBOSE_MAKEFILE ON)
+set (CMAKE_CXX_STANDARD 20)
+
+find_package(ReactAndroid REQUIRED CONFIG)
+find_package(hermes-engine REQUIRED CONFIG)
+
+# Import the pre-built Craby library
+add_library(craby-test-lib STATIC IMPORTED)
+set_target_properties(craby-test-lib PROPERTIES
+  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/libcrabytest.a"
+)
+target_include_directories(craby-test-lib INTERFACE
+  "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/include"
+)
+
+# Generated C++ source files by the Craby
+add_library(cxx-craby-test SHARED
+  src/main/cpp/OnLoad.cpp
+  ../cpp/CxxCrabyTestModule.cpp
+)
+target_include_directories(cxx-craby-test PRIVATE
+  ../cpp
+)
+
+target_link_libraries(cxx-craby-test
+  # android
+  ReactAndroid::reactnative
+  ReactAndroid::jsi
+  hermes-engine::libhermes
+  # craby-test-lib
+  craby-test-lib
+)

@@ -1,0 +1,6 @@
+[project]
+name = "craby_test"
+
+[codegen]
+include = [".*"]
+exclude = []

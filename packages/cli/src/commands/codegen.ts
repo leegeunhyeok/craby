@@ -18,13 +18,12 @@ const command = withVerbose(
     const moduleNames = Object.keys(modules);
 
     if (moduleNames.length === 0) {
-      logger.info('Nothing to generate');
+      logger.error('TurboModule schema is not found');
       return;
     }
 
     getBindings().codegen({
       projectRoot,
-      libraryName: schemaInfo.library.name,
       schemas: moduleNames.map((name) => JSON.stringify(modules[name])),
     });
   })

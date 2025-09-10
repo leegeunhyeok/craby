@@ -1,6 +1,0 @@
-[project]
-name = "basic-module"
-
-[codegen]
-include = [".*"]
-exclude = []

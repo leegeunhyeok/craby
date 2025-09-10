@@ -1,0 +1,10 @@
+[package]
+name = "craby_test"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[lib]
+name = "crabytest"
+crate-type = ["staticlib"]

@@ -8,7 +8,7 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { numeric, boolean } from 'basic-module';
+import { numeric, boolean } from 'craby-test';
 
 export function App() {
   const [numericInput, setNumericInput] = useState('');

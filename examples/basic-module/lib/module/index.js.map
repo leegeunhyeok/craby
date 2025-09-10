@@ -1,1 +1,0 @@
-{"version":3,"names":["Basic","numeric","arg","numericMethod","boolean","booleanMethod"],"sourceRoot":"../../src","sources":["index.ts"],"mappings":";;AAAA,OAAOA,KAAK,MAAM,kBAAe;AAEjC,OAAO,SAASC,OAAOA,CAACC,GAAW,EAAU;EAC3C,OAAOF,KAAK,CAACG,aAAa,CAACD,GAAG,CAAC;AACjC;AAEA,OAAO,SAASE,OAAOA,CAACF,GAAY,EAAW;EAC7C,OAAOF,KAAK,CAACK,aAAa,CAACH,GAAG,CAAC;AACjC","ignoreList":[]}

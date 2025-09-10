@@ -24,7 +24,8 @@ pub fn setup(level_filter: Option<String>) {
 pub struct InitOptions {
     pub project_root: String,
     pub template_base_path: String,
-    pub library_name: String,
+    pub package_name: String,
+    pub schemas: Vec<String>,
 }
 
 #[napi]
@@ -32,10 +33,11 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::init::InitOptions {
         project_root: opts.project_root.into(),
         template_base_path: opts.template_base_path.into(),
-        lib_name: opts.library_name,
+        package_name: opts.package_name,
+        schemas: opts.schemas,
     };
 
-    match craby_cli::commands::init::r#impl(opts) {
+    match craby_cli::commands::init::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
@@ -47,7 +49,6 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct CodegenOptions {
     pub project_root: String,
-    pub library_name: String,
     pub schemas: Vec<String>,
 }
 
@@ -55,11 +56,10 @@ pub struct CodegenOptions {
 pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::codegen::CodegenOptions {
         project_root: opts.project_root.into(),
-        lib_name: opts.library_name,
         schemas: opts.schemas,
     };
 
-    match craby_cli::commands::codegen::r#impl(opts) {
+    match craby_cli::commands::codegen::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
@@ -71,17 +71,15 @@ pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct BuildOptions {
     pub project_root: String,
-    pub library_name: String,
 }
 
 #[napi]
 pub fn build(opts: BuildOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::build::BuildOptions {
         project_root: opts.project_root.into(),
-        lib_name: opts.library_name,
     };
 
-    match craby_cli::commands::build::r#impl(opts) {
+    match craby_cli::commands::build::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
@@ -93,7 +91,7 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct ShowOptions {
     pub project_root: String,
-    pub library_name: String,
+    pub package_name: String,
     pub schemas: Vec<String>,
 }
 
@@ -101,11 +99,11 @@ pub struct ShowOptions {
 pub fn show(opts: ShowOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::show::ShowOptions {
         project_root: opts.project_root.into(),
-        lib_name: opts.library_name,
+        package_name: opts.package_name,
         schemas: opts.schemas,
     };
 
-    match craby_cli::commands::show::r#impl(opts) {
+    match craby_cli::commands::show::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
@@ -125,7 +123,7 @@ pub fn doctor(opts: DoctorOptions) -> napi::Result<()> {
         project_root: opts.project_root.into(),
     };
 
-    match craby_cli::commands::doctor::r#impl(opts) {
+    match craby_cli::commands::doctor::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),
@@ -145,7 +143,7 @@ pub fn clean(opts: CleanOptions) -> napi::Result<()> {
         project_root: opts.project_root.into(),
     };
 
-    match craby_cli::commands::clean::r#impl(opts) {
+    match craby_cli::commands::clean::perform(opts) {
         Err(e) => Err(napi::Error::new(
             napi::Status::GenericFailure,
             e.to_string(),

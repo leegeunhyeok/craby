@@ -13,7 +13,7 @@ pub fn with_spinner(msg: &str, f: impl FnOnce() -> anyhow::Result<()>) -> anyhow
     pb.set_style(
         ProgressStyle::default_spinner()
             .template("{spinner:.green} {msg}")
-            .expect("Invalid template"),
+            .unwrap(),
     );
     pb.enable_steady_tick(Duration::from_millis(120));
     f()?;

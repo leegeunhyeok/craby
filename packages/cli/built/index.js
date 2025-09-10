@@ -11,9 +11,8 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 import { program } from "@commander-js/extra-typings";
 
 // src/commands/init.ts
-import path4 from "path";
+import path3 from "path";
 import { Command } from "@commander-js/extra-typings";
-import { assert as assert2 } from "es-toolkit";
 
 // src/codegen/get-schema-info.ts
 import { assert } from "es-toolkit";
@@ -164,20 +163,6 @@ async function getSchemaInfo(projectRoot) {
   return schemaInfos[0];
 }
 
-// src/utils/is-valid-project.ts
-import fs3 from "fs";
-import path3 from "path";
-function isValidProject(projectRoot) {
-  try {
-    return isValidProjectImpl(projectRoot);
-  } catch {
-    return false;
-  }
-}
-function isValidProjectImpl(projectRoot) {
-  return Boolean(fs3.existsSync(path3.join(projectRoot, "craby.toml")));
-}
-
 // src/utils/with-verbose.ts
 import { Option } from "commander";
 var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
@@ -187,35 +172,57 @@ function withVerbose(command7) {
 
 // src/commands/init.ts
 var command = withVerbose(
-  new Command().name("init").action(() => {
+  new Command().name("init").action(async () => {
     const projectRoot = process.cwd();
-    assert2(isValidProject(projectRoot), "Invalid TurboModule project");
+    const schemaInfo = await getSchemaInfo(projectRoot);
+    const modules = schemaInfo.schema?.modules ?? {};
+    const moduleNames = Object.keys(modules);
+    if (moduleNames.length === 0) {
+      loggerProxy.error("TurboModule schema is not found");
+      return;
+    }
     getBindings().init({
       projectRoot,
-      templateBasePath: path4.resolve(import.meta.dirname, "..", "templates"),
-      libraryName: getSchemaInfo(projectRoot).library.name
+      templateBasePath: path3.resolve(import.meta.dirname, "..", "templates"),
+      packageName: schemaInfo.library.name,
+      schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
     });
   })
 );
 
 // src/commands/codegen.ts
 import { Command as Command2 } from "@commander-js/extra-typings";
-import { assert as assert3 } from "es-toolkit";
+import { assert as assert2 } from "es-toolkit";
+
+// src/utils/is-valid-project.ts
+import fs3 from "fs";
+import path4 from "path";
+function isValidProject(projectRoot) {
+  try {
+    return isValidProjectImpl(projectRoot);
+  } catch {
+    return false;
+  }
+}
+function isValidProjectImpl(projectRoot) {
+  return Boolean(fs3.existsSync(path4.join(projectRoot, "craby.toml")));
+}
+
+// src/commands/codegen.ts
 var command2 = withVerbose(
   new Command2().name("codegen").action(async () => {
     const projectRoot = process.cwd();
-    assert3(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert2(isValidProject(projectRoot), "Invalid TurboModule project");
     const schemaInfo = await getSchemaInfo(projectRoot);
     loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
     const modules = schemaInfo.schema?.modules ?? {};
     const moduleNames = Object.keys(modules);
     if (moduleNames.length === 0) {
-      loggerProxy.info("Nothing to generate");
+      loggerProxy.error("TurboModule schema is not found");
       return;
     }
     getBindings().codegen({
       projectRoot,
-      libraryName: schemaInfo.library.name,
       schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
     });
   })
@@ -223,26 +230,23 @@ var command2 = withVerbose(
 
 // src/commands/build.ts
 import { Command as Command3 } from "@commander-js/extra-typings";
-import { assert as assert4 } from "es-toolkit";
+import { assert as assert3 } from "es-toolkit";
 var command3 = withVerbose(
-  new Command3().name("build").action(async () => {
+  new Command3().name("build").action(() => {
     const projectRoot = process.cwd();
-    assert4(isValidProject(projectRoot), "Invalid Craby project");
-    getBindings().build({
-      projectRoot,
-      libraryName: (await getSchemaInfo(projectRoot)).library.name
-    });
+    assert3(isValidProject(projectRoot), "Invalid Craby project");
+    getBindings().build({ projectRoot });
   })
 );
 
 // src/commands/show.ts
 import { Command as Command4 } from "@commander-js/extra-typings";
-import { assert as assert5 } from "es-toolkit";
+import { assert as assert4 } from "es-toolkit";
 var command4 = withVerbose(
-  new Command4().name("show").action(() => {
+  new Command4().name("show").action(async () => {
     const projectRoot = process.cwd();
-    assert5(isValidProject(projectRoot), "Invalid TurboModule project");
-    const schemaInfo = getSchemaInfo(projectRoot);
+    assert4(isValidProject(projectRoot), "Invalid TurboModule project");
+    const schemaInfo = await getSchemaInfo(projectRoot);
     loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
     const modules = schemaInfo.schema?.modules ?? {};
     const moduleNames = Object.keys(modules);
@@ -252,7 +256,7 @@ var command4 = withVerbose(
     }
     getBindings().show({
       projectRoot,
-      libraryName: getSchemaInfo(projectRoot).library.name,
+      packageName: schemaInfo.library.name,
       schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
     });
   })
@@ -269,11 +273,11 @@ var command5 = withVerbose(
 
 // src/commands/clean.ts
 import { Command as Command6 } from "@commander-js/extra-typings";
-import { assert as assert6 } from "es-toolkit";
+import { assert as assert5 } from "es-toolkit";
 var command6 = withVerbose(
   new Command6().name("clean").action(() => {
     const projectRoot = process.cwd();
-    assert6(isValidProject(projectRoot), "Invalid TurboModule project");
+    assert5(isValidProject(projectRoot), "Invalid TurboModule project");
     getBindings().clean({ projectRoot });
   })
 );

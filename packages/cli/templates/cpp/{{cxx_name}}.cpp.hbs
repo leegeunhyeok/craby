@@ -1,0 +1,13 @@
+#include "{{ cxx_name }}.hpp"
+#include "lib{{ flat_name }}.h"
+
+using namespace facebook;
+
+namespace craby::{{ flat_name }} {
+
+{{ cxx_name }}::{{ cxx_name }}(std::shared_ptr<react::CallInvoker> jsInvoker)
+    : TurboModule({{ cxx_name }}::kModuleName, jsInvoker) {
+  callInvoker_ = std::move(jsInvoker);
+}
+
+} // namespace craby::{{ flat_name }}

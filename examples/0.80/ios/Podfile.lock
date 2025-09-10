@@ -1,5 +1,6 @@
 PODS:
-  - Basic (0.1.0):
+  - boost (1.84.0)
+  - CrabyTest (0.1.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -28,7 +29,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - boost (1.84.0)
   - DoubleConversion (1.1.6)
   - fast_float (8.0.0)
   - FBLazyVector (0.80.1)
@@ -2155,8 +2155,8 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
-  - Basic (from `../../basic-module`)
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
+  - CrabyTest (from `../../craby-test`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - fast_float (from `../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -2236,10 +2236,10 @@ SPEC REPOS:
     - SocketRocket
 
 EXTERNAL SOURCES:
-  Basic:
-    :path: "../../basic-module"
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
+  CrabyTest:
+    :path: "../../craby-test"
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   fast_float:
@@ -2385,8 +2385,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  Basic: 9dee8a1ee700b5d2731d27d34d7f154f8ecedc15
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
+  CrabyTest: d3032ce8cda16c07522717398c64bb6fddd615d6
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
   FBLazyVector: 09f03e4b6f42f955734b64a118f86509cc719427

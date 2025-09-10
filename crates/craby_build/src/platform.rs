@@ -2,14 +2,14 @@ pub mod android {
     use std::{fs, path::PathBuf};
 
     use craby_common::{
-        constants,
-        utils::{to_header_name, to_lib_name, SanitizedString},
+        constants::{self, binding_header_dir, crate_target_dir, lib_header_name, lib_name},
+        utils::string::SanitizedString,
     };
     use log::debug;
 
     use crate::{
-        constants::android::{ABI_ARM64_V8A, ABI_ARMEABI_V7A, ABI_X86, ABI_X86_64},
-        utils::{android::get_abi_by_target, binding_header_dir},
+        constants::android::{ABI_ARM64_V8A, ABI_ARMEABI_V7A, ABI_X86, ABI_X86_64, INCLUDE_DIR},
+        utils::android::get_abi_by_target,
     };
 
     pub struct CreateAbiFilesOptions {
@@ -19,46 +19,47 @@ pub mod android {
     }
 
     pub fn create_abi_files(opts: CreateAbiFilesOptions) -> Result<(), anyhow::Error> {
-        let targets = get_targets();
-        let target_dir = opts.project_root.join("target");
-        let lib_name = to_lib_name(&opts.lib_name);
+        let lib_name = lib_name(&opts.lib_name);
+        let lib_header = lib_header_name(&opts.lib_name);
         let abi_base_path = abi_base_path(&opts.project_root);
-        let abi_list = vec![ABI_ARM64_V8A, ABI_ARMEABI_V7A, ABI_X86_64, ABI_X86];
 
+        prepare_abi_dirs(&abi_base_path)?;
+
+        for target in get_targets() {
+            let abi = get_abi_by_target(&target);
+
+            let from_lib = crate_target_dir(&opts.project_root, &target).join(&lib_name);
+            let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
+
+            let to = abi_base_path.join(abi);
+            let to_lib = to.join(&lib_name);
+            let to_header = to.join(INCLUDE_DIR).join(&lib_header);
+
+            debug!(
+                "(Library) Copying {} to {}",
+                from_lib.display(),
+                to_lib.display()
+            );
+            debug!(
+                "(Headers) Copying {} to {}",
+                from_header.display(),
+                to_header.display()
+            );
+            fs::copy(from_lib, to_lib)?;
+            fs::copy(from_header, to_header)?;
+        }
+
+        Ok(())
+    }
+
+    fn prepare_abi_dirs(abi_base_path: &PathBuf) -> Result<(), anyhow::Error> {
         if abi_base_path.exists() {
             fs::remove_dir_all(&abi_base_path)?;
             debug!("Cleaned up existing abi base directory");
         }
 
-        fs::create_dir_all(&abi_base_path)?;
-        abi_list.iter().try_for_each(|abi| -> std::io::Result<()> {
-            fs::create_dir_all(abi_base_path.join(abi))?;
-            fs::create_dir_all(abi_base_path.join(abi).join("include"))?;
-            Ok(())
-        })?;
-        debug!("Created API directories");
-
-        for target in targets {
-            let lib_header = to_header_name(&opts.lib_name);
-            let abi = get_abi_by_target(&target);
-            let from = target_dir.join(&target).join("release").join(&lib_name);
-            let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
-            let dest = abi_base_path.join(abi);
-            let lib_dest = dest.join(&lib_name);
-            let lib_header_dest = dest.join("include").join(lib_header);
-
-            debug!(
-                "(Library) Copying {} to {}",
-                from.display(),
-                lib_dest.display()
-            );
-            debug!(
-                "(Headers) Copying {} to {}",
-                from_header.display(),
-                lib_header_dest.display()
-            );
-            fs::copy(from, lib_dest)?;
-            fs::copy(from_header, lib_header_dest)?;
+        for abi in [ABI_ARM64_V8A, ABI_ARMEABI_V7A, ABI_X86_64, ABI_X86] {
+            fs::create_dir_all(abi_base_path.join(abi).join(INCLUDE_DIR))?;
         }
 
         Ok(())
@@ -85,12 +86,10 @@ pub mod ios {
     use indoc::formatdoc;
     use log::debug;
 
-    use crate::{
-        constants::{self, ios::HEADERS_PATH},
-        utils::binding_header_dir,
-    };
-    use craby_common::utils::{
-        ios::xcframework_name, to_header_name, to_lib_name, SanitizedString,
+    use crate::constants::{self, ios::{HEADERS_DIR, LIB_IDENTIFIER_ARM64, LIB_IDENTIFIER_ARM64_SIMULATOR}};
+    use craby_common::{
+        constants::{binding_header_dir, crate_target_dir, lib_header_name, lib_name},
+        utils::{ios::xcframework_name, string::SanitizedString},
     };
 
     pub struct CreateXcframeworkOptions {
@@ -100,55 +99,61 @@ pub mod ios {
     }
 
     pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
-        let targets = get_targets();
-        let target_dir = opts.project_root.join("target");
-        let lib_name = to_lib_name(&opts.lib_name);
-        let xcframework = ios_framework_path(&opts.project_root, &opts.lib_name);
+        let lib_name = lib_name(&opts.lib_name);
+        let lib_header = lib_header_name(&opts.lib_name);
+        let xcframework_path = ios_framework_path(&opts.project_root, &opts.lib_name);
 
-        if xcframework.exists() {
-            fs::remove_dir_all(&xcframework)?;
-            debug!("Cleaned up existing xcframework");
-        }
-
-        fs::create_dir_all(&xcframework)?;
-        fs::create_dir_all(xcframework.join("ios-arm64").join(HEADERS_PATH))?;
-        fs::create_dir_all(xcframework.join("ios-arm64-simulator").join(HEADERS_PATH))?;
-        debug!("Created xcframework directories");
+        prepare_xcframework(&xcframework_path)?;
 
         fs::write(
-            xcframework.join("Info.plist"),
+            xcframework_path.join("Info.plist"),
             info_plist_content(&lib_name),
         )?;
         debug!("Wrote Info.plist");
 
-        for target in targets {
-            let lib_header = to_header_name(&opts.lib_name);
-            let from = target_dir.join(&target).join("release").join(&lib_name);
+        for target in get_targets() {
+            let from_lib = crate_target_dir(&opts.project_root, &target).join(&lib_name);
             let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
-            let lib_target = if target.contains("sim") {
-                "ios-arm64-simulator"
-            } else {
-                "ios-arm64"
-            };
-            let dest = xcframework.join(lib_target);
-            let lib_dest = dest.join(&lib_name);
-            let lib_header_dest = dest.join(HEADERS_PATH).join(lib_header);
+
+            let to = xcframework_path.join(get_lib_identifier(&target));
+            let to_lib = to.join(&lib_name);
+            let to_header = to.join(HEADERS_DIR).join(&lib_header);
 
             debug!(
                 "(Library) Copying {} to {}",
-                from.display(),
-                lib_dest.display()
+                from_lib.display(),
+                to_lib.display()
             );
             debug!(
                 "(Headers) Copying {} to {}",
                 from_header.display(),
-                lib_header_dest.display()
+                to_header.display()
             );
-            fs::copy(from, lib_dest)?;
-            fs::copy(from_header, lib_header_dest)?;
+            fs::copy(from_lib, to_lib)?;
+            fs::copy(from_header, to_header)?;
         }
 
         Ok(())
+    }
+
+    fn prepare_xcframework(xcframework: &PathBuf) -> Result<(), anyhow::Error> {
+        if xcframework.exists() {
+            fs::remove_dir_all(&xcframework)?;
+        }
+
+        fs::create_dir_all(xcframework.join("ios-arm64").join(HEADERS_DIR))?;
+        fs::create_dir_all(xcframework.join("ios-arm64-simulator").join(HEADERS_DIR))?;
+
+        Ok(())
+    }
+
+    fn get_lib_identifier(target: &String) -> String {
+        if target.contains("sim") {
+            "ios-arm64-simulator"
+        } else {
+            "ios-arm64"
+        }
+        .to_string()
     }
 
     fn get_targets() -> impl Iterator<Item = String> {
@@ -170,38 +175,38 @@ pub mod ios {
                 <key>AvailableLibraries</key>
                 <array>
                     <dict>
-                    <key>BinaryPath</key>
-                    <string>{lib_name}</string>
-                    <key>HeadersPath</key>
-                    <string>{headers_path}</string>
-                    <key>LibraryIdentifier</key>
-                    <string>ios-arm64</string>
-                    <key>LibraryPath</key>
-                    <string>{lib_name}</string>
-                    <key>SupportedArchitectures</key>
-                    <array>
-                        <string>arm64</string>
-                    </array>
-                    <key>SupportedPlatform</key>
-                    <string>ios</string>
+                        <key>BinaryPath</key>
+                        <string>{lib_name}</string>
+                        <key>LibraryIdentifier</key>
+                        <string>{lib_identifier}</string>
+                        <key>LibraryPath</key>
+                        <string>{lib_name}</string>
+                        <key>HeadersPath</key>
+                        <string>{headers_path}</string>
+                        <key>SupportedArchitectures</key>
+                        <array>
+                            <string>arm64</string>
+                        </array>
+                        <key>SupportedPlatform</key>
+                        <string>ios</string>
                     </dict>
                     <dict>
-                    <key>BinaryPath</key>
-                    <string>{lib_name}</string>
-                    <key>HeadersPath</key>
-                    <string>{headers_path}</string>
-                    <key>LibraryIdentifier</key>
-                    <string>ios-arm64-simulator</string>
-                    <key>LibraryPath</key>
-                    <string>{lib_name}</string>
-                    <key>SupportedArchitectures</key>
-                    <array>
-                        <string>arm64</string>
-                    </array>
-                    <key>SupportedPlatform</key>
-                    <string>ios</string>
-                    <key>SupportedPlatformVariant</key>
-                    <string>simulator</string>
+                        <key>BinaryPath</key>
+                        <string>{lib_name}</string>
+                        <key>LibraryIdentifier</key>
+                        <string>{lib_sim_identifier}</string>
+                        <key>LibraryPath</key>
+                        <string>{lib_name}</string>
+                        <key>HeadersPath</key>
+                        <string>{headers_path}</string>
+                        <key>SupportedArchitectures</key>
+                        <array>
+                            <string>arm64</string>
+                        </array>
+                        <key>SupportedPlatform</key>
+                        <string>ios</string>
+                        <key>SupportedPlatformVariant</key>
+                        <string>simulator</string>
                     </dict>
                 </array>
                 <key>CFBundlePackageType</key>
@@ -211,7 +216,9 @@ pub mod ios {
             </dict>
             </plist>"#,
             lib_name = lib_name,
-            headers_path = HEADERS_PATH
+            lib_identifier = LIB_IDENTIFIER_ARM64,
+            lib_sim_identifier = LIB_IDENTIFIER_ARM64_SIMULATOR,
+            headers_path = HEADERS_DIR
         }
     }
 

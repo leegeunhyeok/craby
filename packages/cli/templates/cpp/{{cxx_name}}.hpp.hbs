@@ -1,0 +1,18 @@
+#pragma once
+
+#include <ReactCommon/TurboModule.h>
+#include <jsi/jsi.h>
+
+namespace craby::{{ flat_name }} {
+
+class JSI_EXPORT {{ cxx_name }} : public facebook::react::TurboModule {
+public:
+  static constexpr const char *kModuleName = "{{ turbo_module_name }}";
+
+  {{ cxx_name }}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
+
+protected:
+  std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
+};
+
+} // namespace craby::{{ flat_name }}

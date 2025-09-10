@@ -1,0 +1,17 @@
+use std::{fs, path::PathBuf};
+
+pub fn is_gradle_configured(project_root: &PathBuf) -> Result<bool, anyhow::Error> {
+    let gradle_path = build_gradle_path(project_root);
+
+    fs::exists(&gradle_path)?;
+
+    let mut passed = true;
+    let content = fs::read_to_string(gradle_path)?;
+    passed &= content.contains("jniLibs.srcDirs");
+    passed &= content.contains("src/main/jniLibs");
+    Ok(passed)
+}
+
+pub fn build_gradle_path(project_root: &PathBuf) -> PathBuf {
+    project_root.join("android").join("build.gradle")
+}

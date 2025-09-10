@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use craby_common::utils::{pascal_case, sanitize_str, to_impl_mod_name, SanitizedString};
+use craby_common::{
+    constants::impl_mod_name,
+    utils::string::{pascal_case, sanitize, SanitizedString},
+};
 use indoc::formatdoc;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -334,7 +337,7 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let fn_name = sanitize_str(&self.name);
+                let fn_name = sanitize(&self.name);
                 let ret_annotation = if return_type == "()" {
                     String::new()
                 } else {
@@ -369,8 +372,8 @@ impl FunctionSpec {
                     .join(", ");
 
                 let fn_sig = self.to_rs_func_sig();
-                let fn_name = sanitize_str(&self.name);
-                let impl_mod_name = to_impl_mod_name(mod_name);
+                let fn_name = sanitize(&self.name);
+                let impl_mod_name = impl_mod_name(mod_name);
 
                 formatdoc! {
                     r#"
@@ -408,9 +411,9 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let impl_mod_name = to_impl_mod_name(mod_name);
+                let impl_mod_name = impl_mod_name(mod_name);
                 let impl_name = pascal_case(mod_name.to_str());
-                let fn_name = sanitize_str(&self.name);
+                let fn_name = sanitize(&self.name);
                 let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
 
                 // If the return type is `void`, return an empty tuple.

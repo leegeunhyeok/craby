@@ -1,0 +1,15 @@
+#import "CxxCrabyTestModule.hpp"
+#import <ReactCommon/CxxTurboModuleUtils.h>
+
+@interface CrabyTestModuleProvider : NSObject
+@end
+
+@implementation CrabyTestModuleProvider
++ (void)load {
+  facebook::react::registerCxxModuleToGlobalModuleMap(
+      craby::crabytest::CxxCrabyTestModule::kModuleName,
+      [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
+        return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+      });
+}
+@end

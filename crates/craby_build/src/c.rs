@@ -3,18 +3,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use craby_common::utils::{to_header_name, SanitizedString};
+use craby_common::{
+    constants::{binding_header_dir, crate_dir, lib_header_name},
+    utils::string::SanitizedString,
+};
 use log::{debug, info};
-
-use crate::utils::{binding_header_dir, crate_dir};
 
 pub fn generate_c_bindings(
     project_root: &Path,
     lib_name: &SanitizedString,
 ) -> Result<PathBuf, anyhow::Error> {
-    let lib_crate_path = crate_dir(&project_root.to_path_buf(), "lib");
+    let lib_crate_path = crate_dir(&project_root.to_path_buf());
     let header_dir = binding_header_dir(&project_root.to_path_buf());
-    let header_path = header_dir.join(to_header_name(lib_name));
+    let header_path = header_dir.join(lib_header_name(lib_name));
 
     clean_binding_headers(&project_root.to_path_buf())?;
 
@@ -31,6 +32,11 @@ pub fn generate_c_bindings(
 
 fn clean_binding_headers(project_root: &PathBuf) -> Result<(), anyhow::Error> {
     let header_dir = binding_header_dir(project_root);
+
+    if !header_dir.exists() {
+        return Ok(());
+    }
+
     let files = fs::read_dir(header_dir)?;
 
     for file in files {

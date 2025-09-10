@@ -1,3 +1,7 @@
+use std::path::PathBuf;
+
+use crate::utils::string::SanitizedString;
+
 pub mod toolchain {
     pub const TARGETS: &[&str] = &[
         // Android
@@ -26,6 +30,37 @@ pub mod android {
 
 pub mod ios {}
 
-pub const IMPL_MOD_SUFFIX: &str = "impl";
 pub const GENERATED_MOD: &str = "generated";
 pub const TEMP_DIR: &str = ".craby";
+
+pub fn lib_name(name: &SanitizedString) -> String {
+    format!("lib{}.a", name.0.replace("_", ""))
+}
+
+pub fn lib_header_name(name: &SanitizedString) -> String {
+    format!("lib{}.h", name.0.replace("_", ""))
+}
+
+pub fn impl_mod_name(name: &SanitizedString) -> String {
+    format!("{}_impl", name.0)
+}
+
+pub fn tmp_dir(project_root: &PathBuf) -> PathBuf {
+    project_root.join(TEMP_DIR)
+}
+
+pub fn crate_target_dir(project_root: &PathBuf, target: &String) -> PathBuf {
+    project_root.join("target").join(target).join("release")
+}
+
+pub fn crate_dir(project_root: &PathBuf) -> PathBuf {
+    project_root.join("crates").join("lib")
+}
+
+pub fn crate_manifest_path(project_root: &PathBuf) -> PathBuf {
+    crate_dir(project_root).join("Cargo.toml")
+}
+
+pub fn binding_header_dir(project_root: &PathBuf) -> PathBuf {
+    tmp_dir(project_root).join("include")
+}

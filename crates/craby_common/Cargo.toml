@@ -17,4 +17,3 @@ log          = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
 owo-colors   = { workspace = true }
-stringcase = "0.4.0"

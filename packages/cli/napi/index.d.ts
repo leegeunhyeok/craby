@@ -4,7 +4,6 @@ export declare function build(opts: BuildOptions): void
 
 export interface BuildOptions {
   projectRoot: string
-  libraryName: string
 }
 
 export declare function clean(opts: CleanOptions): void
@@ -17,7 +16,6 @@ export declare function codegen(opts: CodegenOptions): void
 
 export interface CodegenOptions {
   projectRoot: string
-  libraryName: string
   schemas: Array<string>
 }
 
@@ -38,7 +36,8 @@ export declare function init(opts: InitOptions): void
 export interface InitOptions {
   projectRoot: string
   templateBasePath: string
-  libraryName: string
+  packageName: string
+  schemas: Array<string>
 }
 
 export declare function setup(levelFilter?: string | undefined | null): void
@@ -47,7 +46,7 @@ export declare function show(opts: ShowOptions): void
 
 export interface ShowOptions {
   projectRoot: string
-  libraryName: string
+  packageName: string
   schemas: Array<string>
 }
 

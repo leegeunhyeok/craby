@@ -7,11 +7,11 @@ import { withVerbose } from '../utils/with-verbose';
 import { logger } from '../logger';
 
 const command = withVerbose(
-  new Command().name('show').action(() => {
+  new Command().name('show').action(async () => {
     const projectRoot = process.cwd();
     assert(isValidProject(projectRoot), 'Invalid TurboModule project');
 
-    const schemaInfo = getSchemaInfo(projectRoot);
+    const schemaInfo = await getSchemaInfo(projectRoot);
     logger.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
 
     const modules = schemaInfo.schema?.modules ?? {};
@@ -24,7 +24,7 @@ const command = withVerbose(
 
     getBindings().show({
       projectRoot,
-      libraryName: getSchemaInfo(projectRoot).library.name,
+      packageName: schemaInfo.library.name,
       schemas: moduleNames.map((name) => JSON.stringify(modules[name])),
     });
   })

@@ -27,7 +27,8 @@ pub fn render_template(
         let path = entry.path();
 
         let rel_path = path.strip_prefix(template_dir)?;
-        let rendered_rel_path = reg.render_template(&rel_path.to_string_lossy(), data)?;
+        let replaced_path = replace_path(&rel_path, data);
+        let rendered_rel_path = reg.render_template(replaced_path.as_str(), data)?;
         let dest_path = dest_dir.join(
             rendered_rel_path
                 .strip_suffix(".hbs")
@@ -58,4 +59,15 @@ pub fn render_template(
     }
 
     Ok(())
+}
+
+fn replace_path(path: &Path, data: &BTreeMap<&str, &str>) -> String {
+    let mut result = path.to_string_lossy().to_string();
+
+    for (key, value) in data {
+        // Replace '{{key}}' with value
+        result = result.replace(format!("{{{{{key}}}}}", key = key).as_str(), value);
+    }
+
+    result
 }

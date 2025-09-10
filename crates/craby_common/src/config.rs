@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CrabyConfig {
-    project: ProjectConfig,
+    pub project: ProjectConfig,
     codegen: CodegenConfig,
 }
 
@@ -23,6 +23,7 @@ pub struct CodegenConfig {
 
 #[derive(Debug)]
 pub struct CompleteCrabyConfig {
+    pub name: String,
     pub codegen: CompleteCodegenConfig,
 }
 
@@ -70,7 +71,10 @@ impl CrabyConfig {
                 .collect(),
         };
 
-        CompleteCrabyConfig { codegen }
+        CompleteCrabyConfig {
+            name: self.project.name.clone(),
+            codegen,
+        }
     }
 }
 

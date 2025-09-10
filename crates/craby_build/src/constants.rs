@@ -16,8 +16,13 @@ pub mod android {
     pub const ABI_ARMEABI_V7A: &str = "armeabi-v7a";
     pub const ABI_X86_64: &str = "x86_64";
     pub const ABI_X86: &str = "x86";
+
+    pub const INCLUDE_DIR: &str = "include";
 }
 
 pub mod ios {
-    pub const HEADERS_PATH: &str = "Headers";
+    pub const HEADERS_DIR: &str = "Headers";
+
+    pub const LIB_IDENTIFIER_ARM64: &str = "ios-arm64";
+    pub const LIB_IDENTIFIER_ARM64_SIMULATOR: &str = "ios-arm64-simulator";
 }
