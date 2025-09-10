@@ -1,4 +1,7 @@
-use craby_common::utils::{sanitize_str, to_impl_mod_name};
+use craby_common::{
+    constants::GENERATED_MOD,
+    utils::{pascal_case, sanitize_str},
+};
 use indoc::formatdoc;
 
 use crate::{types::schema::Schema, utils::indent_str};
@@ -10,31 +13,50 @@ impl CodeGenerator {
         Self
     }
 
-    pub fn generate_module(&self, schema: &Schema) -> String {
-        let mod_name = sanitize_str(&schema.module_name);
+    /// Generate the spec trait for the given schema.
+    ///
+    /// ```rust,ignore
+    /// pub trait MyModuleSpec {
+    ///     fn multiply(a: f64, b: f64) -> f64;
+    /// }
+    /// ```
+    pub fn generate_spec(&self, schema: &Schema) -> String {
+        let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| indent_str(spec.to_rs_func(&mod_name), 4))
+            .map(|spec| format!("{};", spec.to_rs_func_sig()))
             .collect::<Vec<_>>();
-        let impl_mod_name = to_impl_mod_name(&mod_name);
 
         formatdoc! {
           r#"
-          pub mod {mod_name} {{
-              use crate::{impl_mod_name};
-
+          pub trait {trait_name} {{
           {methods}
           }}"#,
-          mod_name = mod_name.to_string(),
-          impl_mod_name = impl_mod_name.to_string(),
-          methods = methods.join("\n\n"),
+          trait_name = trait_name,
+          methods = indent_str(methods.join("\n"), 4),
         }
     }
 
-    pub fn generate_empty_module(&self, schema: &Schema) -> String {
-        schema
+    /// Generate the empty module for the given schema.
+    ///
+    /// ```rust,ignore
+    /// use crate::generated::MyModuleSpec;
+    ///
+    /// pub struct MyModule;
+    ///
+    /// impl MyModuleSpec for MyModule {
+    ///     fn multiply(a: f64, b: f64) -> f64 {
+    ///         unimplemented!();
+    ///     }
+    /// }
+    /// ```
+    pub fn generate_impl(&self, schema: &Schema) -> String {
+        let mod_name = pascal_case(schema.module_name.as_str());
+        let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
+
+        let methods = schema
             .spec
             .methods
             .iter()
@@ -43,19 +65,46 @@ impl CodeGenerator {
 
                 formatdoc! {
                   r#"
-                  pub {func_sig} {{
+                  {func_sig} {{
                       unimplemented!();
                   }}"#,
                   func_sig = func_sig,
                 }
             })
-            .collect::<Vec<_>>()
-            .join("\n\n")
+            .collect::<Vec<_>>();
+
+        formatdoc! {
+          r#"
+          use crate::generated::{trait_name};
+
+          pub struct {mod_name};
+
+          impl {trait_name} for {mod_name} {{
+          {methods}
+          }}"#,
+          trait_name = trait_name,
+          mod_name= mod_name,
+          methods = indent_str(methods.join("\n\n"), 4),
+        }
     }
 
-    pub fn generate_ffi_module(&self, schema: &Schema) -> String {
+    /// Generate the empty module for the given schema.
+    ///
+    /// ```rust,ignore
+    /// use generated::*;
+    /// use std::os::raw::*;
+    ///
+    /// #[no_mangle]
+    /// pub extern "C" fn multiply(a: f64, b: String) -> f64 {
+    ///     my_module_impl::MyModule::multiply(a, b)
+    /// }
+    /// ```
+    pub fn generate_ffi(&self, schema: &Schema) -> String {
         let mod_name = sanitize_str(&schema.module_name);
-        let imports = vec!["use std::os::raw::*;".to_string()];
+        let imports = vec![
+            format!("use {}::*;", GENERATED_MOD),
+            "use std::os::raw::*;".to_string(),
+        ];
 
         let methods = schema
             .spec
@@ -77,7 +126,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_function_generation() {
+    fn test_spec_generation() {
         let json_schema = r#"
         {
           "moduleName": "MyModule",
@@ -120,17 +169,13 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_module(&schema);
+        let result = generator.generate_spec(&schema);
 
         assert_eq!(
             result,
             [
-                "pub mod my_module {",
-                "    use crate::my_module_impl;",
-                "",
-                "    pub fn multiply(a: f64, b: f64) -> f64 {",
-                "        my_module_impl::multiply(a, b)",
-                "    }",
+                "pub trait MyModuleSpec {",
+                "    fn multiply(a: f64, b: f64) -> f64;",
                 "}",
             ]
             .join("\n")
@@ -322,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_module() {
+    fn test_generate_spec() {
         let json_schema = r#"
         {
           "moduleName": "MyModule",
@@ -365,16 +410,75 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_module(&schema);
+        let result = generator.generate_spec(&schema);
 
         assert_eq!(
             result,
             [
-                "pub mod my_module {",
-                "    use crate::my_module_impl;",
+                "pub trait MyModuleSpec {",
+                "    fn multiply(a: f64, b: f64) -> f64;",
+                "}",
+            ]
+            .join("\n")
+        );
+    }
+
+    #[test]
+    fn test_generate_impl() {
+        let json_schema = r#"
+        {
+          "moduleName": "MyModule",
+          "type": "NativeModule",
+          "aliasMap": {},
+          "enumMap": {},
+          "spec": {
+            "eventEmitters": [],
+            "methods": [
+              {
+                "name": "multiply",
+                "optional": false,
+                "typeAnnotation": {
+                  "type": "FunctionTypeAnnotation",
+                  "returnTypeAnnotation": {
+                    "type": "NumberTypeAnnotation"
+                  },
+                  "params": [
+                    {
+                      "name": "a",
+                      "optional": false,
+                      "typeAnnotation": {
+                        "type": "NumberTypeAnnotation"
+                      }
+                    },
+                    {
+                      "name": "b",
+                      "optional": false,
+                      "typeAnnotation": {
+                        "type": "NumberTypeAnnotation"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+        "#;
+
+        let generator = CodeGenerator::new();
+        let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
+        let result = generator.generate_impl(&schema);
+
+        assert_eq!(
+            result,
+            [
+                "use crate::generated::MyModuleSpec;",
                 "",
-                "    pub fn multiply(a: f64, b: f64) -> f64 {",
-                "        my_module_impl::multiply(a, b)",
+                "pub struct MyModule;",
+                "",
+                "impl MyModuleSpec for MyModule {",
+                "    fn multiply(a: f64, b: f64) -> f64 {",
+                "        unimplemented!();",
                 "    }",
                 "}",
             ]
@@ -383,64 +487,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_empty_module() {
-        let json_schema = r#"
-        {
-          "moduleName": "MyModule",
-          "type": "NativeModule",
-          "aliasMap": {},
-          "enumMap": {},
-          "spec": {
-            "eventEmitters": [],
-            "methods": [
-              {
-                "name": "multiply",
-                "optional": false,
-                "typeAnnotation": {
-                  "type": "FunctionTypeAnnotation",
-                  "returnTypeAnnotation": {
-                    "type": "NumberTypeAnnotation"
-                  },
-                  "params": [
-                    {
-                      "name": "a",
-                      "optional": false,
-                      "typeAnnotation": {
-                        "type": "NumberTypeAnnotation"
-                      }
-                    },
-                    {
-                      "name": "b",
-                      "optional": false,
-                      "typeAnnotation": {
-                        "type": "NumberTypeAnnotation"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        }
-        "#;
-
-        let generator = CodeGenerator::new();
-        let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_empty_module(&schema);
-
-        assert_eq!(
-            result,
-            [
-                "pub fn multiply(a: f64, b: f64) -> f64 {",
-                "    unimplemented!();",
-                "}",
-            ]
-            .join("\n")
-        );
-    }
-
-    #[test]
-    fn test_generate_ffi_module() {
+    fn test_generate_ffi() {
         let json_schema = r#"
       {
         "moduleName": "MyModule",
@@ -483,16 +530,17 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_ffi_module(&schema);
+        let result = generator.generate_ffi(&schema);
 
         assert_eq!(
             result,
             [
+                "use generated::*;",
                 "use std::os::raw::*;",
                 "",
                 "#[no_mangle]",
                 "pub extern \"C\" fn multiply(a: f64, b: String) -> f64 {",
-                "    generated::my_module_impl::multiply(a, b)",
+                "    my_module_impl::MyModule::multiply(a, b)",
                 "}",
             ]
             .join("\n")

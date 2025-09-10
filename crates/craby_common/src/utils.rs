@@ -21,6 +21,10 @@ pub fn sanitize_str(value: &str) -> SanitizedString {
     SanitizedString(str)
 }
 
+pub fn pascal_case(value: &str) -> String {
+    stringcase::pascal_case(value)
+}
+
 pub fn to_lib_name(str: &SanitizedString) -> String {
     format!("lib{}.a", str.0.replace("_", ""))
 }

@@ -151,7 +151,7 @@ export function subtract(a: number, b: number): number {
 
 After running `craby codegen`, you'll get:
 
-```rust
+```rust,ignore
 // crates/lib/src/lib.rs (auto-generated)
 pub mod calculator {
     use crate::impls;
@@ -168,7 +168,7 @@ pub mod calculator {
 mod impls;
 ```
 
-```rust
+```rust,ignore
 // crates/lib/src/impls.rs (you implement this)
 pub fn add(a: f64, b: f64) -> f64 {
     a + b

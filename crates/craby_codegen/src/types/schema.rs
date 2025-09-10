@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use craby_common::{
-    constants::GENERATED_MOD,
-    utils::{sanitize_str, to_impl_mod_name, SanitizedString},
-};
+use craby_common::utils::{pascal_case, sanitize_str, to_impl_mod_name, SanitizedString};
 use indoc::formatdoc;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -158,6 +155,9 @@ impl TypeAnnotation {
             TypeAnnotation::StringTypeAnnotation => Type::String,
             TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
             TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
+
+            // Void type
+            TypeAnnotation::VoidTypeAnnotation => Type::Void,
 
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
@@ -354,7 +354,7 @@ impl FunctionSpec {
 
     /// Returns the Rust function signature for the `FunctionSpec`.
     ///
-    /// ```rs
+    /// ```rust,ignore
     /// pub my_func(arg1: Foo, arg2: Bar) {
     ///     my_mod_impl::my_func(arg1, arg2)
     /// }
@@ -389,7 +389,7 @@ impl FunctionSpec {
 
     /// Returns the FFI function signature for the `FunctionSpec`.
     ///
-    /// ```rs
+    /// ```rust,ignore
     /// #[no_mangle]
     /// pub extern "C" fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
     ///     my_mod_impl::my_func(arg1, arg2)
@@ -408,6 +408,8 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
+                let impl_mod_name = to_impl_mod_name(mod_name);
+                let impl_name = pascal_case(mod_name.to_str());
                 let fn_name = sanitize_str(&self.name);
                 let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
 
@@ -423,15 +425,15 @@ impl FunctionSpec {
                     r#"
                     #[no_mangle]
                     pub extern "C" fn {orig_fn_name}({params_sig}){ret} {{
-                        {generated_mod}::{mod_name}::{fn_name}({fn_args})
+                        {impl_mod_name}::{impl_name}::{fn_name}({fn_args})
                     }}"#,
                     orig_fn_name = self.name,
                     params_sig = params_sig,
                     ret = ret_annotation,
-                    mod_name = mod_name.to_string(),
+                    impl_name = impl_name,
+                    impl_mod_name = impl_mod_name.to_string(),
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
-                    generated_mod = GENERATED_MOD,
                 }
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),

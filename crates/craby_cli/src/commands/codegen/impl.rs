@@ -28,7 +28,7 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
     info!("{} module schema(s) found", opts.schemas.len());
 
     let total_mods = opts.schemas.len();
-    let mut lib_codes = vec![];
+    let mut spec_codes = vec![];
     let mut ffi_codes = vec![];
     let mut mod_imports = vec![format!("pub(crate) mod {};", GENERATED_MOD)];
     let generator = CodeGenerator::new();
@@ -55,11 +55,11 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
             let sanitized_mod_name = sanitize_str(&schema.module_name);
             let impl_mod_name = to_impl_mod_name(&sanitized_mod_name);
 
-            let lib_code = generator.generate_module(&schema);
-            let ffi_code = generator.generate_ffi_module(&schema);
-            let empty_code = generator.generate_empty_module(&schema);
+            let spec_code = generator.generate_spec(&schema);
+            let ffi_code = generator.generate_ffi(&schema);
+            let impl_code = generator.generate_impl(&schema);
 
-            lib_codes.push(lib_code);
+            spec_codes.push(spec_code);
             ffi_codes.push(ffi_code);
             mod_imports.push(format!("pub(crate) mod {};", impl_mod_name));
 
@@ -67,7 +67,7 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
                 &opts.project_root,
                 &schema.module_name,
                 &format!("{}.rs", impl_mod_name),
-                empty_code + "\n",
+                impl_code + "\n",
             )?;
 
             Ok::<(), anyhow::Error>(())
@@ -75,7 +75,7 @@ pub fn r#impl(opts: CodegenOptions) -> anyhow::Result<()> {
 
     ffi_codes.push(mod_imports.join("\n"));
 
-    let lib_code = lib_codes.join("\n\n");
+    let lib_code = spec_codes.join("\n\n");
     let ffi_code = ffi_codes.join("\n\n");
 
     write_rs(&opts.project_root, "lib.rs", ffi_code + "\n")?;

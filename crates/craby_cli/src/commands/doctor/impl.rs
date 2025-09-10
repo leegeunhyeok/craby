@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use craby_common::{
     constants::toolchain::TARGETS,
@@ -14,9 +14,6 @@ pub struct DoctorOptions {
 }
 
 pub fn r#impl(opts: DoctorOptions) -> anyhow::Result<()> {
-    let package_json = fs::read_to_string(opts.project_root.join("package.json"))?;
-    let package_json = serde_json::from_str::<serde_json::Value>(&package_json)?;
-
     println!("\n{}", "Rust".bold().dimmed());
     let installed_targets = get_installed_targets()?;
     TARGETS.iter().for_each(|target| {

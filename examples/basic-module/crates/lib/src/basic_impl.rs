@@ -1,8 +1,14 @@
 // Implement module for 'Basic' here
-pub fn numeric_method(arg: f64) -> f64 {
-    unimplemented!();
-}
+use crate::generated::BasicSpec;
 
-pub fn boolean_method(arg: bool) -> bool {
-    unimplemented!();
+pub struct Basic;
+
+impl BasicSpec for Basic {
+    fn numeric_method(arg: f64) -> f64 {
+        arg * 2.0
+    }
+
+    fn boolean_method(arg: bool) -> bool {
+        !arg
+    }
 }
