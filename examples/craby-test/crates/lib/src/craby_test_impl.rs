@@ -10,4 +10,8 @@ impl CrabyTestSpec for CrabyTest {
     fn boolean_method(arg: bool) -> bool {
         !arg
     }
+
+    fn string_method(arg: String) -> String {
+        format!("From Rust: {}", arg)
+    }
 }

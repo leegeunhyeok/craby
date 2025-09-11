@@ -10,4 +10,6 @@ double numericMethod(double arg);
 
 bool booleanMethod(bool arg);
 
+const char *stringMethod(const char *arg);
+
 }  // extern "C"

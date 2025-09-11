@@ -272,7 +272,7 @@ impl TypeAnnotation {
             // String types
             TypeAnnotation::StringTypeAnnotation
             | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "String",
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "*const c_char",
 
             _ => {
                 error!("Unsupported type annotation: {:?}", self);

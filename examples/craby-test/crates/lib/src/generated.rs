@@ -2,4 +2,5 @@
 pub trait CrabyTestSpec {
     fn numeric_method(arg: f64) -> f64;
     fn boolean_method(arg: bool) -> bool;
+    fn string_method(arg: String) -> String;
 }
