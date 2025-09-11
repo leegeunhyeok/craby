@@ -6,11 +6,11 @@
     <array>
         <dict>
             <key>BinaryPath</key>
-            <string>libcrabytest.a</string>
+            <string>libcrabytest-craby.a</string>
             <key>LibraryIdentifier</key>
             <string>ios-arm64</string>
             <key>LibraryPath</key>
-            <string>libcrabytest.a</string>
+            <string>libcrabytest-craby.a</string>
             <key>HeadersPath</key>
             <string>Headers</string>
             <key>SupportedArchitectures</key>
@@ -22,11 +22,11 @@
         </dict>
         <dict>
             <key>BinaryPath</key>
-            <string>libcrabytest.a</string>
+            <string>libcrabytest-craby.a</string>
             <key>LibraryIdentifier</key>
             <string>ios-arm64-simulator</string>
             <key>LibraryPath</key>
-            <string>libcrabytest.a</string>
+            <string>libcrabytest-craby.a</string>
             <key>HeadersPath</key>
             <string>Headers</string>
             <key>SupportedArchitectures</key>

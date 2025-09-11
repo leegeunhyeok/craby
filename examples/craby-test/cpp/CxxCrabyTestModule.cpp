@@ -1,5 +1,5 @@
 #include "CxxCrabyTestModule.hpp"
-#include "libcrabytest.h"
+#include "libcrabytest-craby.h"
 
 using namespace facebook;
 

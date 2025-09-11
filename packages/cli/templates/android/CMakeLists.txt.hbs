@@ -11,7 +11,7 @@ find_package(hermes-engine REQUIRED CONFIG)
 # Import the pre-built Craby library
 add_library({{ kebab_name }}-lib STATIC IMPORTED)
 set_target_properties({{ kebab_name }}-lib PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/lib{{ flat_name }}.a"
+  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/lib{{ flat_name }}-craby.a"
 )
 target_include_directories({{ kebab_name }}-lib INTERFACE
   "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/include"
@@ -20,7 +20,7 @@ target_include_directories({{ kebab_name }}-lib INTERFACE
 # Generated C++ source files by the Craby
 add_library(cxx-{{ kebab_name }} SHARED
   src/main/cpp/OnLoad.cpp
-  ../cpp/{{cxx_name}}.cpp
+  ../cpp/{{ cxx_name }}.cpp
 )
 target_include_directories(cxx-{{ kebab_name }} PRIVATE
   ../cpp

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "basic-module": ["./src/index"]
+      "craby-test": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,

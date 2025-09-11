@@ -2,7 +2,7 @@ pub mod android {
     use std::{fs, path::PathBuf};
 
     use craby_common::{
-        constants::{self, binding_header_dir, crate_target_dir, lib_header_name, lib_name},
+        constants::{self, binding_header_dir, cargo_lib_name, crate_target_dir, lib_header_name, lib_name},
         utils::string::SanitizedString,
     };
     use log::debug;
@@ -19,6 +19,7 @@ pub mod android {
     }
 
     pub fn create_abi_files(opts: CreateAbiFilesOptions) -> Result<(), anyhow::Error> {
+        let cargo_lib_name = cargo_lib_name(&opts.lib_name);
         let lib_name = lib_name(&opts.lib_name);
         let lib_header = lib_header_name(&opts.lib_name);
         let abi_base_path = abi_base_path(&opts.project_root);
@@ -28,7 +29,7 @@ pub mod android {
         for target in get_targets() {
             let abi = get_abi_by_target(&target);
 
-            let from_lib = crate_target_dir(&opts.project_root, &target).join(&lib_name);
+            let from_lib = crate_target_dir(&opts.project_root, &target).join(&cargo_lib_name);
             let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
 
             let to = abi_base_path.join(abi);
@@ -86,9 +87,14 @@ pub mod ios {
     use indoc::formatdoc;
     use log::debug;
 
-    use crate::constants::{self, ios::{HEADERS_DIR, LIB_IDENTIFIER_ARM64, LIB_IDENTIFIER_ARM64_SIMULATOR}};
+    use crate::constants::{
+        self,
+        ios::{HEADERS_DIR, LIB_IDENTIFIER_ARM64, LIB_IDENTIFIER_ARM64_SIMULATOR},
+    };
     use craby_common::{
-        constants::{binding_header_dir, crate_target_dir, lib_header_name, lib_name},
+        constants::{
+            binding_header_dir, cargo_lib_name, crate_target_dir, lib_header_name, lib_name,
+        },
         utils::{ios::xcframework_name, string::SanitizedString},
     };
 
@@ -99,6 +105,7 @@ pub mod ios {
     }
 
     pub fn create_xcframework(opts: CreateXcframeworkOptions) -> Result<(), anyhow::Error> {
+        let cargo_lib_name = cargo_lib_name(&opts.lib_name);
         let lib_name = lib_name(&opts.lib_name);
         let lib_header = lib_header_name(&opts.lib_name);
         let xcframework_path = ios_framework_path(&opts.project_root, &opts.lib_name);
@@ -112,7 +119,7 @@ pub mod ios {
         debug!("Wrote Info.plist");
 
         for target in get_targets() {
-            let from_lib = crate_target_dir(&opts.project_root, &target).join(&lib_name);
+            let from_lib = crate_target_dir(&opts.project_root, &target).join(&cargo_lib_name);
             let from_header = binding_header_dir(&opts.project_root).join(&lib_header);
 
             let to = xcframework_path.join(get_lib_identifier(&target));

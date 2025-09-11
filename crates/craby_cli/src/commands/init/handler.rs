@@ -8,7 +8,7 @@ use craby_build::setup::setup_project;
 use craby_codegen::types::schema::Schema;
 use craby_common::{
     env::is_rustup_installed,
-    utils::string::{flat_case, pascal_case, snake_case},
+    utils::string::{flat_case, kebab_case, pascal_case, snake_case},
 };
 use inquire::Text;
 use log::{debug, info, warn};
@@ -38,7 +38,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     let flat_name = flat_case(&crate_name);
 
     // fast-calculator
-    let kebab_name = crate_name.replace("_", "-");
+    let kebab_name = kebab_case(&crate_name);
 
     // FastCalculatorModuleProvider
     let objc_provider_name = format!("{}ModuleProvider", pascal_name);
