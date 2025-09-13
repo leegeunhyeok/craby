@@ -3,7 +3,8 @@
 
 using namespace facebook;
 
-namespace craby::crabytest {
+namespace craby {
+namespace crabytest {
 
 CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
@@ -14,6 +15,8 @@ CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInv
       MethodMetadata{1, &CxxCrabyTestModule::JSI__booleanMethod};
   methodMap_["stringMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::JSI__stringMethod};
+  methodMap_["objectMethod"] =
+      MethodMetadata{1, &CxxCrabyTestModule::JSI__objectMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
@@ -67,28 +70,28 @@ jsi::Value CxxCrabyTestModule::JSI__objectMethod(jsi::Runtime &rt,
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isObject()) {
     auto arg0 = args[0].asObject(rt);
+    auto __TestObject$foo = arg0.getProperty(rt, "foo");
+    auto __TestObject$bar = arg0.getProperty(rt, "bar");
+    auto __TestObject$baz = arg0.getProperty(rt, "baz");
 
-    auto testObject__foo = arg0.getProperty(rt, "foo");
-    auto testObject__bar = arg0.getProperty(rt, "bar");
-    auto testObject__baz = arg0.getProperty(rt, "baz");
-
+    // Validator
     if (!(
-      testObject__foo.isString() &&
-      testObject__bar.isNumber() &&
-      testObject__baz.isBool()
+      __TestObject$foo.isString() &&
+      __TestObject$bar.isNumber() &&
+      __TestObject$baz.isBool()
     )) {
       throw jsi::JSError(rt, "Invalid argument (TestObject)");
     }
 
     craby::codegen::crabytest::TestObject testObject = {
-      testObject__foo.asString(rt).utf8(rt).c_str(),
-      testObject__bar.asNumber(),
-      testObject__baz.asBool()
+      __TestObject$foo.asString(rt).utf8(rt).c_str(),
+      __TestObject$bar.asNumber(),
+      __TestObject$baz.asBool()
     };
 
     auto ret = craby::codegen::crabytest::objectMethod(testObject);
     jsi::Object obj = jsi::Object(rt);
-    obj.setProperty(rt, "foo", jsi::String::createFromUtf8(rt, ret.foo));
+    obj.setProperty(rt, "foo", jsi::String::createFromUtf8(rt, ret.foo.c_str()));
     obj.setProperty(rt, "bar", jsi::Value(ret.bar));
     obj.setProperty(rt, "baz", jsi::Value(ret.baz));
 
@@ -98,4 +101,5 @@ jsi::Value CxxCrabyTestModule::JSI__objectMethod(jsi::Runtime &rt,
   throw jsi::JSError(rt, "Expected 1 argument (string)");
 }
 
-} // namespace craby::crabytest
+} // namespace crabytest
+} // namespace craby

@@ -3,7 +3,8 @@
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
 
-namespace craby::crabytest {
+namespace craby {
+namespace crabytest {
 
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
@@ -35,4 +36,5 @@ protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
 };
 
-} // namespace craby::crabytest
+} // namespace crabytest
+} // namespace craby
