@@ -11,6 +11,11 @@ use craby_common::{
 };
 use log::debug;
 
+const IOS_TARGETS: [Target; 2] = [
+    Target::Ios(Identifier::Arm64),
+    Target::Ios(Identifier::Arm64Simulator),
+];
+
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
     let ios_base_path = ios_base_path(&config.project_root);
 
@@ -21,21 +26,18 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
 
     let xcframework_path = create_xcframework(&config)?;
 
-    for target in [
-        Target::Ios(Identifier::Arm64),
-        Target::Ios(Identifier::Arm64Simulator),
-    ] {
+    for target in IOS_TARGETS {
         if let Target::Ios(identifier) = &target {
             let artifacts = Artifacts::get_artifacts(config, &target)?;
             let identifier = identifier.to_str();
 
-            // {ios_base_path}/src
+            // ios/src
             artifacts.copy_to(ArtifactType::Src, &ios_base_path.join("src"))?;
 
-            // {ios_base_path}/include
+            // ios/include
             artifacts.copy_to(ArtifactType::Header, &ios_base_path.join("include"))?;
 
-            // {ios_base_path}/framework/lib{lib_name}.xcframework/{identifier}
+            // ios/framework/lib{lib_name}.xcframework/{identifier}
             artifacts.copy_to(ArtifactType::Lib, &xcframework_path.join(identifier))?;
         } else {
             unreachable!();

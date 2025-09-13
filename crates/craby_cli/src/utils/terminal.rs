@@ -1,4 +1,4 @@
-use std::{thread::sleep, time::Duration};
+use std::time::Duration;
 
 use indicatif::{ProgressBar, ProgressStyle};
 use syntect::{
@@ -6,7 +6,7 @@ use syntect::{
 };
 use syntect_assets::assets::HighlightingAssets;
 
-pub fn with_spinner(msg: &str, f: impl FnOnce() -> anyhow::Result<()>) -> anyhow::Result<()> {
+pub fn with_spinner(msg: &str, f: impl FnOnce(&ProgressBar) -> anyhow::Result<()>) -> anyhow::Result<()> {
     let pb = ProgressBar::new_spinner();
 
     pb.set_message(msg.to_string());
@@ -16,8 +16,7 @@ pub fn with_spinner(msg: &str, f: impl FnOnce() -> anyhow::Result<()>) -> anyhow
             .unwrap(),
     );
     pb.enable_steady_tick(Duration::from_millis(120));
-    f()?;
-    sleep(Duration::from_secs(3));
+    f(&pb)?;
     pb.finish_and_clear();
 
     Ok(())

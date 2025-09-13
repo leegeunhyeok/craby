@@ -9,6 +9,13 @@ use crate::{
     constants::{android::Abi, toolchain::Target},
 };
 
+const ANDROID_TARGETS: [Target; 4] = [
+    Target::Android(Abi::Arm64V8a),
+    Target::Android(Abi::ArmeAbiV7a),
+    Target::Android(Abi::X86_64),
+    Target::Android(Abi::X86),
+];
+
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
     let android_path = android_path(&config.project_root);
     let jni_base_path = jni_base_path(&config.project_root);
@@ -18,12 +25,7 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
         debug!("Cleaned up existing JNI base directory");
     }
 
-    for target in [
-        Target::Android(Abi::Arm64V8a),
-        Target::Android(Abi::ArmeAbiV7a),
-        Target::Android(Abi::X86_64),
-        Target::Android(Abi::X86),
-    ] {
+    for target in ANDROID_TARGETS {
         if let Target::Android(abi) = &target {
             let artifacts = Artifacts::get_artifacts(config, &target)?;
             let abi = abi.to_str();

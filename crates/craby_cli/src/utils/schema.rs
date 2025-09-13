@@ -33,11 +33,24 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
                 println!("{} {}", method.name, "(not included)".dimmed());
             }
         });
+
+    // Type Aliases
+    println!("├─ Type Aliases ({})", schema.alias_map.len());
+    schema.alias_map.keys().enumerate().for_each(|(i, name)| {
+        if i == schema.alias_map.len() - 1 {
+            print!("│   └─ ");
+        } else {
+            print!("│   ├─ ");
+        }
+        println!("{}", name.blue());
+    });
+
     // TODO: Impl
+    // Event Emitters
     println!("├─ Event Emitters (0)");
     println!("│  {}", "(None)".dimmed());
-    println!("├─ Type Aliases (0)");
-    println!("│  {}", "(None)".dimmed());
+
+    // Enums
     println!("└─ Enums (0)");
     println!("   {}", "(None)".dimmed());
 }

@@ -106,7 +106,10 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
 
     if is_rustup_installed() {
         info!("Setting up the Rust project");
-        with_spinner("Setting up the project, please wait...", setup_project)?;
+        with_spinner("Setting up the project, please wait...", |_| {
+            setup_project()?;
+            Ok(())
+        })?;
         info!("Rust project setup completed");
     } else {
         warn!(

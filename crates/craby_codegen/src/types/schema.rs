@@ -176,8 +176,8 @@ impl TypeAnnotation {
             // Void type
             TypeAnnotation::VoidTypeAnnotation => Type::Void,
 
-            // TODO
-            TypeAnnotation::TypeAliasTypeAnnotation { .. } => Type::Object,
+            // Type alias
+            TypeAnnotation::TypeAliasTypeAnnotation { name } => Type::Alias(name.clone()),
 
             _ => {
                 error!("Unsupported type annotation: {:?}", self);

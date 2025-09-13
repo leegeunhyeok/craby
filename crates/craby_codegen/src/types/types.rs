@@ -6,6 +6,7 @@ pub enum Type {
     Array(String),
     Nullable(String),
     Object,
+    Alias(String),
 }
 
 impl ToString for Type {
@@ -19,6 +20,7 @@ impl ToString for Type {
             Type::Nullable(t) => format!("Option<{}>", t),
             // TODO
             Type::Object => "()".to_string(),
+            Type::Alias(t) => t.clone(),
         }
     }
 }
