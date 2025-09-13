@@ -51,15 +51,18 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             )),
         },
     );
-    assert_with_status(format!("Build configuration {}", "(build.gradle)".dimmed()).as_str(), || {
-        if is_gradle_configured(&opts.project_root)? {
-            Ok(Status::Ok)
-        } else {
-            Err(anyhow::anyhow!(
-                "`android/build.gradle` is not configured correctly"
-            ))
-        }
-    });
+    assert_with_status(
+        format!("Build configuration {}", "(build.gradle)".dimmed()).as_str(),
+        || {
+            if is_gradle_configured(&opts.project_root)? {
+                Ok(Status::Ok)
+            } else {
+                Err(anyhow::anyhow!(
+                    "`android/build.gradle` is not configured correctly"
+                ))
+            }
+        },
+    );
 
     println!("\n{}", "iOS".bold().dimmed());
     assert_with_status(

@@ -4,10 +4,11 @@ use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{ios::Identifier, toolchain::Target},
 };
+
+use craby_codegen::{constants::objc_mod_provider_name, platform::ios::info_plist};
 use craby_common::{
-    config::CompleteCrabyConfig, constants::{dest_lib_name, lib_base_name}, utils::string::SanitizedString,
+    config::CompleteCrabyConfig, constants::lib_base_name, utils::string::SanitizedString,
 };
-use indoc::formatdoc;
 use log::debug;
 
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
@@ -41,14 +42,25 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
         }
     }
 
+    fs::write(
+        ios_base_path.join(format!(
+            "{}.mm",
+            objc_mod_provider_name(&config.project.name)
+        )),
+        craby_codegen::platform::ios::objc_mod_provider(&config.project.name),
+    )?;
+
     Ok(())
 }
 
 fn create_xcframework(config: &CompleteCrabyConfig) -> Result<PathBuf, anyhow::Error> {
     let name = SanitizedString::from(&config.project.name);
-    let dest_lib_name = dest_lib_name(&name);
     let lib_base_name = lib_base_name(&name);
-    let info_plist_content = info_plist_content(&dest_lib_name);
+    let info_plist_content = info_plist(
+        &config.project.name,
+        Identifier::Arm64.to_str(),
+        Identifier::Arm64Simulator.to_str(),
+    );
     let framework_path = ios_base_path(&config.project_root).join("framework");
     let xcframework_path =
         framework_path.join(format!("lib{}.xcframework", lib_base_name.to_string()));
@@ -64,57 +76,6 @@ fn create_xcframework(config: &CompleteCrabyConfig) -> Result<PathBuf, anyhow::E
     fs::write(info_plist_path, info_plist_content)?;
 
     Ok(xcframework_path)
-}
-
-fn info_plist_content(lib_name: &String) -> String {
-    formatdoc! {
-        r#"<?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>AvailableLibraries</key>
-            <array>
-                <dict>
-                    <key>BinaryPath</key>
-                    <string>{lib_name}</string>
-                    <key>LibraryIdentifier</key>
-                    <string>{lib_identifier}</string>
-                    <key>LibraryPath</key>
-                    <string>{lib_name}</string>
-                    <key>SupportedArchitectures</key>
-                    <array>
-                        <string>arm64</string>
-                    </array>
-                    <key>SupportedPlatform</key>
-                    <string>ios</string>
-                </dict>
-                <dict>
-                    <key>BinaryPath</key>
-                    <string>{lib_name}</string>
-                    <key>LibraryIdentifier</key>
-                    <string>{lib_sim_identifier}</string>
-                    <key>LibraryPath</key>
-                    <string>{lib_name}</string>
-                    <key>SupportedArchitectures</key>
-                    <array>
-                        <string>arm64</string>
-                    </array>
-                    <key>SupportedPlatform</key>
-                    <string>ios</string>
-                    <key>SupportedPlatformVariant</key>
-                    <string>simulator</string>
-                </dict>
-            </array>
-            <key>CFBundlePackageType</key>
-            <string>XFWK</string>
-            <key>XCFrameworkFormatVersion</key>
-            <string>1.0</string>
-        </dict>
-        </plist>"#,
-        lib_name = lib_name,
-        lib_identifier = Identifier::Arm64.to_str(),
-        lib_sim_identifier = Identifier::Arm64Simulator.to_str(),
-    }
 }
 
 fn ios_base_path(project_root: &PathBuf) -> PathBuf {

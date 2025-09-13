@@ -1,0 +1,11 @@
+use craby_common::utils::string::pascal_case;
+
+/// eg. `CxxFastCalculatorModule`
+pub fn cxx_mod_cls_name(name: &String) -> String {
+    format!("Cxx{}Module", pascal_case(name.as_str()))
+}
+
+/// eg. `FastCalculatorModuleProvider`
+pub fn objc_mod_provider_name(name: &String) -> String {
+    format!("{}ModuleProvider", pascal_case(name.as_str()))
+}

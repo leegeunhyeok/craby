@@ -1,7 +1,10 @@
-use craby_common::{constants::GENERATED_MOD, utils::string::pascal_case};
+use craby_common::utils::string::pascal_case;
 use indoc::formatdoc;
 
-use crate::{types::schema::Schema, utils::indent_str};
+use crate::{
+    types::schema::{CxxFunction, FunctionSpec, Schema},
+    utils::indent_str,
+};
 
 pub struct CodeGenerator;
 
@@ -39,7 +42,7 @@ impl CodeGenerator {
     /// Generate the empty module for the given schema.
     ///
     /// ```rust,ignore
-    /// use crate::generated::MyModuleSpec;
+    /// use crate::{ffi::ffi::*, generated::*};
     ///
     /// pub struct MyModule;
     ///
@@ -72,7 +75,7 @@ impl CodeGenerator {
 
         formatdoc! {
           r#"
-          use crate::generated::{trait_name};
+          use crate::{{ffi::ffi::*, generated::*}};
 
           pub struct {mod_name};
 
@@ -85,35 +88,25 @@ impl CodeGenerator {
         }
     }
 
-    /// Generate the empty module for the given schema.
+    /// Returns the CXX(FFI) function signature for the `FunctionSpec`.
     ///
     /// ```rust,ignore
-    /// use generated::*;
-    /// use std::os::raw::*;
+    /// // extern function
+    /// #[cxx_name = "myFunc"]
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
     ///
-    /// #[no_mangle]
-    /// pub extern "C" fn multiply(a: f64, b: String) -> f64 {
-    ///     my_module_impl::MyModule::multiply(a, b)
+    /// // impl function
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
+    ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn generate_ffi(&self, schema: &Schema) -> String {
-        let imports = vec![
-            format!("use {}::*;", GENERATED_MOD),
-            "use std::os::raw::*;".to_string(),
-        ];
-
-        let methods = schema
+    pub fn get_cxx_functions(&self, schema: &Schema) -> Vec<CxxFunction> {
+        schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_ffi_func(&schema.module_name))
-            .collect::<Vec<_>>();
-
-        format!(
-            "{imports}\n\n{methods}",
-            imports = imports.join("\n"),
-            methods = methods.join("\n\n")
-        )
+            .map(|spec: &FunctionSpec| spec.to_cxx_func(&schema.module_name))
+            .collect::<Vec<_>>()
     }
 }
 
@@ -468,7 +461,7 @@ mod tests {
         assert_eq!(
             result,
             [
-                "use crate::generated::MyModuleSpec;",
+                "use crate::{ffi::ffi::*, generated::*};",
                 "",
                 "pub struct MyModule;",
                 "",
@@ -526,17 +519,23 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_ffi(&schema);
+        let result = generator.get_cxx_functions(&schema);
+        let result = result.get(0).unwrap();
 
         assert_eq!(
-            result,
+            result.extern_func,
             [
-                "use generated::*;",
-                "use std::os::raw::*;",
-                "",
-                "#[no_mangle]",
-                "pub extern \"C\" fn multiply(a: f64, b: String) -> f64 {",
-                "    my_module_impl::MyModule::multiply(a, b)",
+                "#[cxx_name = \"multiply\"]",
+                "fn multiply(a: f64, b: String) -> f64;",
+            ]
+            .join("\n")
+        );
+
+        assert_eq!(
+            result.impl_func,
+            [
+                "fn multiply(a: f64, b: String) -> f64 {",
+                "    MyModule::multiply(a, b)",
                 "}",
             ]
             .join("\n")

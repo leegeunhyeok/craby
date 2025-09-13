@@ -177,7 +177,7 @@ impl TypeAnnotation {
             TypeAnnotation::VoidTypeAnnotation => Type::Void,
 
             // TODO
-            TypeAnnotation::TypeAliasTypeAnnotation { .. }=> Type::Object,
+            TypeAnnotation::TypeAliasTypeAnnotation { .. } => Type::Object,
 
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
@@ -289,7 +289,7 @@ impl TypeAnnotation {
             // String types
             TypeAnnotation::StringTypeAnnotation
             | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "*const c_char",
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "String",
 
             // TODO
             TypeAnnotation::TypeAliasTypeAnnotation { .. } => "()",
@@ -410,15 +410,19 @@ impl FunctionSpec {
         }
     }
 
-    /// Returns the FFI function signature for the `FunctionSpec`.
+    /// Returns the CXX(FFI) function signature for the `FunctionSpec`.
     ///
     /// ```rust,ignore
-    /// #[no_mangle]
-    /// pub extern "C" fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
-    ///     my_mod_impl::my_func(arg1, arg2)
+    /// // extern function
+    /// #[cxx_name = "myFunc"]
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
+    ///
+    /// // impl function
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
+    ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn to_ffi_func(&self, mod_name: &String) -> String {
+    pub fn to_cxx_func(&self, mod_name: &String) -> CxxFunction {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
@@ -431,7 +435,6 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let impl_mod_name = impl_mod_name(mod_name);
                 let impl_name = pascal_case(mod_name);
                 let fn_name = snake_case(&self.name);
                 let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
@@ -444,22 +447,39 @@ impl FunctionSpec {
                     format!(" -> {}", return_type)
                 };
 
-                formatdoc! {
+                let extern_func = formatdoc! {
                     r#"
-                    #[no_mangle]
-                    pub extern "C" fn {orig_fn_name}({params_sig}){ret} {{
-                        {impl_mod_name}::{impl_name}::{fn_name}({fn_args})
-                    }}"#,
+                    #[cxx_name = "{orig_fn_name}"]
+                    fn {fn_name}({params_sig}){ret};"#,
                     orig_fn_name = self.name,
+                    fn_name = fn_name,
+                    params_sig = params_sig,
+                    ret = ret_annotation,
+                };
+
+                let impl_func = formatdoc! {
+                    r#"
+                    fn {fn_name}({params_sig}){ret} {{
+                        {impl_name}::{fn_name}({fn_args})
+                    }}"#,
                     params_sig = params_sig,
                     ret = ret_annotation,
                     impl_name = impl_name,
-                    impl_mod_name = impl_mod_name.to_string(),
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
+                };
+
+                CxxFunction {
+                    extern_func,
+                    impl_func,
                 }
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
     }
+}
+
+pub struct CxxFunction {
+    pub extern_func: String,
+    pub impl_func: String,
 }

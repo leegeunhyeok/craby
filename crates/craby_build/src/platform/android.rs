@@ -1,5 +1,6 @@
 use std::{fs, path::PathBuf};
 
+use craby_codegen::platform::android::{cmakelists, cxx_on_load};
 use craby_common::config::CompleteCrabyConfig;
 use log::debug;
 
@@ -9,6 +10,7 @@ use crate::{
 };
 
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
+    let android_path = android_path(&config.project_root);
     let jni_base_path = jni_base_path(&config.project_root);
 
     if jni_base_path.exists() {
@@ -28,25 +30,40 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
 
             debug!("Copying artifacts to JNI base path: {:?}", jni_base_path);
 
-            // {jni_base_path}/src
+            // android/src/main/jni/src
             artifacts.copy_to(ArtifactType::Src, &jni_base_path.join("src"))?;
 
-            // {jni_base_path}/include
+            // android/src/main/jni/include
             artifacts.copy_to(ArtifactType::Header, &jni_base_path.join("include"))?;
 
-            // {jni_base_path}/libs/{abi}
+            // android/src/main/jni/libs/{abi}
             artifacts.copy_to(ArtifactType::Lib, &jni_base_path.join("libs").join(abi))?;
         } else {
             unreachable!();
         }
     }
 
+    // android/CMakeLists.txt
+    fs::write(
+        android_path.join("CMakeLists.txt"),
+        cmakelists(&config.project.name),
+    )?;
+
+    // android/src/main/jni/OnLoad.cpp
+    fs::write(
+        jni_base_path.join("OnLoad.cpp"),
+        cxx_on_load(&config.project.name),
+    )?;
+
     Ok(())
 }
 
+fn android_path(project_root: &PathBuf) -> PathBuf {
+    project_root.join("android")
+}
+
 fn jni_base_path(project_root: &PathBuf) -> PathBuf {
-    project_root
-        .join("android")
+    android_path(project_root)
         .join("src")
         .join("main")
         .join("jni")

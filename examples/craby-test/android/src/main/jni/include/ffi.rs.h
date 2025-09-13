@@ -95,18 +95,15 @@ private:
 #endif
 
 namespace craby {
-  namespace codegen {
-    namespace crabytest {
-      struct TestObject;
-    }
+  namespace ffi {
+    struct TestObject;
   }
 }
 
 namespace craby {
-namespace codegen {
-namespace crabytest {
-#ifndef CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
-#define CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+namespace ffi {
+#ifndef CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+#define CXXBRIDGE1_STRUCT_craby$ffi$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
@@ -114,7 +111,7 @@ struct TestObject final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$ffi$TestObject
 
 double numericMethod(double arg) noexcept;
 
@@ -122,9 +119,8 @@ bool booleanMethod(bool arg) noexcept;
 
 ::rust::String stringMethod(::rust::String arg) noexcept;
 
-::craby::codegen::crabytest::TestObject objectMethod(::craby::codegen::crabytest::TestObject arg) noexcept;
-} // namespace crabytest
-} // namespace codegen
+::craby::ffi::TestObject objectMethod(::craby::ffi::TestObject arg) noexcept;
+} // namespace ffi
 } // namespace craby
 
 #ifdef __clang__

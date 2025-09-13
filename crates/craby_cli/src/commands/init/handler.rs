@@ -5,10 +5,13 @@ use crate::{
     utils::{template::render_template, terminal::with_spinner},
 };
 use craby_build::setup::setup_project;
-use craby_codegen::types::schema::Schema;
+use craby_codegen::{
+    constants::{cxx_mod_cls_name, objc_mod_provider_name},
+    types::schema::Schema,
+};
 use craby_common::{
     env::is_rustup_installed,
-    utils::string::{flat_case, kebab_case, pascal_case, snake_case},
+    utils::string::{flat_case, kebab_case, snake_case},
 };
 use inquire::Text;
 use log::{debug, info, warn};
@@ -29,10 +32,8 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         .with_validator(validators::CrateNameValidator)
         .prompt()?;
 
-    let pascal_name = pascal_case(&crate_name);
-
     // CxxFastCalculatorModule
-    let cxx_name = format!("Cxx{}Module", pascal_name);
+    let cxx_name = cxx_mod_cls_name(&crate_name);
 
     // fastcalculator
     let flat_name = flat_case(&crate_name);
@@ -41,7 +42,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     let kebab_name = kebab_case(&crate_name);
 
     // FastCalculatorModuleProvider
-    let objc_provider_name = format!("{}ModuleProvider", pascal_name);
+    let objc_provider_name = objc_mod_provider_name(&crate_name);
 
     let root_template = opts.template_base_path.join("root");
     let crates_template = opts.template_base_path.join("crates");

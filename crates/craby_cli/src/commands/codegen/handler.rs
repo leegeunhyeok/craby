@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
-use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
+use craby_codegen::{
+    generator::CodeGenerator,
+    platform::rust::{ffi_rs, lib_rs},
+    types::schema::Schema,
+};
 use craby_common::{
     config::load_config,
     constants::{crate_dir, impl_mod_name, FFI_MOD, GENERATED_MOD},
@@ -27,12 +31,10 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     info!("{} module schema(s) found", opts.schemas.len());
 
     let total_mods = opts.schemas.len();
-    let mut spec_codes = vec![];
-    let mut ffi_codes = vec![];
-    let mut mod_imports = vec![
-        format!("pub(crate) mod {};", GENERATED_MOD),
-        format!("pub(crate) mod {};", FFI_MOD),
-    ];
+    let mut mod_names = vec![];
+    let mut spec_codes = vec!["use crate::ffi::ffi::*;".to_string()];
+    let mut cxx_functions = vec![];
+    let mut impl_mods = vec![];
     let generator = CodeGenerator::new();
 
     opts.schemas
@@ -55,12 +57,12 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
             let impl_mod_name = impl_mod_name(&schema.module_name);
             let spec_code = generator.generate_spec(&schema);
-            let ffi_code = generator.generate_ffi(&schema);
             let impl_code = generator.generate_impl(&schema);
+            cxx_functions.extend(generator.get_cxx_functions(&schema));
 
             spec_codes.push(spec_code);
-            ffi_codes.push(ffi_code);
-            mod_imports.push(format!("pub(crate) mod {};", impl_mod_name));
+            impl_mods.push(format!("pub(crate) mod {};", impl_mod_name));
+            mod_names.push(schema.module_name.clone());
 
             write_file(
                 crate_src_path.join(format!("{}.rs", impl_mod_name)),
@@ -71,14 +73,16 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             Ok::<(), anyhow::Error>(())
         })?;
 
-    ffi_codes.push(mod_imports.join("\n"));
-
     let spec_code = spec_codes.join("\n\n");
-    let ffi_code = ffi_codes.join("\n\n");
 
     write_file(
         crate_src_path.join("lib.rs"),
-        with_generated_comment(ffi_code),
+        with_generated_comment(lib_rs(&mod_names)),
+        true,
+    )?;
+    write_file(
+        crate_src_path.join(format!("{}.rs", FFI_MOD)),
+        with_generated_comment(ffi_rs(&mod_names, &cxx_functions)),
         true,
     )?;
     write_file(

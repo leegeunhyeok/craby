@@ -17,7 +17,7 @@ target_include_directories(craby-test-lib INTERFACE
   "${CMAKE_SOURCE_DIR}/src/main/jni/include"
 )
 
-# Generated C++ source files by the Craby
+# Generated C++ source files by Craby
 add_library(cxx-craby-test SHARED
   src/main/jni/OnLoad.cpp
   src/main/jni/src/ffi.rs.cc

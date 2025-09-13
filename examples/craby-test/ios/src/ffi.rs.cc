@@ -126,18 +126,15 @@ union MaybeUninit {
 #endif
 
 namespace craby {
-  namespace codegen {
-    namespace crabytest {
-      struct TestObject;
-    }
+  namespace ffi {
+    struct TestObject;
   }
 }
 
 namespace craby {
-namespace codegen {
-namespace crabytest {
-#ifndef CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
-#define CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+namespace ffi {
+#ifndef CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+#define CXXBRIDGE1_STRUCT_craby$ffi$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
@@ -145,38 +142,37 @@ struct TestObject final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$ffi$TestObject
 
 extern "C" {
-double craby$codegen$crabytest$cxxbridge1$numeric_method(double arg) noexcept;
+double craby$ffi$cxxbridge1$numeric_method(double arg) noexcept;
 
-bool craby$codegen$crabytest$cxxbridge1$boolean_method(bool arg) noexcept;
+bool craby$ffi$cxxbridge1$boolean_method(bool arg) noexcept;
 
-void craby$codegen$crabytest$cxxbridge1$string_method(::rust::String *arg, ::rust::String *return$) noexcept;
+void craby$ffi$cxxbridge1$string_method(::rust::String *arg, ::rust::String *return$) noexcept;
 
-void craby$codegen$crabytest$cxxbridge1$object_method(::craby::codegen::crabytest::TestObject *arg, ::craby::codegen::crabytest::TestObject *return$) noexcept;
+void craby$ffi$cxxbridge1$object_method(::craby::ffi::TestObject *arg, ::craby::ffi::TestObject *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
-  return craby$codegen$crabytest$cxxbridge1$numeric_method(arg);
+  return craby$ffi$cxxbridge1$numeric_method(arg);
 }
 
 bool booleanMethod(bool arg) noexcept {
-  return craby$codegen$crabytest$cxxbridge1$boolean_method(arg);
+  return craby$ffi$cxxbridge1$boolean_method(arg);
 }
 
 ::rust::String stringMethod(::rust::String arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  craby$codegen$crabytest$cxxbridge1$string_method(&arg, &return$.value);
+  craby$ffi$cxxbridge1$string_method(&arg, &return$.value);
   return ::std::move(return$.value);
 }
 
-::craby::codegen::crabytest::TestObject objectMethod(::craby::codegen::crabytest::TestObject arg) noexcept {
-  ::rust::ManuallyDrop<::craby::codegen::crabytest::TestObject> arg$(::std::move(arg));
-  ::rust::MaybeUninit<::craby::codegen::crabytest::TestObject> return$;
-  craby$codegen$crabytest$cxxbridge1$object_method(&arg$.value, &return$.value);
+::craby::ffi::TestObject objectMethod(::craby::ffi::TestObject arg) noexcept {
+  ::rust::ManuallyDrop<::craby::ffi::TestObject> arg$(::std::move(arg));
+  ::rust::MaybeUninit<::craby::ffi::TestObject> return$;
+  craby$ffi$cxxbridge1$object_method(&arg$.value, &return$.value);
   return ::std::move(return$.value);
 }
-} // namespace crabytest
-} // namespace codegen
+} // namespace ffi
 } // namespace craby
