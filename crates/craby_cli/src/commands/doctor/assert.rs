@@ -16,10 +16,10 @@ pub fn assert_with_status(label: &str, f: impl FnOnce() -> Result<Status, anyhow
             println!("{} {}", STATUS_OK.bold().green(), label);
         }
         Ok(Status::Warn(msg)) => {
-            println!("{} {} - {}", STATUS_WARN.bold().yellow(), label, msg);
+            println!("{} {} - {}", STATUS_WARN.bold().yellow(), label, msg.yellow());
         }
         Err(e) => {
-            println!("{} {} - {}", STATUS_ERR.bold().red(), label, e.to_string());
+            println!("{} {} - {}", STATUS_ERR.bold().red(), label, e.to_string().red());
             debug!("Assertion failed: {}", e);
         }
     }
