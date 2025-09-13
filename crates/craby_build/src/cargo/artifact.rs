@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use craby_common::{
     config::CompleteCrabyConfig,
-    constants::{cargo_lib_name, crate_target_dir, cxx_dir},
+    constants::{crate_target_dir, cxx_dir, lib_base_name},
     utils::string::SanitizedString,
 };
 use log::debug;
@@ -15,6 +15,7 @@ pub struct Artifacts {
     pub libs: Vec<PathBuf>,
 }
 
+#[derive(PartialEq)]
 pub enum ArtifactType {
     Src,
     Header,
@@ -31,8 +32,8 @@ impl Artifacts {
         let cxx_headers = collect_files(&cxx_dir, &["h", "hh"])?;
 
         let lib_name = SanitizedString::from(&config.project.name);
-        let lib =
-            crate_target_dir(&config.project_root, target.to_str()).join(cargo_lib_name(&lib_name));
+        let lib = crate_target_dir(&config.project_root, target.to_str())
+            .join(format!("lib{}.a", lib_base_name(&lib_name)));
 
         debug!("cxx_srcs: {:?}", cxx_srcs);
         debug!("cxx_headers: {:?}", cxx_headers);
@@ -62,7 +63,19 @@ impl Artifacts {
         }
 
         target_artifacts.iter().try_for_each(|src| {
-            let dest = dest.join(src.file_name().unwrap());
+            let file_name = src.file_name().unwrap();
+            let ext = src.extension().unwrap().to_string_lossy().to_string();
+
+            let dest = if artifact_type == ArtifactType::Lib {
+                // Add `-craby` suffix to the library name
+                let lib_name = file_name.to_string_lossy().to_string().replace(
+                    format!(".{}", ext).as_str(),
+                    format!("-craby.{}", ext).as_str(),
+                );
+                dest.join(lib_name)
+            } else {
+                dest.join(file_name)
+            };
 
             match artifact_type {
                 // Skip copying cxx bridge source and header files to the destination

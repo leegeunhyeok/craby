@@ -33,14 +33,15 @@ pub mod ios {}
 pub const GENERATED_MOD: &str = "generated";
 pub const TEMP_DIR: &str = ".craby";
 
-/// Returns the name of the library for the Cargo manifest.
+pub fn lib_base_name(name: &SanitizedString) -> String {
+    format!("{}", flat_case(name.0.as_ref()))
+}
+
+/// Returns the destination name of the built library
 ///
-/// Example: `libsomelibrary.a`
-///
-/// Cargo library names cannot contain hyphens,
-/// so we use flat case for the library name in the Cargo manifest.
-pub fn cargo_lib_name(name: &SanitizedString) -> String {
-    format!("lib{}.a", flat_case(name.0.as_ref()))
+/// Example: `libsomelibrary-craby.a`
+pub fn dest_lib_name(name: &SanitizedString) -> String {
+    format!("lib{}-craby.a", flat_case(name.0.as_ref()))
 }
 
 /// Example: `some_library_impl`
