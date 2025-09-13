@@ -13,22 +13,22 @@ public:
   CxxCrabyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
 
   static facebook::jsi::Value
-  JSI__numericMethod(facebook::jsi::Runtime &rt,
+  numericMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  JSI__booleanMethod(facebook::jsi::Runtime &rt,
+  booleanMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  JSI__stringMethod(facebook::jsi::Runtime &rt,
+  stringMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  JSI__objectMethod(facebook::jsi::Runtime &rt,
+  objectMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 

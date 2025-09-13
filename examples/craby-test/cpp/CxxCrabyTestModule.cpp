@@ -10,18 +10,18 @@ CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInv
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
 
   methodMap_["numericMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::JSI__numericMethod};
+      MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
   methodMap_["booleanMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::JSI__booleanMethod};
+      MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["stringMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::JSI__stringMethod};
+      MethodMetadata{1, &CxxCrabyTestModule::stringMethod};
   methodMap_["objectMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::JSI__objectMethod};
+      MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
 
-jsi::Value CxxCrabyTestModule::JSI__numericMethod(jsi::Runtime &rt,
+jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
@@ -35,7 +35,7 @@ jsi::Value CxxCrabyTestModule::JSI__numericMethod(jsi::Runtime &rt,
   throw jsi::JSError(rt, "Expected 1 argument (number)");
 }
 
-jsi::Value CxxCrabyTestModule::JSI__booleanMethod(jsi::Runtime &rt,
+jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
@@ -49,7 +49,7 @@ jsi::Value CxxCrabyTestModule::JSI__booleanMethod(jsi::Runtime &rt,
   throw jsi::JSError(rt, "Expected 1 argument (boolean)");
 }
 
-jsi::Value CxxCrabyTestModule::JSI__stringMethod(jsi::Runtime &rt,
+jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
@@ -63,7 +63,7 @@ jsi::Value CxxCrabyTestModule::JSI__stringMethod(jsi::Runtime &rt,
   throw jsi::JSError(rt, "Expected 1 argument (string)");
 }
 
-jsi::Value CxxCrabyTestModule::JSI__objectMethod(jsi::Runtime &rt,
+jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
                                          react::TurboModule &turboModule,
                                          const jsi::Value args[],
                                          size_t count) {
