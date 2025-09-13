@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <type_traits>
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -87,14 +88,41 @@ private:
 } // namespace cxxbridge1
 } // namespace rust
 
+#if __cplusplus >= 201402L
+#define CXX_DEFAULT_VALUE(value) = value
+#else
+#define CXX_DEFAULT_VALUE(value)
+#endif
+
+namespace craby {
+  namespace codegen {
+    namespace crabytest {
+      struct TestObject;
+    }
+  }
+}
+
 namespace craby {
 namespace codegen {
 namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+#define CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+struct TestObject final {
+  ::rust::String foo;
+  double bar CXX_DEFAULT_VALUE(0);
+  bool baz CXX_DEFAULT_VALUE(false);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+
 double numericMethod(double arg) noexcept;
 
 bool booleanMethod(bool arg) noexcept;
 
 ::rust::String stringMethod(::rust::String arg) noexcept;
+
+::craby::codegen::crabytest::TestObject objectMethod(::craby::codegen::crabytest::TestObject arg) noexcept;
 } // namespace crabytest
 } // namespace codegen
 } // namespace craby

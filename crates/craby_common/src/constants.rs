@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::utils::string::{flat_case, SanitizedString};
+use crate::utils::string::{flat_case, snake_case, SanitizedString};
 
 pub mod toolchain {
     pub const TARGETS: &[&str] = &[
@@ -31,6 +31,7 @@ pub mod android {
 pub mod ios {}
 
 pub const GENERATED_MOD: &str = "generated";
+pub const FFI_MOD: &str = "ffi";
 pub const TEMP_DIR: &str = ".craby";
 
 pub fn lib_base_name(name: &SanitizedString) -> String {
@@ -45,8 +46,8 @@ pub fn dest_lib_name(name: &SanitizedString) -> String {
 }
 
 /// Example: `some_library_impl`
-pub fn impl_mod_name(name: &SanitizedString) -> String {
-    format!("{}_impl", name.0)
+pub fn impl_mod_name(name: &String) -> String {
+    format!("{}_impl", snake_case(name.as_str()))
 }
 
 pub fn tmp_dir(project_root: &PathBuf) -> PathBuf {

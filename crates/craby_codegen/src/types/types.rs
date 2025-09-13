@@ -5,6 +5,7 @@ pub enum Type {
     Void,
     Array(String),
     Nullable(String),
+    Object,
 }
 
 impl ToString for Type {
@@ -16,6 +17,8 @@ impl ToString for Type {
             Type::Void => "()".to_string(),
             Type::Array(t) => format!("Vec<{}>", t),
             Type::Nullable(t) => format!("Option<{}>", t),
+            // TODO
+            Type::Object => "()".to_string(),
         }
     }
 }

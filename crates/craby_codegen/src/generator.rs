@@ -1,7 +1,4 @@
-use craby_common::{
-    constants::GENERATED_MOD,
-    utils::string::{pascal_case, SanitizedString},
-};
+use craby_common::{constants::GENERATED_MOD, utils::string::pascal_case};
 use indoc::formatdoc;
 
 use crate::{types::schema::Schema, utils::indent_str};
@@ -100,7 +97,6 @@ impl CodeGenerator {
     /// }
     /// ```
     pub fn generate_ffi(&self, schema: &Schema) -> String {
-        let mod_name = SanitizedString::from(&schema.module_name);
         let imports = vec![
             format!("use {}::*;", GENERATED_MOD),
             "use std::os::raw::*;".to_string(),
@@ -110,7 +106,7 @@ impl CodeGenerator {
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_ffi_func(&mod_name))
+            .map(|spec| spec.to_ffi_func(&schema.module_name))
             .collect::<Vec<_>>();
 
         format!(

@@ -1,13 +1,19 @@
-import Basic from './NativeCrabyTest';
+import CrabyTestModule, { type TestObject } from "./NativeCrabyTest";
 
-export function numeric(arg: number): number {
-  return Basic.numericMethod(arg);
+export function numericMethod(arg: number) {
+  return CrabyTestModule.numericMethod(arg);
 }
 
-export function boolean(arg: boolean): boolean {
-  return Basic.booleanMethod(arg);
+export function booleanMethod(arg: boolean) {
+  return CrabyTestModule.booleanMethod(arg);
 }
 
-export function string(arg: string): string {
-  return Basic.stringMethod(arg);
+export function stringMethod(arg: string) {
+  return CrabyTestModule.stringMethod(arg);
 }
+
+export function objectMethod(arg: TestObject) {
+  return CrabyTestModule.objectMethod(arg);
+}
+
+export type { TestObject };

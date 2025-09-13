@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use craby_common::{
     constants::impl_mod_name,
-    utils::string::{pascal_case, SanitizedString},
+    utils::string::{pascal_case, snake_case, SanitizedString},
 };
 use indoc::formatdoc;
 use log::error;
@@ -17,10 +17,24 @@ pub struct Schema {
     // NativeModule, Component
     pub r#type: String,
     #[serde(rename = "aliasMap")]
-    pub alias_map: HashMap<String, String>,
+    pub alias_map: HashMap<String, Alias>,
     #[serde(rename = "enumMap")]
     pub enum_map: HashMap<String, String>,
     pub spec: Spec,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Alias {
+    pub r#type: String,
+    pub properties: Vec<AliasProperty>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AliasProperty {
+    pub name: String,
+    pub optional: bool,
+    #[serde(rename = "typeAnnotation")]
+    pub type_annotation: TypeAnnotation,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -162,6 +176,9 @@ impl TypeAnnotation {
             // Void type
             TypeAnnotation::VoidTypeAnnotation => Type::Void,
 
+            // TODO
+            TypeAnnotation::TypeAliasTypeAnnotation { .. }=> Type::Object,
+
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
                 unimplemented!();
@@ -274,6 +291,9 @@ impl TypeAnnotation {
             | TypeAnnotation::StringLiteralTypeAnnotation { .. }
             | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "*const c_char",
 
+            // TODO
+            TypeAnnotation::TypeAliasTypeAnnotation { .. } => "()",
+
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
                 unimplemented!();
@@ -337,7 +357,7 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let fn_name = SanitizedString::from(&self.name);
+                let fn_name = snake_case(&self.name);
                 let ret_annotation = if return_type == "()" {
                     String::new()
                 } else {
@@ -362,7 +382,7 @@ impl FunctionSpec {
     ///     my_mod_impl::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn to_rs_func(&self, mod_name: &SanitizedString) -> String {
+    pub fn to_rs_func(&self, mod_name: &String) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation { params, .. } => {
                 let params = params
@@ -398,7 +418,7 @@ impl FunctionSpec {
     ///     my_mod_impl::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn to_ffi_func(&self, mod_name: &SanitizedString) -> String {
+    pub fn to_ffi_func(&self, mod_name: &String) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
@@ -412,8 +432,8 @@ impl FunctionSpec {
                     .join(", ");
 
                 let impl_mod_name = impl_mod_name(mod_name);
-                let impl_name = pascal_case(mod_name.to_str());
-                let fn_name = SanitizedString::from(&self.name);
+                let impl_name = pascal_case(mod_name);
+                let fn_name = snake_case(&self.name);
                 let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
 
                 // If the return type is `void`, return an empty tuple.

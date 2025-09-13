@@ -3,11 +3,15 @@
 #include <cstdint>
 #include <new>
 #include <string>
+#include <type_traits>
 #include <utility>
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wshadow"
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
 #endif // __clang__
+#endif // __GNUC__
 
 namespace rust {
 inline namespace cxxbridge1 {
@@ -99,6 +103,13 @@ struct operator_new<T, decltype(T::operator new(sizeof(T)))> {
 } // namespace detail
 
 template <typename T>
+union ManuallyDrop {
+  T value;
+  ManuallyDrop(T &&value) : value(::std::move(value)) {}
+  ~ManuallyDrop() {}
+};
+
+template <typename T>
 union MaybeUninit {
   T value;
   void *operator new(::std::size_t sz) { return detail::operator_new<T>{}(sz); }
@@ -108,15 +119,42 @@ union MaybeUninit {
 } // namespace cxxbridge1
 } // namespace rust
 
+#if __cplusplus >= 201402L
+#define CXX_DEFAULT_VALUE(value) = value
+#else
+#define CXX_DEFAULT_VALUE(value)
+#endif
+
+namespace craby {
+  namespace codegen {
+    namespace crabytest {
+      struct TestObject;
+    }
+  }
+}
+
 namespace craby {
 namespace codegen {
 namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+#define CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+struct TestObject final {
+  ::rust::String foo;
+  double bar CXX_DEFAULT_VALUE(0);
+  bool baz CXX_DEFAULT_VALUE(false);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$codegen$crabytest$TestObject
+
 extern "C" {
 double craby$codegen$crabytest$cxxbridge1$numeric_method(double arg) noexcept;
 
 bool craby$codegen$crabytest$cxxbridge1$boolean_method(bool arg) noexcept;
 
 void craby$codegen$crabytest$cxxbridge1$string_method(::rust::String *arg, ::rust::String *return$) noexcept;
+
+void craby$codegen$crabytest$cxxbridge1$object_method(::craby::codegen::crabytest::TestObject *arg, ::craby::codegen::crabytest::TestObject *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
@@ -130,6 +168,13 @@ bool booleanMethod(bool arg) noexcept {
 ::rust::String stringMethod(::rust::String arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
   craby$codegen$crabytest$cxxbridge1$string_method(&arg, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::craby::codegen::crabytest::TestObject objectMethod(::craby::codegen::crabytest::TestObject arg) noexcept {
+  ::rust::ManuallyDrop<::craby::codegen::crabytest::TestObject> arg$(::std::move(arg));
+  ::rust::MaybeUninit<::craby::codegen::crabytest::TestObject> return$;
+  craby$codegen$crabytest$cxxbridge1$object_method(&arg$.value, &return$.value);
   return ::std::move(return$.value);
 }
 } // namespace crabytest

@@ -3,9 +3,8 @@ use std::path::PathBuf;
 use craby_codegen::{generator::CodeGenerator, types::schema::Schema};
 use craby_common::{
     config::load_config,
-    constants::{crate_dir, impl_mod_name, GENERATED_MOD},
+    constants::{crate_dir, impl_mod_name, FFI_MOD, GENERATED_MOD},
     env::is_initialized,
-    utils::string::SanitizedString,
 };
 use log::info;
 
@@ -30,7 +29,10 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     let total_mods = opts.schemas.len();
     let mut spec_codes = vec![];
     let mut ffi_codes = vec![];
-    let mut mod_imports = vec![format!("pub(crate) mod {};", GENERATED_MOD)];
+    let mut mod_imports = vec![
+        format!("pub(crate) mod {};", GENERATED_MOD),
+        format!("pub(crate) mod {};", FFI_MOD),
+    ];
     let generator = CodeGenerator::new();
 
     opts.schemas
@@ -51,9 +53,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
             print_schema(&schema, &config);
 
-            let sanitized_mod_name = SanitizedString::from(&schema.module_name);
-            let impl_mod_name = impl_mod_name(&sanitized_mod_name);
-
+            let impl_mod_name = impl_mod_name(&schema.module_name);
             let spec_code = generator.generate_spec(&schema);
             let ffi_code = generator.generate_ffi(&schema);
             let impl_code = generator.generate_impl(&schema);

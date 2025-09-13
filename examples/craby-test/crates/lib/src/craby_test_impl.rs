@@ -1,4 +1,4 @@
-use crate::generated::CrabyTestSpec;
+use crate::{ffi::ffi::*, generated::CrabyTestSpec};
 
 pub struct CrabyTest;
 
@@ -13,5 +13,13 @@ impl CrabyTestSpec for CrabyTest {
 
     fn string_method(arg: String) -> String {
         format!("From Rust: {}", arg)
+    }
+
+    fn object_method(arg: TestObject) -> TestObject {
+        TestObject {
+          foo: format!("From Rust: {}", arg.foo),
+          bar: arg.bar * 2.0,
+          baz: !arg.baz,
+        }
     }
 }

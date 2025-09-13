@@ -8,7 +8,13 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import { numeric, boolean, string } from 'craby-test';
+import {
+  numericMethod,
+  booleanMethod,
+  stringMethod,
+  objectMethod,
+  type TestObject,
+} from 'craby-test';
 
 export function App() {
   const [numericInput, setNumericInput] = useState('');
@@ -18,10 +24,12 @@ export function App() {
     numeric: number | null;
     string: string | null;
     boolean: boolean | null;
+    object: TestObject | null;
   }>({
     numeric: null,
     string: null,
     boolean: null,
+    object: null,
   });
 
   useEffect(() => {
@@ -29,7 +37,7 @@ export function App() {
     const numValue = parseFloat(numericInput);
     if (!isNaN(numValue)) {
       try {
-        setResults(prev => ({ ...prev, numeric: numeric(numValue) }));
+        setResults(prev => ({ ...prev, numeric: numericMethod(numValue) }));
       } catch (error) {
         console.warn('Numeric function error:', error);
         setResults(prev => ({ ...prev, numeric: null }));
@@ -43,7 +51,7 @@ export function App() {
     // Test string function
     if (stringInput.trim()) {
       try {
-        setResults(prev => ({ ...prev, string: string(stringInput) }));
+        setResults(prev => ({ ...prev, string: stringMethod(stringInput) }));
       } catch (error) {
         console.warn('String function error:', error);
         setResults(prev => ({ ...prev, string: null }));
@@ -56,18 +64,48 @@ export function App() {
   useEffect(() => {
     // Test boolean function
     try {
-      setResults(prev => ({ ...prev, boolean: boolean(booleanInput) }));
+      setResults(prev => ({ ...prev, boolean: booleanMethod(booleanInput) }));
     } catch (error) {
       console.warn('Boolean function error:', error);
       setResults(prev => ({ ...prev, boolean: null }));
     }
   }, [booleanInput]);
 
+  useEffect(() => {
+    // Test boolean function
+    try {
+      const numValue = parseFloat(numericInput);
+      const stringValue = stringInput.trim();
+      const booleanValue = booleanInput;
+
+      if (Number.isNaN(numValue) || typeof stringValue !== 'string') {
+        return;
+      }
+
+      setResults(prev => ({
+        ...prev,
+        object: objectMethod({
+          foo: stringValue,
+          bar: numValue,
+          baz: booleanValue,
+        }),
+      }));
+    } catch (error) {
+      console.warn('Object function error:', error);
+      setResults(prev => ({ ...prev, object: null }));
+    }
+  }, [numericInput, stringInput, booleanInput]);
+
   const clear = () => {
     setNumericInput('');
     setStringInput('');
     setBooleanInput(false);
-    setResults({ numeric: null, string: null, boolean: null });
+    setResults({
+      numeric: null,
+      string: null,
+      boolean: null,
+      object: null,
+    });
   };
 
   return (
@@ -116,10 +154,18 @@ export function App() {
         <View style={styles.booleanContainer}>
           <Text style={styles.booleanLabel}>Boolean input:</Text>
           <TouchableOpacity
-            style={[styles.booleanButton, booleanInput && styles.booleanButtonActive]}
+            style={[
+              styles.booleanButton,
+              booleanInput && styles.booleanButtonActive,
+            ]}
             onPress={() => setBooleanInput(!booleanInput)}
           >
-            <Text style={[styles.booleanButtonText, booleanInput && styles.booleanButtonTextActive]}>
+            <Text
+              style={[
+                styles.booleanButtonText,
+                booleanInput && styles.booleanButtonTextActive,
+              ]}
+            >
               {booleanInput ? 'true' : 'false'}
             </Text>
           </TouchableOpacity>
@@ -135,7 +181,7 @@ export function App() {
       {/* Test Result Cards */}
       <TestCard
         title="Numeric Function"
-        funcName="numeric(number)"
+        funcName="numericMethod(number)"
         input={numericInput}
         result={results.numeric}
         color="#10B981"
@@ -144,7 +190,7 @@ export function App() {
 
       <TestCard
         title="String Function"
-        funcName="string(string)"
+        funcName="stringMethod(string)"
         input={stringInput}
         result={results.string}
         color="#3B82F6"
@@ -153,11 +199,20 @@ export function App() {
 
       <TestCard
         title="Boolean Function"
-        funcName="boolean(boolean)"
+        funcName="booleanMethod(boolean)"
         input={booleanInput.toString()}
         result={results.boolean}
         color="#8B5CF6"
         type="boolean"
+      />
+
+      <TestCard
+        title="Object Function"
+        funcName="objectMethod(object)"
+        input={JSON.stringify(results.object)}
+        result={results.object}
+        color="#F59E0B"
+        type="object"
       />
 
       {/* Footer */}
@@ -166,7 +221,7 @@ export function App() {
       </View>
     </ScrollView>
   );
-};
+}
 
 function TestCard({
   title,
@@ -185,7 +240,7 @@ function TestCard({
 }) {
   const formatResult = (value: any, dataType: string) => {
     if (value === null) return '—';
-    
+
     switch (dataType) {
       case 'array':
         return Array.isArray(value) ? `[${value.join(', ')}]` : String(value);
@@ -195,6 +250,8 @@ function TestCard({
         return String(value);
       case 'number':
         return String(value);
+      case 'object':
+        return JSON.stringify(value, null, 2);
       default:
         return String(value);
     }
@@ -202,7 +259,7 @@ function TestCard({
 
   const formatInput = (value: any, dataType: string) => {
     if (!value) return 'No input';
-    
+
     switch (dataType) {
       case 'array':
         return `[${value}]`;
@@ -231,7 +288,7 @@ function TestCard({
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {

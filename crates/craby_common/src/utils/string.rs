@@ -1,8 +1,13 @@
 use convert_case::{Case, Casing};
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct SanitizedString(pub String);
 impl SanitizedString {
+    fn regex() -> Regex {
+        Regex::new(r"[^a-zA-Z0-9]").unwrap()
+    }
+
     pub fn to_string(&self) -> String {
         self.0.to_string()
     }
@@ -14,13 +19,21 @@ impl SanitizedString {
 
 impl From<&str> for SanitizedString {
     fn from(value: &str) -> Self {
-        SanitizedString(value.to_string())
+        SanitizedString(
+            SanitizedString::regex()
+                .replace_all(value.to_lowercase().as_str(), "_")
+                .to_string(),
+        )
     }
 }
 
 impl From<&String> for SanitizedString {
     fn from(value: &String) -> Self {
-        SanitizedString(value.clone())
+        SanitizedString(
+            SanitizedString::regex()
+                .replace_all(value.to_lowercase().as_str(), "_")
+                .to_string(),
+        )
     }
 }
 
