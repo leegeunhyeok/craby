@@ -1,5 +1,5 @@
 #include "CxxCrabyTestModule.hpp"
-#include "libcrabytest-craby.h"
+#include "ffi.rs.h"
 
 using namespace facebook;
 
@@ -25,7 +25,7 @@ jsi::Value CxxCrabyTestModule::JSI__numericMethod(jsi::Runtime &rt,
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isNumber()) {
     auto arg0 = args[0].asNumber();
-    auto ret = numericMethod(arg0);
+    auto ret = craby::codegen::crabytest::numericMethod(arg0);
     return jsi::Value(ret);
   }
 
@@ -39,7 +39,7 @@ jsi::Value CxxCrabyTestModule::JSI__booleanMethod(jsi::Runtime &rt,
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isBool()) {
     auto arg0 = args[0].asBool();
-    auto ret = booleanMethod(arg0);
+    auto ret = craby::codegen::crabytest::booleanMethod(arg0);
     return jsi::Value(ret);
   }
 
@@ -53,7 +53,7 @@ jsi::Value CxxCrabyTestModule::JSI__stringMethod(jsi::Runtime &rt,
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isString()) {
     auto arg0 = args[0].asString(rt).utf8(rt).c_str();
-    auto ret = jsi::String::createFromUtf8(rt, std::string(stringMethod(arg0)));
+    auto ret = jsi::String::createFromUtf8(rt, std::string(craby::codegen::crabytest::stringMethod(arg0)));
     return jsi::Value(rt, ret);
   }
 

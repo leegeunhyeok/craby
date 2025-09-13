@@ -1,11 +1,10 @@
 use convert_case::{Case, Casing};
-use regex::Regex;
 
 #[derive(Debug, Clone)]
 pub struct SanitizedString(pub String);
 impl SanitizedString {
     pub fn to_string(&self) -> String {
-        self.0.clone()
+        self.0.to_string()
     }
 
     pub fn to_str(&self) -> &str {
@@ -13,10 +12,16 @@ impl SanitizedString {
     }
 }
 
-pub fn sanitize(value: &str) -> SanitizedString {
-    let re = Regex::new(r"[^a-zA-Z]").unwrap();
-    let str = snake_case(re.replace_all(&value, "_").to_string().as_str());
-    SanitizedString(str)
+impl From<&str> for SanitizedString {
+    fn from(value: &str) -> Self {
+        SanitizedString(value.to_string())
+    }
+}
+
+impl From<&String> for SanitizedString {
+    fn from(value: &String) -> Self {
+        SanitizedString(value.clone())
+    }
 }
 
 pub fn pascal_case(value: &str) -> String {

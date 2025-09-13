@@ -13,5 +13,4 @@ cxx-build    = { workspace = true }
 log          = { workspace = true }
 anyhow       = { workspace = true }
 owo-colors   = { workspace = true }
-cbindgen     = "0.29.0"
 indoc        = "2.0.6"

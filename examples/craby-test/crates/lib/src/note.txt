@@ -1,0 +1,25 @@
+// https://developer.android.com/ndk/downloads
+
+// https://github.com/facebook/react-native/blob/v0.74.0/packages/react-native/gradle/libs.versions.toml
+minSdk = 23
+
+// aarch64-linux-android
+export CXX_aarch64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android23-clang++"
+export CC_aarch64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/aarch64-linux-android23-clang"
+export AR_aarch64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar"
+cargo build --release --target aarch64-linux-android
+
+export CXX_armv7_linux_androideabi="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi23-clang++"
+export CC_armv7_linux_androideabi="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/armv7a-linux-androideabi23-clang"
+export AR_armv7_linux_androideabi="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar"
+cargo build --release --target armv7-linux-androideabi
+
+export CXX_x86_64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android23-clang++"
+export CC_x86_64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/x86_64-linux-android23-clang"
+export AR_x86_64_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar"
+cargo build --release --target x86_64-linux-android
+
+export CXX_i686_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android23-clang++"
+export CC_i686_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/i686-linux-android23-clang"
+export AR_i686_linux_android="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar"
+cargo build --release --target i686-linux-android

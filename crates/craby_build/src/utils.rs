@@ -1,13 +1,23 @@
-pub mod android {
-    use crate::constants::android::{ABI_ARM64_V8A, ABI_ARMEABI_V7A, ABI_X86, ABI_X86_64};
+use std::{fs, path::PathBuf};
 
-    pub fn get_abi_by_target(target: &str) -> &str {
-        match target {
-            "aarch64-linux-android" => ABI_ARM64_V8A,
-            "armv7-linux-androideabi" => ABI_ARMEABI_V7A,
-            "x86_64-linux-android" => ABI_X86_64,
-            "i686-linux-android" => ABI_X86,
-            _ => unreachable!("Unsupported target: {}", target),
+pub fn collect_files(dir: &PathBuf, exts: &[&str]) -> Result<Vec<PathBuf>, anyhow::Error> {
+    let mut files = Vec::new();
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            let ext = path.extension().unwrap_or_default();
+            let is_target = exts.contains(&ext.to_str().unwrap_or_default());
+
+            if is_target {
+                files.push(path);
+            }
+        } else if path.is_dir() {
+            files.extend(collect_files(&path, exts)?);
         }
     }
+
+    Ok(files)
 }

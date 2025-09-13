@@ -1,4 +1,3 @@
-pub mod c;
 pub mod cargo;
 pub mod cxx;
 pub mod platform;

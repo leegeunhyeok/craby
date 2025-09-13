@@ -1,0 +1,74 @@
+use std::{fs, path::PathBuf};
+
+use regex::Regex;
+
+use crate::{constants::crate_dir, utils::string::flat_case};
+
+use super::{types::CrabyConfig, CargoManifest, CompleteCodegenConfig, CompleteCrabyConfig};
+
+pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow::Error> {
+    let manifest_path = crate_dir(project_root).join("Cargo.toml");
+    let config_path = project_root.join("craby.toml");
+
+    validate_config(&manifest_path, &config_path)?;
+
+    let config = fs::read_to_string(config_path)?;
+    let config = toml::from_str::<CrabyConfig>(&config)?;
+
+    let codegen = CompleteCodegenConfig {
+        exclude: config
+            .codegen
+            .exclude
+            .iter()
+            .map(|s| Regex::new(s).unwrap())
+            .collect(),
+        include: config
+            .codegen
+            .include
+            .iter()
+            .map(|s| Regex::new(s).unwrap())
+            .collect(),
+    };
+
+    Ok(CompleteCrabyConfig {
+        project_root: project_root.clone(),
+        project: config.project,
+        codegen,
+    })
+}
+
+fn validate_config(
+    manifest_path: &PathBuf,
+    config_path: &PathBuf,
+) -> Result<CrabyConfig, anyhow::Error> {
+    if !manifest_path.exists() {
+        return Err(anyhow::anyhow!("Cargo.toml not found"));
+    }
+
+    if !config_path.exists() {
+        return Err(anyhow::anyhow!("craby.toml not found"));
+    }
+
+    let manifest = fs::read_to_string(manifest_path)?;
+    let manifest = toml::from_str::<CargoManifest>(&manifest)?;
+
+    let config = fs::read_to_string(config_path)?;
+    let config = toml::from_str::<CrabyConfig>(&config)?;
+
+    if manifest.package.name != config.project.name {
+        return Err(anyhow::anyhow!(format!(
+            "Craby project name({}) does not match Cargo project name({})",
+            config.project.name, manifest.lib.name,
+        )));
+    }
+
+    let expected_lib_name = flat_case(&config.project.name);
+    if manifest.lib.name != expected_lib_name {
+        return Err(anyhow::anyhow!(format!(
+            "Invalid library name in Cargo.toml: {} (Expected: {})",
+            manifest.lib.name, expected_lib_name,
+        )));
+    }
+
+    Ok(config)
+}

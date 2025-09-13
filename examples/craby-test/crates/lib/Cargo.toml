@@ -4,6 +4,10 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+cxx = "1.0.180"
+
+[build-dependencies]
+cxx-build = "1.0.180"
 
 [lib]
 name = "crabytest"

@@ -38,6 +38,13 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             e
         )),
     });
+    assert_with_status("ANDROID_NDK_HOME", || match std::env::var("ANDROID_NDK_HOME") {
+        Ok(_) => Ok(Status::Ok),
+        Err(e) => Err(anyhow::anyhow!(
+            "`ANDROID_NDK_HOME` environment variable is not set: {}",
+            e
+        )),
+    });
     assert_with_status("Build configuration", || {
         if is_gradle_configured(&opts.project_root)? {
             Ok(Status::Ok)

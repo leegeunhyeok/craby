@@ -5,7 +5,7 @@ use craby_common::{
     config::load_config,
     constants::{crate_dir, impl_mod_name, GENERATED_MOD},
     env::is_initialized,
-    utils::string::sanitize,
+    utils::string::SanitizedString,
 };
 use log::info;
 
@@ -23,7 +23,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     let crate_path = crate_dir(&opts.project_root);
     let crate_src_path = crate_path.join("src");
-    let config = load_config(&opts.project_root)?.into_complete();
+    let config = load_config(&opts.project_root)?;
 
     info!("{} module schema(s) found", opts.schemas.len());
 
@@ -51,7 +51,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
             print_schema(&schema, &config);
 
-            let sanitized_mod_name = sanitize(&schema.module_name);
+            let sanitized_mod_name = SanitizedString::from(&schema.module_name);
             let impl_mod_name = impl_mod_name(&sanitized_mod_name);
 
             let spec_code = generator.generate_spec(&schema);

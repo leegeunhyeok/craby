@@ -11,15 +11,16 @@ find_package(hermes-engine REQUIRED CONFIG)
 # Import the pre-built Craby library
 add_library(craby-test-lib STATIC IMPORTED)
 set_target_properties(craby-test-lib PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/libcrabytest-craby.a"
+  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/main/jni/libs/${ANDROID_ABI}/libcrabytest.a"
 )
 target_include_directories(craby-test-lib INTERFACE
-  "${CMAKE_SOURCE_DIR}/src/libs/${ANDROID_ABI}/include"
+  "${CMAKE_SOURCE_DIR}/src/main/jni/include"
 )
 
 # Generated C++ source files by the Craby
 add_library(cxx-craby-test SHARED
-  src/main/cpp/OnLoad.cpp
+  src/main/jni/OnLoad.cpp
+  src/main/jni/src/ffi.rs.cc
   ../cpp/CxxCrabyTestModule.cpp
 )
 target_include_directories(cxx-craby-test PRIVATE
