@@ -77,7 +77,7 @@ pub enum TypeAnnotation {
         value: String,
     },
     StringLiteralUnionTypeAnnotation {
-        values: Vec<String>,
+        types: Vec<Box<TypeAnnotation>>,
     },
 
     // Boolean type
@@ -124,7 +124,6 @@ pub enum TypeAnnotation {
     UnionTypeAnnotation {
         #[serde(rename = "memberType")]
         member_type: String,
-        types: Vec<Box<TypeAnnotation>>,
     },
 
     // Mixed type
@@ -196,10 +195,19 @@ impl TypeAnnotation {
             TypeAnnotation::TypeAliasTypeAnnotation { name } => Type::Alias(name.clone()),
 
             // Enum
-            TypeAnnotation::EnumDeclaration { name, member_type, .. } => match member_type.as_str() {
+            TypeAnnotation::EnumDeclaration {
+                name, member_type, ..
+            } => match member_type.as_str() {
                 "NumberTypeAnnotation" => Type::Enum(name.clone()),
                 "StringTypeAnnotation" => Type::Enum(name.clone()),
-                _ => unimplemented!("Unsupported enum type: {}", member_type),
+                _ => return Err(anyhow::anyhow!("Unsupported enum type: {}", member_type)),
+            },
+
+            // Union type
+            TypeAnnotation::UnionTypeAnnotation { member_type } => match member_type.as_str() {
+                "NumberTypeAnnotation" => Type::Number,
+                "StringTypeAnnotation" => Type::String,
+                _ => return Err(anyhow::anyhow!("Unsupported union type: {}", member_type)),
             },
 
             // Void type
@@ -212,8 +220,7 @@ impl TypeAnnotation {
             }
 
             _ => {
-                error!("Unsupported type annotation: {:?}", self);
-                unimplemented!();
+                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
                 // match unsuported_type_annotation {
                 //     // Reserved types
                 //     TypeAnnotation::ReservedTypeAnnotation { name } => match name.as_str() {

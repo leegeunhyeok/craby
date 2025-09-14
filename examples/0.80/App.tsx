@@ -15,8 +15,10 @@ import {
   objectMethod,
   arrayMethod,
   enumMethod,
+  unionMethod,
   MyEnum,
   type TestObject,
+  Direction,
 } from 'craby-test';
 
 export function App() {
@@ -30,6 +32,7 @@ export function App() {
     object: TestObject | null;
     array: number[] | null;
     enum: string | null;
+    union: string | null;
   }>({
     numeric: null,
     string: null,
@@ -37,6 +40,7 @@ export function App() {
     object: null,
     array: null,
     enum: null,
+    union: null,
   });
 
   useEffect(() => {
@@ -122,7 +126,6 @@ export function App() {
     }
   }, [numericInput]);
 
-
   useEffect(() => {
     // Test enum function
     try {
@@ -136,6 +139,16 @@ export function App() {
     }
   }, [numericInput]);
 
+  useEffect(() => {
+    // Test union function
+    try {
+      setResults(prev => ({ ...prev, union: unionMethod('up') }));
+    } catch (error) {
+      console.warn('Union function error:', error);
+      setResults(prev => ({ ...prev, union: null }));
+    }
+  }, []);
+
   const clear = () => {
     setNumericInput('');
     setStringInput('');
@@ -147,6 +160,7 @@ export function App() {
       object: null,
       array: null,
       enum: null,
+      union: null,
     });
   };
 
@@ -273,6 +287,15 @@ export function App() {
         result={results.enum}
         color="#26A69A"
         type="enum"
+      />
+
+      <TestCard
+        title="Union Function"
+        funcName="unionMethod(union)"
+        input={JSON.stringify(results.union)}
+        result={results.union}
+        color="#DCE775"
+        type="union"
       />
 
       {/* Footer */}

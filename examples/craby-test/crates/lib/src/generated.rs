@@ -8,4 +8,5 @@ pub trait CrabyTestSpec {
     fn object_method(arg: TestObject) -> TestObject;
     fn array_method(arg: Vec<f64>) -> Vec<f64>;
     fn enum_method(arg: MyEnum) -> String;
+    fn union_method(arg: String) -> String;
 }

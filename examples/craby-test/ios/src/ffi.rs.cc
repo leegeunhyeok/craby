@@ -817,6 +817,8 @@ void craby$ffi$cxxbridge1$object_method(::craby::ffi::TestObject *arg, ::craby::
 void craby$ffi$cxxbridge1$array_method(::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
 void craby$ffi$cxxbridge1$enum_method(::craby::ffi::MyEnum arg, ::rust::String *return$) noexcept;
+
+void craby$ffi$cxxbridge1$union_method(::rust::String *arg, ::rust::String *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
@@ -850,6 +852,12 @@ bool booleanMethod(bool arg) noexcept {
 ::rust::String enumMethod(::craby::ffi::MyEnum arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
   craby$ffi$cxxbridge1$enum_method(arg, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String unionMethod(::rust::String arg) noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  craby$ffi$cxxbridge1$union_method(&arg, &return$.value);
   return ::std::move(return$.value);
 }
 } // namespace ffi

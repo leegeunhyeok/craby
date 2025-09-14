@@ -36,4 +36,8 @@ impl CrabyTestSpec for CrabyTest {
             _ => unreachable!(),
         }
     }
+
+    fn union_method(arg: String) -> String {
+        format!("Union: {}", arg)
+    }
 }
