@@ -16,7 +16,7 @@ pub struct Schema {
     #[serde(rename = "aliasMap")]
     pub alias_map: HashMap<String, Alias>,
     #[serde(rename = "enumMap")]
-    pub enum_map: HashMap<String, String>,
+    pub enum_map: HashMap<String, Enum>,
     pub spec: Spec,
 }
 
@@ -31,7 +31,29 @@ pub struct AliasProperty {
     pub name: String,
     pub optional: bool,
     #[serde(rename = "typeAnnotation")]
-    pub type_annotation: TypeAnnotation,
+    pub type_annotation: Box<TypeAnnotation>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Enum {
+    pub name: String,
+    pub r#type: String,
+    #[serde(rename = "memberType")]
+    pub member_type: String,
+    #[serde(default)]
+    pub members: Option<Vec<EnumMember>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EnumMember {
+    pub name: String,
+    pub value: EnumMemberValue,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EnumMemberValue {
+    pub r#type: String,
+    pub value: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -72,9 +94,11 @@ pub enum TypeAnnotation {
 
     // Enum
     EnumDeclaration {
+        name: String,
         #[serde(rename = "memberType")]
         member_type: String,
-        members: Vec<EnumMember>,
+        #[serde(default)]
+        members: Option<Vec<EnumMember>>,
     },
 
     // Array type
@@ -84,7 +108,6 @@ pub enum TypeAnnotation {
     },
 
     // Function type
-    #[serde(rename = "FunctionTypeAnnotation")]
     FunctionTypeAnnotation {
         #[serde(rename = "returnTypeAnnotation")]
         return_type_annotation: Box<TypeAnnotation>,
@@ -101,7 +124,7 @@ pub enum TypeAnnotation {
     UnionTypeAnnotation {
         #[serde(rename = "memberType")]
         member_type: String,
-        types: Vec<TypeAnnotation>,
+        types: Vec<Box<TypeAnnotation>>,
     },
 
     // Mixed type
@@ -123,17 +146,11 @@ pub enum TypeAnnotation {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EnumMember {
-    pub name: String,
-    pub value: serde_json::Value,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectProperty {
     pub name: String,
     pub optional: bool,
     #[serde(rename = "typeAnnotation")]
-    pub type_annotation: TypeAnnotation,
+    pub type_annotation: Box<TypeAnnotation>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -141,7 +158,7 @@ pub struct Parameter {
     pub name: String,
     pub optional: bool,
     #[serde(rename = "typeAnnotation")]
-    pub type_annotation: TypeAnnotation,
+    pub type_annotation: Box<TypeAnnotation>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -149,7 +166,7 @@ pub struct FunctionSpec {
     pub name: String,
     pub optional: bool,
     #[serde(rename = "typeAnnotation")]
-    pub type_annotation: TypeAnnotation,
+    pub type_annotation: Box<TypeAnnotation>,
 }
 
 impl TypeAnnotation {
@@ -177,6 +194,13 @@ impl TypeAnnotation {
 
             // Type alias
             TypeAnnotation::TypeAliasTypeAnnotation { name } => Type::Alias(name.clone()),
+
+            // Enum
+            TypeAnnotation::EnumDeclaration { name, member_type, .. } => match member_type.as_str() {
+                "NumberTypeAnnotation" => Type::Enum(name.clone()),
+                "StringTypeAnnotation" => Type::Enum(name.clone()),
+                _ => unimplemented!("Unsupported enum type: {}", member_type),
+            },
 
             // Void type
             TypeAnnotation::VoidTypeAnnotation => Type::Void,
@@ -272,14 +296,14 @@ impl TypeAnnotation {
 impl Parameter {
     pub fn to_sig(&self) -> Result<String, anyhow::Error> {
         if let TypeAnnotation::ObjectTypeAnnotation { .. }
-        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = self.type_annotation
+        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
         {
             error!("Object type is not supported for parameters");
             error!("Use defined type alias instead");
             unimplemented!();
         }
 
-        if let TypeAnnotation::FunctionTypeAnnotation { .. } = self.type_annotation {
+        if let TypeAnnotation::FunctionTypeAnnotation { .. } = *self.type_annotation {
             error!("Function type is not supported for parameters");
             unimplemented!();
         }
@@ -305,7 +329,7 @@ impl Parameter {
 
 impl FunctionSpec {
     pub fn to_sig(&self) -> Result<String, anyhow::Error> {
-        match &self.type_annotation {
+        match &*self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
                 params,
@@ -348,7 +372,7 @@ impl FunctionSpec {
     /// }
     /// ```
     pub fn to_cxx_func(&self, mod_name: &String) -> Result<CxxFunction, anyhow::Error> {
-        match &self.type_annotation {
+        match &*self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
                 params,

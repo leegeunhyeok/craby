@@ -22,9 +22,12 @@ const command = withVerbose(
       return;
     }
 
+    const schemas = moduleNames.map((name) => JSON.stringify(modules[name]));
+    logger.debug(`Schemas: ${schemas.join('\n')}`);
+
     getBindings().codegen({
       projectRoot,
-      schemas: moduleNames.map((name) => JSON.stringify(modules[name])),
+      schemas,
     });
   })
 );

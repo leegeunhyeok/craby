@@ -779,6 +779,7 @@ union MaybeUninit {
 namespace craby {
   namespace ffi {
     struct TestObject;
+    enum class MyEnum : ::std::uint8_t;
   }
 }
 
@@ -795,6 +796,15 @@ struct TestObject final {
 };
 #endif // CXXBRIDGE1_STRUCT_craby$ffi$TestObject
 
+#ifndef CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+#define CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+enum class MyEnum : ::std::uint8_t {
+  FOO = 0,
+  BAR = 1,
+  BAZ = 2,
+};
+#endif // CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+
 extern "C" {
 double craby$ffi$cxxbridge1$numeric_method(double arg) noexcept;
 
@@ -805,6 +815,8 @@ void craby$ffi$cxxbridge1$string_method(::rust::String *arg, ::rust::String *ret
 void craby$ffi$cxxbridge1$object_method(::craby::ffi::TestObject *arg, ::craby::ffi::TestObject *return$) noexcept;
 
 void craby$ffi$cxxbridge1$array_method(::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
+
+void craby$ffi$cxxbridge1$enum_method(::craby::ffi::MyEnum arg, ::rust::String *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
@@ -832,6 +844,12 @@ bool booleanMethod(bool arg) noexcept {
   ::rust::ManuallyDrop<::rust::Vec<double>> arg$(::std::move(arg));
   ::rust::MaybeUninit<::rust::Vec<double>> return$;
   craby$ffi$cxxbridge1$array_method(&arg$.value, &return$.value);
+  return ::std::move(return$.value);
+}
+
+::rust::String enumMethod(::craby::ffi::MyEnum arg) noexcept {
+  ::rust::MaybeUninit<::rust::String> return$;
+  craby$ffi$cxxbridge1$enum_method(arg, &return$.value);
   return ::std::move(return$.value);
 }
 } // namespace ffi

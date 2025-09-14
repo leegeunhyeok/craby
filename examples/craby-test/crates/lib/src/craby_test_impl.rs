@@ -27,4 +27,13 @@ impl CrabyTestSpec for CrabyTest {
         arg.iter_mut().for_each(|x| *x *= 2.0);
         arg
     }
+
+    fn enum_method(arg: MyEnum) -> String {
+        match arg {
+            MyEnum::FOO => "FOO!".to_string(),
+            MyEnum::BAR => "BAR!".to_string(),
+            MyEnum::BAZ => "BAZ!".to_string(),
+            _ => unreachable!(),
+        }
+    }
 }

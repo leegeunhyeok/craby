@@ -7,6 +7,7 @@ pub enum Type {
     Nullable(String),
     Object,
     Alias(String),
+    Enum(String),
 }
 
 impl ToString for Type {
@@ -18,9 +19,9 @@ impl ToString for Type {
             Type::Void => "()".to_string(),
             Type::Array(t) => format!("Vec<{}>", t),
             Type::Nullable(t) => format!("Option<{}>", t),
-            // TODO
             Type::Object => "()".to_string(),
             Type::Alias(t) => t.clone(),
+            Type::Enum(name) => name.clone(),
         }
     }
 }

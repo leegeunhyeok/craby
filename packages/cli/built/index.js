@@ -221,9 +221,11 @@ var command2 = withVerbose(
       loggerProxy.error("TurboModule schema is not found");
       return;
     }
+    const schemas = moduleNames.map((name) => JSON.stringify(modules[name]));
+    loggerProxy.debug(`Schemas: ${schemas.join("\n")}`);
     getBindings().codegen({
       projectRoot,
-      schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
+      schemas
     });
   })
 );
