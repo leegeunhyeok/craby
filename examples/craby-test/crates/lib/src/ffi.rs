@@ -23,6 +23,9 @@ pub mod ffi {
 
         #[cxx_name = "objectMethod"]
         fn object_method(arg: TestObject) -> TestObject;
+
+        #[cxx_name = "arrayMethod"]
+        fn array_method(arg: Vec<f64>) -> Vec<f64>;
     }
 }
 
@@ -40,4 +43,8 @@ fn string_method(arg: String) -> String {
 
 fn object_method(arg: TestObject) -> TestObject {
     CrabyTest::object_method(arg)
+}
+
+fn array_method(arg: Vec<f64>) -> Vec<f64> {
+    CrabyTest::array_method(arg)
 }

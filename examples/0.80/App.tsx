@@ -13,6 +13,7 @@ import {
   booleanMethod,
   stringMethod,
   objectMethod,
+  arrayMethod,
   type TestObject,
 } from 'craby-test';
 
@@ -25,11 +26,13 @@ export function App() {
     string: string | null;
     boolean: boolean | null;
     object: TestObject | null;
+    array: number[] | null;
   }>({
     numeric: null,
     string: null,
     boolean: null,
     object: null,
+    array: null,
   });
 
   useEffect(() => {
@@ -96,6 +99,25 @@ export function App() {
     }
   }, [numericInput, stringInput, booleanInput]);
 
+  useEffect(() => {
+    // Test array function
+    try {
+      const numValue = parseFloat(numericInput);
+
+      if (Number.isNaN(numValue)) {
+        return;
+      }
+
+      setResults(prev => ({
+        ...prev,
+        array: arrayMethod([numValue, numValue, numValue]),
+      }));
+    } catch (error) {
+      console.warn('Array function error:', error);
+      setResults(prev => ({ ...prev, array: null }));
+    }
+  }, [numericInput]);
+
   const clear = () => {
     setNumericInput('');
     setStringInput('');
@@ -105,6 +127,7 @@ export function App() {
       string: null,
       boolean: null,
       object: null,
+      array: null,
     });
   };
 
@@ -213,6 +236,15 @@ export function App() {
         result={results.object}
         color="#F59E0B"
         type="object"
+      />
+
+      <TestCard
+        title="Array Function"
+        funcName="arrayMethod(array)"
+        input={JSON.stringify(results.array)}
+        result={results.array}
+        color="#EF5350"
+        type="array"
       />
 
       {/* Footer */}

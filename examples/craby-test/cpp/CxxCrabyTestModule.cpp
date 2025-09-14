@@ -17,6 +17,8 @@ CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInv
       MethodMetadata{1, &CxxCrabyTestModule::stringMethod};
   methodMap_["objectMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
+  methodMap_["arrayMethod"] =
+      MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
@@ -99,6 +101,47 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
   }
 
   throw jsi::JSError(rt, "Expected 1 argument (string)");
+}
+
+jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
+                                         react::TurboModule &turboModule,
+                                         const jsi::Value args[],
+                                         size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  if (1 == count && args[0].isObject()) {
+    auto _0 = args[0].asObject(rt);
+
+    if (!_0.isArray(rt)) {
+      throw jsi::JSError(rt, "Expected an array (Position: 0)");
+    }
+
+    auto arg0 = _0.asArray(rt);
+    size_t len = arg0.length(rt);
+    rust::Vec<double> vec;
+    vec.reserve(len);
+
+    for (size_t i = 0; i < len; i++) {
+        auto el = arg0.getValueAtIndex(rt, i);
+
+        if (!el.isNumber()) {
+          throw jsi::JSError(rt, "Expected a number");
+        }
+
+        vec.push_back(el.asNumber());
+    }
+
+    auto ret = craby::ffi::arrayMethod(vec);
+    auto ret_len = ret.size();
+    auto ret_arr = jsi::Array(rt, ret_len);
+
+    for (size_t i = 0; i < ret_len; i++) {
+      ret_arr.setValueAtIndex(rt, i, jsi::Value(ret[i]));
+    }
+
+    return jsi::Value(rt, ret_arr);
+  }
+
+  throw jsi::JSError(rt, "Expected 1 argument (array)");
 }
 
 } // namespace crabytest

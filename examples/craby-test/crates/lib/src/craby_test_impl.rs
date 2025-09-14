@@ -22,4 +22,12 @@ impl CrabyTestSpec for CrabyTest {
           baz: !arg.baz,
         }
     }
+
+    fn array_method(arg: Vec<f64>) -> Vec<f64> {
+        let mut vec = arg.iter().map(|x| x * 2.0).collect::<Vec<_>>();
+        vec.push(1.0);
+        vec.push(2.0);
+        vec.push(3.0);
+        vec
+    }
 }

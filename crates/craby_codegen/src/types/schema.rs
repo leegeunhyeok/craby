@@ -156,7 +156,7 @@ pub struct FunctionSpec {
 }
 
 impl TypeAnnotation {
-    pub fn to_rs_type(&self) -> String {
+    pub fn to_type(&self) -> String {
         match self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation => Type::Boolean,
@@ -173,11 +173,23 @@ impl TypeAnnotation {
             TypeAnnotation::StringLiteralTypeAnnotation { .. } => Type::String,
             TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
 
-            // Void type
-            TypeAnnotation::VoidTypeAnnotation => Type::Void,
+            // Array type
+            TypeAnnotation::ArrayTypeAnnotation { element_type } => {
+                Type::Array(element_type.to_type())
+            }
 
             // Type alias
             TypeAnnotation::TypeAliasTypeAnnotation { name } => Type::Alias(name.clone()),
+
+            // Void type
+            TypeAnnotation::VoidTypeAnnotation => Type::Void,
+
+            // Unsupported types
+            TypeAnnotation::FunctionTypeAnnotation { .. }
+            | TypeAnnotation::ObjectTypeAnnotation { .. } => {
+                error!("Unsupported type annotation: {:?}", self);
+                unimplemented!();
+            }
 
             _ => {
                 error!("Unsupported type annotation: {:?}", self);
@@ -200,7 +212,7 @@ impl TypeAnnotation {
 
                 //     // Array type
                 //     TypeAnnotation::ArrayTypeAnnotation { element_type } => {
-                //         Type::Array(element_type.to_rs_type())
+                //         Type::Array(element_type.to_type())
                 //     }
 
                 //     // Function type
@@ -235,7 +247,7 @@ impl TypeAnnotation {
 
                 //     // Nullable wrapper
                 //     TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
-                //         Type::Nullable(type_annotation.to_rs_type())
+                //         Type::Nullable(type_annotation.to_type())
                 //     }
 
                 //     // Type alias
@@ -243,60 +255,6 @@ impl TypeAnnotation {
                 //         unimplemented!("TypeAliasTypeAnnotation")
                 //     }
                 // }
-            }
-        }
-        .to_string()
-    }
-
-    pub fn get_rust_type(&self) -> Type {
-        match self {
-            // Boolean type
-            TypeAnnotation::BooleanTypeAnnotation => Type::Boolean,
-
-            // Number types
-            TypeAnnotation::NumberTypeAnnotation
-            | TypeAnnotation::FloatTypeAnnotation
-            | TypeAnnotation::DoubleTypeAnnotation
-            | TypeAnnotation::Int32TypeAnnotation
-            | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => Type::Number,
-
-            // String types
-            TypeAnnotation::StringTypeAnnotation
-            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => Type::String,
-
-            TypeAnnotation::VoidTypeAnnotation => Type::Void,
-
-            _ => {
-                error!("Unsupported type annotation: {:?}", self);
-                unimplemented!();
-            }
-        }
-    }
-
-    pub fn to_ffi_type(&self) -> String {
-        match self {
-            // Boolean type
-            TypeAnnotation::BooleanTypeAnnotation => "bool",
-
-            // Number types
-            TypeAnnotation::NumberTypeAnnotation
-            | TypeAnnotation::FloatTypeAnnotation
-            | TypeAnnotation::DoubleTypeAnnotation
-            | TypeAnnotation::Int32TypeAnnotation
-            | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => "f64",
-
-            // String types
-            TypeAnnotation::StringTypeAnnotation
-            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "String",
-
-            // TODO
-            TypeAnnotation::TypeAliasTypeAnnotation { .. } => "()",
-
-            _ => {
-                error!("Unsupported type annotation: {:?}", self);
-                unimplemented!();
             }
         }
         .to_string()
@@ -315,45 +273,50 @@ impl TypeAnnotation {
 }
 
 impl Parameter {
-    pub fn to_rs_param(&self) -> String {
+    pub fn to_sig(&self) -> String {
+        if let TypeAnnotation::ObjectTypeAnnotation { .. }
+        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = self.type_annotation
+        {
+            error!("Object type is not supported for parameters");
+            error!("Use defined type alias instead");
+            unimplemented!();
+        }
+
+        if let TypeAnnotation::FunctionTypeAnnotation { .. } = self.type_annotation {
+            error!("Function type is not supported for parameters");
+            unimplemented!();
+        }
+
         let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let rust_type = type_annotation.to_rs_type();
+        let param_type = type_annotation.to_type();
 
         let final_type = if self.optional && !is_nullable {
-            format!("Option<{}>", rust_type)
+            format!("Option<{}>", param_type)
         } else if is_nullable || self.optional {
-            if rust_type.starts_with("Option<") {
-                rust_type
+            if param_type.starts_with("Option<") {
+                param_type
             } else {
-                format!("Option<{}>", rust_type)
+                format!("Option<{}>", param_type)
             }
         } else {
-            rust_type
+            param_type
         };
 
         format!("{}: {}", self.name, final_type)
     }
-
-    pub fn to_ffi_param(&self) -> String {
-        // TODO: Handle nullable parameters
-        let (type_annotation, _nullable) = self.type_annotation.unwrap_nullable();
-        let ffi_type = type_annotation.to_ffi_type();
-
-        format!("{}: {}", self.name, ffi_type)
-    }
 }
 
 impl FunctionSpec {
-    pub fn to_rs_func_sig(&self) -> String {
+    pub fn to_sig(&self) -> String {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_rs_type();
+                let return_type = return_type_annotation.to_type();
                 let params_sig = params
                     .iter()
-                    .map(|p| p.to_rs_param())
+                    .map(|p| p.to_sig())
                     .collect::<Vec<_>>()
                     .join(", ");
 
@@ -391,7 +354,7 @@ impl FunctionSpec {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                let fn_sig = self.to_rs_func_sig();
+                let fn_sig = self.to_sig();
                 let fn_name = SanitizedString::from(&self.name);
                 let impl_mod_name = impl_mod_name(mod_name);
 
@@ -428,10 +391,10 @@ impl FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_ffi_type();
+                let return_type = return_type_annotation.to_type();
                 let params_sig = params
                     .iter()
-                    .map(|p| p.to_ffi_param())
+                    .map(|p| p.to_sig())
                     .collect::<Vec<_>>()
                     .join(", ");
 

@@ -6,4 +6,5 @@ pub trait CrabyTestSpec {
     fn boolean_method(arg: bool) -> bool;
     fn string_method(arg: String) -> String;
     fn object_method(arg: TestObject) -> TestObject;
+    fn array_method(arg: Vec<f64>) -> Vec<f64>;
 }

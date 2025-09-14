@@ -26,7 +26,7 @@ impl CodeGenerator {
             .spec
             .methods
             .iter()
-            .map(|spec| format!("{};", spec.to_rs_func_sig()))
+            .map(|spec| format!("{};", spec.to_sig()))
             .collect::<Vec<_>>();
 
         formatdoc! {
@@ -61,7 +61,7 @@ impl CodeGenerator {
             .methods
             .iter()
             .map(|spec| {
-                let func_sig = spec.to_rs_func_sig();
+                let func_sig = spec.to_sig();
 
                 formatdoc! {
                   r#"

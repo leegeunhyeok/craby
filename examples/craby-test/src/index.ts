@@ -1,4 +1,4 @@
-import CrabyTestModule, { type TestObject } from "./NativeCrabyTest";
+import CrabyTestModule, { type TestObject } from './NativeCrabyTest';
 
 export function numericMethod(arg: number) {
   return CrabyTestModule.numericMethod(arg);
@@ -14,6 +14,10 @@ export function stringMethod(arg: string) {
 
 export function objectMethod(arg: TestObject) {
   return CrabyTestModule.objectMethod(arg);
+}
+
+export function arrayMethod(arg: number[]) {
+  return CrabyTestModule.arrayMethod(arg);
 }
 
 export type { TestObject };

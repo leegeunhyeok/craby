@@ -1,5 +1,5 @@
-import type { TurboModule } from "react-native";
-import { TurboModuleRegistry } from "react-native";
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
 
 export interface TestObject {
   foo: string;
@@ -12,6 +12,7 @@ export interface Spec extends TurboModule {
   booleanMethod(arg: boolean): boolean;
   stringMethod(arg: string): string;
   objectMethod(arg: TestObject): TestObject;
+  arrayMethod(arg: number[]): number[];
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>("CrabyTest");
+export default TurboModuleRegistry.getEnforcing<Spec>('CrabyTest');
