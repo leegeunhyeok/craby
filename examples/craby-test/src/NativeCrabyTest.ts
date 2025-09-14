@@ -8,9 +8,9 @@ export interface TestObject {
 }
 
 export enum MyEnum {
-  FOO = 'foo',
-  BAR = 'bar',
-  BAZ = 'baz',
+  FOO = 'FOO',
+  BAR = 'BAR',
+  BAZ = 'BAZ',
 }
 
 export interface Spec extends TurboModule {

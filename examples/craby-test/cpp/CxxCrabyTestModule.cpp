@@ -19,6 +19,8 @@ CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInv
       MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["arrayMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
+  methodMap_["enumMethod"] =
+      MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
@@ -142,6 +144,32 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
   }
 
   throw jsi::JSError(rt, "Expected 1 argument (array)");
+}
+
+jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
+                                         react::TurboModule &turboModule,
+                                         const jsi::Value args[],
+                                         size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  if (1 == count && args[0].isString()) {
+    auto arg0 = args[0].asString(rt).utf8(rt);
+    craby::ffi::MyEnum enum_arg;
+
+    if (arg0 == "FOO") {
+      enum_arg = craby::ffi::MyEnum::FOO;
+    } else if (arg0 == "BAR") {
+      enum_arg = craby::ffi::MyEnum::BAR;
+    } else if (arg0 == "BAZ") {
+      enum_arg = craby::ffi::MyEnum::BAZ;
+    } else {
+      throw jsi::JSError(rt, "Invalid argument (MyEnum)");
+    }
+
+    auto ret = jsi::String::createFromUtf8(rt, std::string(craby::ffi::enumMethod(enum_arg)));
+    return jsi::Value(rt, ret);
+  }
+
+  throw jsi::JSError(rt, "Expected 1 argument (string)");
 }
 
 } // namespace crabytest

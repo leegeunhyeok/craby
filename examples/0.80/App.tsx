@@ -14,6 +14,8 @@ import {
   stringMethod,
   objectMethod,
   arrayMethod,
+  enumMethod,
+  MyEnum,
   type TestObject,
 } from 'craby-test';
 
@@ -27,12 +29,14 @@ export function App() {
     boolean: boolean | null;
     object: TestObject | null;
     array: number[] | null;
+    enum: string | null;
   }>({
     numeric: null,
     string: null,
     boolean: null,
     object: null,
     array: null,
+    enum: null,
   });
 
   useEffect(() => {
@@ -118,6 +122,20 @@ export function App() {
     }
   }, [numericInput]);
 
+
+  useEffect(() => {
+    // Test enum function
+    try {
+      setResults(prev => ({
+        ...prev,
+        enum: enumMethod(MyEnum.FOO),
+      }));
+    } catch (error) {
+      console.warn('Enum function error:', error);
+      setResults(prev => ({ ...prev, array: null }));
+    }
+  }, [numericInput]);
+
   const clear = () => {
     setNumericInput('');
     setStringInput('');
@@ -128,6 +146,7 @@ export function App() {
       boolean: null,
       object: null,
       array: null,
+      enum: null,
     });
   };
 
@@ -245,6 +264,15 @@ export function App() {
         result={results.array}
         color="#EF5350"
         type="array"
+      />
+
+      <TestCard
+        title="Enum Function"
+        funcName="enumMethod(enum)"
+        input={JSON.stringify(results.enum)}
+        result={results.enum}
+        color="#26A69A"
+        type="enum"
       />
 
       {/* Footer */}

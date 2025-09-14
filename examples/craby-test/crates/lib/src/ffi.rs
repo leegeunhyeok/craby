@@ -12,9 +12,9 @@ pub mod ffi {
     }
 
     enum MyEnum {
-        FOO = 0,
-        BAR = 1,
-        BAZ = 2,
+        FOO,
+        BAR,
+        BAZ,
     }
 
     extern "Rust" {
