@@ -15,19 +15,16 @@ impl CrabyTestSpec for CrabyTest {
         format!("From Rust: {}", arg)
     }
 
-    fn object_method(arg: TestObject) -> TestObject {
-        TestObject {
-          foo: format!("From Rust: {}", arg.foo),
-          bar: arg.bar * 2.0,
-          baz: !arg.baz,
-        }
+    fn object_method(mut arg: TestObject) -> TestObject {
+        arg.foo = format!("From Rust: {}", arg.foo);
+        arg.bar = arg.bar * 2.0;
+        arg.baz = !arg.baz;
+        arg
     }
 
-    fn array_method(arg: Vec<f64>) -> Vec<f64> {
-        let mut vec = arg.iter().map(|x| x * 2.0).collect::<Vec<_>>();
-        vec.push(1.0);
-        vec.push(2.0);
-        vec.push(3.0);
-        vec
+    fn array_method(mut arg: Vec<f64>) -> Vec<f64> {
+        arg.extend(vec![1.0, 2.0, 3.0]);
+        arg.iter_mut().for_each(|x| *x *= 2.0);
+        arg
     }
 }
