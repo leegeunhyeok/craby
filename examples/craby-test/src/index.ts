@@ -32,5 +32,9 @@ export function unionMethod(arg: Direction) {
   return CrabyTestModule.unionMethod(arg);
 }
 
+export function promiseMethod(arg: number) {
+  return CrabyTestModule.promiseMethod(arg);
+}
+
 export type { TestObject, Direction };
 export { MyEnum };

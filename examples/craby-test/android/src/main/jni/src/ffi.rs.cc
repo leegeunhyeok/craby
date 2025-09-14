@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <initializer_list>
 #include <iterator>
 #include <new>
@@ -673,6 +674,27 @@ template <typename T>
 Vec<T>::Vec(unsafe_bitcopy_t, const Vec &bits) noexcept : repr(bits.repr) {}
 #endif // CXXBRIDGE1_RUST_VEC
 
+#ifndef CXXBRIDGE1_RUST_ERROR
+#define CXXBRIDGE1_RUST_ERROR
+class Error final : public std::exception {
+public:
+  Error(const Error &);
+  Error(Error &&) noexcept;
+  ~Error() noexcept override;
+
+  Error &operator=(const Error &) &;
+  Error &operator=(Error &&) & noexcept;
+
+  const char *what() const noexcept override;
+
+private:
+  Error() noexcept = default;
+  friend impl<Error>;
+  const char *msg;
+  std::size_t len;
+};
+#endif // CXXBRIDGE1_RUST_ERROR
+
 #ifndef CXXBRIDGE1_IS_COMPLETE
 #define CXXBRIDGE1_IS_COMPLETE
 namespace detail {
@@ -741,6 +763,13 @@ std::size_t align_of() {
 }
 #endif // CXXBRIDGE1_LAYOUT
 
+namespace repr {
+struct PtrLen final {
+  void *ptr;
+  ::std::size_t len;
+};
+} // namespace repr
+
 namespace detail {
 template <typename T, typename = void *>
 struct operator_new {
@@ -767,6 +796,19 @@ union MaybeUninit {
   MaybeUninit() {}
   ~MaybeUninit() {}
 };
+
+namespace {
+template <>
+class impl<Error> final {
+public:
+  static Error error(repr::PtrLen repr) noexcept {
+    Error error;
+    error.msg = static_cast<char const *>(repr.ptr);
+    error.len = repr.len;
+    return error;
+  }
+};
+} // namespace
 } // namespace cxxbridge1
 } // namespace rust
 
@@ -819,6 +861,8 @@ void craby$ffi$cxxbridge1$array_method(::rust::Vec<double> *arg, ::rust::Vec<dou
 void craby$ffi$cxxbridge1$enum_method(::craby::ffi::MyEnum arg, ::rust::String *return$) noexcept;
 
 void craby$ffi$cxxbridge1$union_method(::rust::String *arg, ::rust::String *return$) noexcept;
+
+::rust::repr::PtrLen craby$ffi$cxxbridge1$promise_method(double arg, double *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
@@ -858,6 +902,15 @@ bool booleanMethod(bool arg) noexcept {
 ::rust::String unionMethod(::rust::String arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
   craby$ffi$cxxbridge1$union_method(&arg, &return$.value);
+  return ::std::move(return$.value);
+}
+
+double promiseMethod(double arg) {
+  ::rust::MaybeUninit<double> return$;
+  ::rust::repr::PtrLen error$ = craby$ffi$cxxbridge1$promise_method(arg, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
   return ::std::move(return$.value);
 }
 } // namespace ffi

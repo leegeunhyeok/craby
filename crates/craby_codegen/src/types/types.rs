@@ -8,6 +8,7 @@ pub enum Type {
     Object,
     Alias(String),
     Enum(String),
+    Promise(String),
 }
 
 impl ToString for Type {
@@ -22,6 +23,7 @@ impl ToString for Type {
             Type::Object => "()".to_string(),
             Type::Alias(t) => t.clone(),
             Type::Enum(name) => name.clone(),
+            Type::Promise(t) => format!("Result<{}, anyhow::Error>", t),
         }
     }
 }

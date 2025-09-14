@@ -24,26 +24,31 @@ public:
 
   static facebook::jsi::Value
   stringMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+               facebook::react::TurboModule &turboModule,
+               const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   objectMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+               facebook::react::TurboModule &turboModule,
+               const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   arrayMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+              facebook::react::TurboModule &turboModule,
+              const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   enumMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+             facebook::react::TurboModule &turboModule,
+             const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   unionMethod(facebook::jsi::Runtime &rt,
+              facebook::react::TurboModule &turboModule,
+              const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  promiseMethod(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);
 

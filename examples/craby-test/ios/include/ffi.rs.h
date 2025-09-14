@@ -790,6 +790,8 @@ bool booleanMethod(bool arg) noexcept;
 ::rust::String enumMethod(::craby::ffi::MyEnum arg) noexcept;
 
 ::rust::String unionMethod(::rust::String arg) noexcept;
+
+double promiseMethod(double arg);
 } // namespace ffi
 } // namespace craby
 

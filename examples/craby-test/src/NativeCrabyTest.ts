@@ -23,6 +23,7 @@ export interface Spec extends TurboModule {
   arrayMethod(arg: number[]): number[];
   enumMethod(arg: MyEnum): string;
   unionMethod(arg: Direction): string;
+  promiseMethod(arg: number): Promise<number>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('CrabyTest');

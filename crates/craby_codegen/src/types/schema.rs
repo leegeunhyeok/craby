@@ -126,6 +126,12 @@ pub enum TypeAnnotation {
         member_type: String,
     },
 
+    // Promise type
+    PromiseTypeAnnotation {
+        #[serde(rename = "elementType")]
+        element_type: Box<TypeAnnotation>,
+    },
+
     // Mixed type
     MixedTypeAnnotation,
 
@@ -210,6 +216,11 @@ impl TypeAnnotation {
                 _ => return Err(anyhow::anyhow!("Unsupported union type: {}", member_type)),
             },
 
+            // Promise type
+            TypeAnnotation::PromiseTypeAnnotation { element_type } => {
+                Type::Promise(element_type.to_type()?.to_string())
+            }
+
             // Void type
             TypeAnnotation::VoidTypeAnnotation => Type::Void,
 
@@ -286,6 +297,14 @@ impl TypeAnnotation {
         };
 
         Ok(r#type)
+    }
+
+    pub fn to_extern_type(&self) -> Result<String, anyhow::Error> {
+        let r#type = self.to_type()?;
+        match r#type {
+            Type::Promise(t) => Ok(format!("Result<{}>", t)),
+            _ => Ok(r#type.to_string()),
+        }
     }
 
     /// Unwrap nullable type annotations to get the inner type and nullable flag
@@ -384,7 +403,8 @@ impl FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_type()?.to_string();
+                let ret_type = return_type_annotation.to_type()?.to_string();
+                let ret_extern_type = return_type_annotation.to_extern_type()?.to_string();
                 let params_sig = params
                     .iter()
                     .map(|p| p.to_sig())
@@ -397,10 +417,16 @@ impl FunctionSpec {
 
                 // If the return type is `void`, return an empty tuple.
                 // Otherwise, return the given return type.
-                let ret_annotation = if return_type == "()" {
+                let ret_extern_annotation = if ret_extern_type == "()" {
                     String::new()
                 } else {
-                    format!(" -> {}", return_type)
+                    format!(" -> {}", ret_extern_type)
+                };
+
+                let ret_annotation = if ret_type == "()" {
+                    String::new()
+                } else {
+                    format!(" -> {}", ret_type)
                 };
 
                 let extern_func = formatdoc! {
@@ -410,7 +436,7 @@ impl FunctionSpec {
                     orig_fn_name = self.name,
                     fn_name = fn_name,
                     params_sig = params_sig,
-                    ret = ret_annotation,
+                    ret = ret_extern_annotation,
                 };
 
                 let impl_func = formatdoc! {

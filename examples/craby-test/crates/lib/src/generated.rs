@@ -9,4 +9,5 @@ pub trait CrabyTestSpec {
     fn array_method(arg: Vec<f64>) -> Vec<f64>;
     fn enum_method(arg: MyEnum) -> String;
     fn union_method(arg: String) -> String;
+    fn promise_method(arg: f64) -> Result<f64, anyhow::Error>;
 }

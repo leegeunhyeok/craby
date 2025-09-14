@@ -38,6 +38,9 @@ pub mod ffi {
 
         #[cxx_name = "unionMethod"]
         fn union_method(arg: String) -> String;
+
+        #[cxx_name = "promiseMethod"]
+        fn promise_method(arg: f64) -> Result<f64>;
     }
 }
 
@@ -67,4 +70,8 @@ fn enum_method(arg: MyEnum) -> String {
 
 fn union_method(arg: String) -> String {
     CrabyTest::union_method(arg)
+}
+
+fn promise_method(arg: f64) -> Result<f64, anyhow::Error> {
+    CrabyTest::promise_method(arg)
 }

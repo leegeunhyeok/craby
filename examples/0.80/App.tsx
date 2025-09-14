@@ -16,9 +16,9 @@ import {
   arrayMethod,
   enumMethod,
   unionMethod,
+  promiseMethod,
   MyEnum,
   type TestObject,
-  Direction,
 } from 'craby-test';
 
 export function App() {
@@ -33,6 +33,7 @@ export function App() {
     array: number[] | null;
     enum: string | null;
     union: string | null;
+    promise: number | null;
   }>({
     numeric: null,
     string: null,
@@ -41,6 +42,7 @@ export function App() {
     array: null,
     enum: null,
     union: null,
+    promise: null,
   });
 
   useEffect(() => {
@@ -149,6 +151,23 @@ export function App() {
     }
   }, []);
 
+
+  useEffect(() => {
+    // Test union function
+    const numValue = parseFloat(numericInput);
+
+    if (Number.isNaN(numValue)) {
+      return;
+    }
+
+    promiseMethod(numValue).then((result) => {
+      setResults(prev => ({ ...prev, promise: result }));
+    }).catch((error) => {
+      console.warn('Promise function error:', error);
+      setResults(prev => ({ ...prev, promise: null }));
+    });
+  }, [numericInput]);
+
   const clear = () => {
     setNumericInput('');
     setStringInput('');
@@ -161,6 +180,7 @@ export function App() {
       array: null,
       enum: null,
       union: null,
+      promise: null,
     });
   };
 
@@ -296,6 +316,15 @@ export function App() {
         result={results.union}
         color="#DCE775"
         type="union"
+      />
+
+      <TestCard
+        title="Promise Function"
+        funcName="promiseMethod(number)"
+        input={JSON.stringify(results.promise)}
+        result={results.promise}
+        color="#78909C"
+        type="promise"
       />
 
       {/* Footer */}

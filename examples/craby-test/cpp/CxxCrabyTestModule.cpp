@@ -1,12 +1,15 @@
+#include <thread>
 #include "CxxCrabyTestModule.hpp"
 #include "ffi.rs.h"
+#include "cxx.h"
 
 using namespace facebook;
 
 namespace craby {
 namespace crabytest {
 
-CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInvoker)
+CxxCrabyTestModule::CxxCrabyTestModule(
+    std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
 
   methodMap_["numericMethod"] =
@@ -19,18 +22,19 @@ CxxCrabyTestModule::CxxCrabyTestModule(std::shared_ptr<react::CallInvoker> jsInv
       MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["arrayMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
-  methodMap_["enumMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
+  methodMap_["enumMethod"] = MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
   methodMap_["unionMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::unionMethod};
+  methodMap_["promiseMethod"] =
+      MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
 
   callInvoker_ = std::move(jsInvoker);
 }
 
 jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                             react::TurboModule &turboModule,
+                                             const jsi::Value args[],
+                                             size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isNumber()) {
     auto arg0 = args[0].asNumber();
@@ -42,9 +46,9 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                             react::TurboModule &turboModule,
+                                             const jsi::Value args[],
+                                             size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isBool()) {
     auto arg0 = args[0].asBool();
@@ -56,13 +60,14 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                            react::TurboModule &turboModule,
+                                            const jsi::Value args[],
+                                            size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isString()) {
     auto arg0 = args[0].asString(rt).utf8(rt).c_str();
-    auto ret = jsi::String::createFromUtf8(rt, std::string(craby::ffi::stringMethod(arg0)));
+    auto ret = jsi::String::createFromUtf8(
+        rt, std::string(craby::ffi::stringMethod(arg0)));
     return jsi::Value(rt, ret);
   }
 
@@ -70,9 +75,9 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                            react::TurboModule &turboModule,
+                                            const jsi::Value args[],
+                                            size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isObject()) {
     auto arg0 = args[0].asObject(rt);
@@ -81,23 +86,19 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
     auto __TestObject$baz = arg0.getProperty(rt, "baz");
 
     // Validator
-    if (!(
-      __TestObject$foo.isString() &&
-      __TestObject$bar.isNumber() &&
-      __TestObject$baz.isBool()
-    )) {
+    if (!(__TestObject$foo.isString() && __TestObject$bar.isNumber() &&
+          __TestObject$baz.isBool())) {
       throw jsi::JSError(rt, "Invalid argument (TestObject)");
     }
 
     craby::ffi::TestObject testObject = {
-      __TestObject$foo.asString(rt).utf8(rt).c_str(),
-      __TestObject$bar.asNumber(),
-      __TestObject$baz.asBool()
-    };
+        __TestObject$foo.asString(rt).utf8(rt).c_str(),
+        __TestObject$bar.asNumber(), __TestObject$baz.asBool()};
 
     auto ret = craby::ffi::objectMethod(testObject);
     jsi::Object obj = jsi::Object(rt);
-    obj.setProperty(rt, "foo", jsi::String::createFromUtf8(rt, ret.foo.c_str()));
+    obj.setProperty(rt, "foo",
+                    jsi::String::createFromUtf8(rt, std::string(ret.foo)));
     obj.setProperty(rt, "bar", jsi::Value(ret.bar));
     obj.setProperty(rt, "baz", jsi::Value(ret.baz));
 
@@ -108,9 +109,9 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                           react::TurboModule &turboModule,
+                                           const jsi::Value args[],
+                                           size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isObject()) {
     auto _0 = args[0].asObject(rt);
@@ -125,13 +126,13 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
     vec.reserve(len);
 
     for (size_t i = 0; i < len; i++) {
-        auto el = arg0.getValueAtIndex(rt, i);
+      auto el = arg0.getValueAtIndex(rt, i);
 
-        if (!el.isNumber()) {
-          throw jsi::JSError(rt, "Expected a number");
-        }
+      if (!el.isNumber()) {
+        throw jsi::JSError(rt, "Expected a number");
+      }
 
-        vec.push_back(el.asNumber());
+      vec.push_back(el.asNumber());
     }
 
     auto ret = craby::ffi::arrayMethod(vec);
@@ -149,9 +150,9 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                          react::TurboModule &turboModule,
+                                          const jsi::Value args[],
+                                          size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isString()) {
     auto arg0 = args[0].asString(rt).utf8(rt);
@@ -167,7 +168,8 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Invalid argument (MyEnum)");
     }
 
-    auto ret = jsi::String::createFromUtf8(rt, std::string(craby::ffi::enumMethod(enum_arg)));
+    auto ret = jsi::String::createFromUtf8(
+        rt, std::string(craby::ffi::enumMethod(enum_arg)));
     return jsi::Value(rt, ret);
   }
 
@@ -175,22 +177,75 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
 }
 
 jsi::Value CxxCrabyTestModule::unionMethod(jsi::Runtime &rt,
-                                         react::TurboModule &turboModule,
-                                         const jsi::Value args[],
-                                         size_t count) {
+                                           react::TurboModule &turboModule,
+                                           const jsi::Value args[],
+                                           size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   if (1 == count && args[0].isString()) {
     auto arg0 = args[0].asString(rt).utf8(rt);
 
-    if (!(arg0 == "up" || arg0 == "down" || arg0 == "left" || arg0 == "right")) {
+    if (!(arg0 == "up" || arg0 == "down" || arg0 == "left" ||
+          arg0 == "right")) {
       throw jsi::JSError(rt, "Invalid union argument");
     }
 
-    auto ret = jsi::String::createFromUtf8(rt, std::string(craby::ffi::unionMethod(arg0.c_str())));
+    auto ret = jsi::String::createFromUtf8(
+        rt, std::string(craby::ffi::unionMethod(arg0.c_str())));
     return jsi::Value(rt, ret);
   }
 
   throw jsi::JSError(rt, "Expected 1 argument (string)");
+}
+
+jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
+                                             react::TurboModule &turboModule,
+                                             const jsi::Value args[],
+                                             size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  if (!(1 == count && args[0].isNumber())) {
+    throw jsi::JSError(rt, "Expected 1 argument (number)");
+  }
+
+  auto arg0 = args[0].asNumber();
+
+  return rt.global()
+      .getPropertyAsFunction(rt, "Promise")
+      .callAsConstructor(
+          rt,
+          jsi::Function::createFromHostFunction(
+              rt, jsi::PropNameID::forAscii(rt, "executor"), 2,
+              [callInvoker, arg0, count](
+                  jsi::Runtime &rt, const jsi::Value &thisValue,
+                  const jsi::Value *args, size_t _count) mutable -> jsi::Value {
+                auto resolve = std::make_shared<jsi::Function>(
+                    args[0].asObject(rt).asFunction(rt));
+                auto reject = std::make_shared<jsi::Function>(
+                    args[1].asObject(rt).asFunction(rt));
+
+                std::thread([callInvoker, arg0, resolve, reject]() mutable {
+                  try {
+                    auto ret = craby::ffi::promiseMethod(arg0);
+
+                    callInvoker->invokeAsync(
+                        [resolve, ret](jsi::Runtime &rt) mutable {
+                          resolve->call(rt, jsi::Value(ret));
+                        });
+                  } catch (const std::exception &err) {
+                    const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+                    auto msg = std::string(rs_err ? rs_err->what() : err.what());
+
+                    callInvoker->invokeAsync(
+                        [reject, msg](jsi::Runtime &rt) mutable {
+                          reject->call(
+                              rt, jsi::String::createFromUtf8(rt, msg));
+                        });
+                  }
+                }).detach();
+
+                return jsi::Value();
+              }));
 }
 
 } // namespace crabytest
