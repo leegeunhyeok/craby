@@ -71,7 +71,6 @@
     "unordered_set": "cpp",
     "variant": "cpp",
     "vector": "cpp",
-    "algorithm": "cpp",
-    "*.rs": "cpp"
+    "algorithm": "cpp"
   }
 }

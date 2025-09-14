@@ -4,17 +4,13 @@ use owo_colors::OwoColorize;
 
 use crate::utils::terminal::CodeHighlighter;
 
-pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
+pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
     println!("├─ Methods ({})", schema.spec.methods.len());
 
     let highlighter = CodeHighlighter::new();
 
-    schema
-        .spec
-        .methods
-        .iter()
-        .enumerate()
-        .for_each(|(i, method)| {
+    schema.spec.methods.iter().enumerate().try_for_each(
+        |(i, method)| -> Result<(), anyhow::Error> {
             if i == schema.spec.methods.len() - 1 {
                 print!("│   └─ ");
             } else {
@@ -22,17 +18,16 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
             }
 
             if config.is_excluded_method(&method.name) {
-                println!(
-                    "{} {}",
-                    method.to_sig().dimmed(),
-                    "(excluded)".yellow()
-                );
+                println!("{} {}", method.to_sig()?.dimmed(), "(excluded)".yellow());
             } else if config.is_included_method(&method.name) {
-                highlighter.highlight_code(&method.to_sig(), "rs");
+                highlighter.highlight_code(&method.to_sig()?, "rs");
             } else {
                 println!("{} {}", method.name, "(not included)".dimmed());
             }
-        });
+
+            Ok(())
+        },
+    )?;
 
     // Type Aliases
     println!("├─ Type Aliases ({})", schema.alias_map.len());
@@ -53,4 +48,6 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) {
     // Enums
     println!("└─ Enums (0)");
     println!("   {}", "(None)".dimmed());
+
+    Ok(())
 }

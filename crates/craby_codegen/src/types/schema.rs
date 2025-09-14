@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use craby_common::{
-    constants::impl_mod_name,
-    utils::string::{pascal_case, snake_case, SanitizedString},
-};
+use craby_common::utils::string::{pascal_case, snake_case};
 use indoc::formatdoc;
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -156,8 +153,8 @@ pub struct FunctionSpec {
 }
 
 impl TypeAnnotation {
-    pub fn to_type(&self) -> String {
-        match self {
+    pub fn to_type(&self) -> Result<Type, anyhow::Error> {
+        let r#type = match self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation => Type::Boolean,
 
@@ -175,7 +172,7 @@ impl TypeAnnotation {
 
             // Array type
             TypeAnnotation::ArrayTypeAnnotation { element_type } => {
-                Type::Array(element_type.to_type())
+                Type::Array(element_type.to_type()?.to_string())
             }
 
             // Type alias
@@ -187,8 +184,7 @@ impl TypeAnnotation {
             // Unsupported types
             TypeAnnotation::FunctionTypeAnnotation { .. }
             | TypeAnnotation::ObjectTypeAnnotation { .. } => {
-                error!("Unsupported type annotation: {:?}", self);
-                unimplemented!();
+                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
             }
 
             _ => {
@@ -256,8 +252,9 @@ impl TypeAnnotation {
                 //     }
                 // }
             }
-        }
-        .to_string()
+        };
+
+        Ok(r#type)
     }
 
     /// Unwrap nullable type annotations to get the inner type and nullable flag
@@ -273,7 +270,7 @@ impl TypeAnnotation {
 }
 
 impl Parameter {
-    pub fn to_sig(&self) -> String {
+    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
         if let TypeAnnotation::ObjectTypeAnnotation { .. }
         | TypeAnnotation::GenericObjectTypeAnnotation { .. } = self.type_annotation
         {
@@ -288,7 +285,7 @@ impl Parameter {
         }
 
         let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let param_type = type_annotation.to_type();
+        let param_type = type_annotation.to_type()?.to_string();
 
         let final_type = if self.optional && !is_nullable {
             format!("Option<{}>", param_type)
@@ -302,23 +299,23 @@ impl Parameter {
             param_type
         };
 
-        format!("{}: {}", self.name, final_type)
+        Ok(format!("{}: {}", self.name, final_type))
     }
 }
 
 impl FunctionSpec {
-    pub fn to_sig(&self) -> String {
+    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_type();
+                let return_type = return_type_annotation.to_type()?.to_string();
                 let params_sig = params
                     .iter()
                     .map(|p| p.to_sig())
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|p| p.join(", "))?;
 
                 let fn_name = snake_case(&self.name);
                 let ret_annotation = if return_type == "()" {
@@ -327,47 +324,12 @@ impl FunctionSpec {
                     format!(" -> {}", return_type)
                 };
 
-                format!(
+                Ok(format!(
                     "fn {}({}){}",
                     fn_name.to_string(),
                     params_sig,
                     ret_annotation
-                )
-            }
-            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
-        }
-    }
-
-    /// Returns the Rust function signature for the `FunctionSpec`.
-    ///
-    /// ```rust,ignore
-    /// pub my_func(arg1: Foo, arg2: Bar) {
-    ///     my_mod_impl::my_func(arg1, arg2)
-    /// }
-    /// ```
-    pub fn to_rs_func(&self, mod_name: &String) -> String {
-        match &self.type_annotation {
-            TypeAnnotation::FunctionTypeAnnotation { params, .. } => {
-                let params = params
-                    .iter()
-                    .map(|p| p.name.clone())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-
-                let fn_sig = self.to_sig();
-                let fn_name = SanitizedString::from(&self.name);
-                let impl_mod_name = impl_mod_name(mod_name);
-
-                formatdoc! {
-                    r#"
-                    pub {fn_sig} {{
-                        {impl_mod}::{fn_name}({fn_params})
-                    }}"#,
-                    impl_mod = impl_mod_name.to_string(),
-                    fn_name = fn_name.to_string(),
-                    fn_sig = fn_sig,
-                    fn_params = params,
-                }
+                ))
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
@@ -385,18 +347,18 @@ impl FunctionSpec {
     ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn to_cxx_func(&self, mod_name: &String) -> CxxFunction {
+    pub fn to_cxx_func(&self, mod_name: &String) -> Result<CxxFunction, anyhow::Error> {
         match &self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_type();
+                let return_type = return_type_annotation.to_type()?.to_string();
                 let params_sig = params
                     .iter()
                     .map(|p| p.to_sig())
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|p| p.join(", "))?;
 
                 let impl_name = pascal_case(mod_name);
                 let fn_name = snake_case(&self.name);
@@ -432,10 +394,10 @@ impl FunctionSpec {
                     fn_args = fn_args.join(", "),
                 };
 
-                CxxFunction {
+                Ok(CxxFunction {
                     extern_func,
                     impl_func,
-                }
+                })
             }
             _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }

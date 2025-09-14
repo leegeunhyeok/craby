@@ -2,7 +2,7 @@ use craby_common::utils::string::pascal_case;
 use indoc::formatdoc;
 
 use crate::{
-    types::schema::{CxxFunction, FunctionSpec, Schema},
+    types::schema::{CxxFunction, Schema},
     utils::indent_str,
 };
 
@@ -20,23 +20,28 @@ impl CodeGenerator {
     ///     fn multiply(a: f64, b: f64) -> f64;
     /// }
     /// ```
-    pub fn generate_spec(&self, schema: &Schema) -> String {
+    pub fn generate_spec(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
         let methods = schema
             .spec
             .methods
             .iter()
-            .map(|spec| format!("{};", spec.to_sig()))
-            .collect::<Vec<_>>();
+            .map(|spec| -> Result<String, anyhow::Error> {
+                let sig = spec.to_sig()?;
+                Ok(format!("{};", sig))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
 
-        formatdoc! {
+        let code = formatdoc! {
           r#"
           pub trait {trait_name} {{
           {methods}
           }}"#,
           trait_name = trait_name,
           methods = indent_str(methods.join("\n"), 4),
-        }
+        };
+
+        Ok(code)
     }
 
     /// Generate the empty module for the given schema.
@@ -52,7 +57,7 @@ impl CodeGenerator {
     ///     }
     /// }
     /// ```
-    pub fn generate_impl(&self, schema: &Schema) -> String {
+    pub fn generate_impl(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let mod_name = pascal_case(schema.module_name.as_str());
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
 
@@ -60,20 +65,21 @@ impl CodeGenerator {
             .spec
             .methods
             .iter()
-            .map(|spec| {
-                let func_sig = spec.to_sig();
-
-                formatdoc! {
+            .map(|spec| -> Result<String, anyhow::Error> {
+                let func_sig = spec.to_sig()?;
+                let code = formatdoc! {
                   r#"
                   {func_sig} {{
                       unimplemented!();
                   }}"#,
                   func_sig = func_sig,
-                }
-            })
-            .collect::<Vec<_>>();
+                };
 
-        formatdoc! {
+                Ok(code)
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let code = formatdoc! {
           r#"
           use crate::{{ffi::ffi::*, generated::*}};
 
@@ -85,7 +91,9 @@ impl CodeGenerator {
           trait_name = trait_name,
           mod_name= mod_name,
           methods = indent_str(methods.join("\n\n"), 4),
-        }
+        };
+
+        Ok(code)
     }
 
     /// Returns the CXX(FFI) function signature for the `FunctionSpec`.
@@ -100,13 +108,15 @@ impl CodeGenerator {
     ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn get_cxx_functions(&self, schema: &Schema) -> Vec<CxxFunction> {
-        schema
+    pub fn get_cxx_functions(&self, schema: &Schema) -> Result<Vec<CxxFunction>, anyhow::Error> {
+        let res = schema
             .spec
             .methods
             .iter()
-            .map(|spec: &FunctionSpec| spec.to_cxx_func(&schema.module_name))
-            .collect::<Vec<_>>()
+            .map(|spec| spec.to_cxx_func(&schema.module_name))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(res)
     }
 }
 
@@ -158,7 +168,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_spec(&schema);
+        let result = generator.generate_spec(&schema).unwrap();
 
         assert_eq!(
             result,
@@ -399,7 +409,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_spec(&schema);
+        let result = generator.generate_spec(&schema).unwrap();
 
         assert_eq!(
             result,
@@ -456,7 +466,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.generate_impl(&schema);
+        let result = generator.generate_impl(&schema).unwrap();
 
         assert_eq!(
             result,
@@ -519,7 +529,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.get_cxx_functions(&schema);
+        let result = generator.get_cxx_functions(&schema).unwrap();
         let result = result.get(0).unwrap();
 
         assert_eq!(

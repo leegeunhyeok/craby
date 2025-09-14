@@ -53,12 +53,12 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
                 return Err(anyhow::anyhow!("Component type is not supported"));
             }
 
-            print_schema(&schema, &config);
+            print_schema(&schema, &config)?;
 
             let impl_mod_name = impl_mod_name(&schema.module_name);
-            let spec_code = generator.generate_spec(&schema);
-            let impl_code = generator.generate_impl(&schema);
-            cxx_functions.extend(generator.get_cxx_functions(&schema));
+            let spec_code = generator.generate_spec(&schema)?;
+            let impl_code = generator.generate_impl(&schema)?;
+            cxx_functions.extend(generator.get_cxx_functions(&schema)?);
 
             spec_codes.push(spec_code);
             impl_mods.push(format!("pub(crate) mod {};", impl_mod_name));
