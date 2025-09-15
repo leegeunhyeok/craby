@@ -49,11 +49,6 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(),
         println!("{}", name.blue());
     });
 
-    // TODO: Impl
-    // Event Emitters
-    println!("├─ Event Emitters (0)");
-    println!("│  {}", "(None)".dimmed());
-
     // Enums
     println!("└─ Enums (0)");
     println!("   {}", "(None)".dimmed());

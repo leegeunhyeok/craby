@@ -5,73 +5,57 @@ use crate::craby_test_impl::*;
 
 #[cxx::bridge(namespace = "craby::crabytest")]
 pub mod craby_test {
-    struct TestObject {
-        foo: String,
-        bar: f64,
-        baz: bool,
-    }
-
-    enum MyEnum {
-        FOO,
-        BAR,
-        BAZ,
-    }
+    // Type definitions
+    // N/A
 
     extern "Rust" {
         #[cxx_name = "numericMethod"]
-        fn numeric_method(arg: f64) -> f64;
+        fn craby_test_numeric_method(arg: f64) -> f64;
 
         #[cxx_name = "booleanMethod"]
-        fn boolean_method(arg: bool) -> bool;
+        fn craby_test_boolean_method(arg: bool) -> bool;
 
         #[cxx_name = "stringMethod"]
-        fn string_method(arg: String) -> String;
+        fn craby_test_string_method(arg: String) -> String;
 
         #[cxx_name = "objectMethod"]
-        fn object_method(arg: TestObject) -> TestObject;
+        fn craby_test_object_method(arg: ());
 
         #[cxx_name = "arrayMethod"]
-        fn array_method(arg: Vec<f64>) -> Vec<f64>;
+        fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64>;
 
         #[cxx_name = "enumMethod"]
-        fn enum_method(arg: MyEnum) -> String;
-
-        #[cxx_name = "unionMethod"]
-        fn union_method(arg: String) -> String;
+        fn craby_test_enum_method(arg: MyEnum) -> String;
 
         #[cxx_name = "promiseMethod"]
-        fn promise_method(arg: f64) -> Result<f64>;
+        fn craby_test_promise_method(arg: f64) -> Result<f64>;
     }
 }
 
-fn numeric_method(arg: f64) -> f64 {
+fn craby_test_numeric_method(arg: f64) -> f64 {
     CrabyTest::numeric_method(arg)
 }
 
-fn boolean_method(arg: bool) -> bool {
+fn craby_test_boolean_method(arg: bool) -> bool {
     CrabyTest::boolean_method(arg)
 }
 
-fn string_method(arg: String) -> String {
+fn craby_test_string_method(arg: String) -> String {
     CrabyTest::string_method(arg)
 }
 
-fn object_method(arg: TestObject) -> TestObject {
+fn craby_test_object_method(arg: ()) {
     CrabyTest::object_method(arg)
 }
 
-fn array_method(arg: Vec<f64>) -> Vec<f64> {
+fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64> {
     CrabyTest::array_method(arg)
 }
 
-fn enum_method(arg: MyEnum) -> String {
+fn craby_test_enum_method(arg: MyEnum) -> String {
     CrabyTest::enum_method(arg)
 }
 
-fn union_method(arg: String) -> String {
-    CrabyTest::union_method(arg)
-}
-
-fn promise_method(arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {
     CrabyTest::promise_method(arg)
 }

@@ -49,7 +49,7 @@ impl ToRsType for TypeAnnotation {
             }
 
             // Type alias
-            TypeAnnotation::TypeAliasTypeAnnotation { .. } => "()".to_string(), // TODO
+            TypeAnnotation::TypeAliasTypeAnnotation { name } => name.clone(),
 
             // Enum
             TypeAnnotation::EnumDeclaration { name, .. } => name.clone(),
@@ -211,7 +211,7 @@ pub fn ffi_rs(codgen_res: &Vec<CodegenResult>) -> String {
 
         {cxx_impl}"#,
         impl_mods = impl_mods.join("\n"),
-        cxx_extern = indent_str(cxx_externs.join("\n\n"), 8),
+        cxx_extern = cxx_externs.join("\n\n"),
         cxx_impl = cxx_impls.join("\n\n"),
     }
 }
@@ -255,7 +255,8 @@ fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
                 r#"
                 #[cxx::bridge(namespace = "craby::{flat_name}")]
                 pub mod {snake_name} {{
-                    {type_defs}
+                    // Type definitions
+                {type_defs}
 
                     extern "Rust" {{
                 {cxx_extern}
@@ -263,8 +264,8 @@ fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
                 }}"#,
                 flat_name = flat_name,
                 snake_name = snake_name,
-                type_defs = "", // TODO
-                cxx_extern = cxx_extern.join("\n\n"),
+                type_defs = indent_str("// N/A".to_string(), 4), // TODO
+                cxx_extern = indent_str(cxx_extern.join("\n\n"), 8),
             }
         })
         .collect::<Vec<_>>()

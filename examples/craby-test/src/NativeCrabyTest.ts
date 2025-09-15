@@ -13,8 +13,6 @@ export enum MyEnum {
   BAZ = 'BAZ',
 }
 
-export type Direction = 'up' | 'down' | 'left' | 'right';
-
 export interface Spec extends TurboModule {
   numericMethod(arg: number): number;
   booleanMethod(arg: boolean): boolean;
@@ -22,7 +20,6 @@ export interface Spec extends TurboModule {
   objectMethod(arg: TestObject): TestObject;
   arrayMethod(arg: number[]): number[];
   enumMethod(arg: MyEnum): string;
-  unionMethod(arg: Direction): string;
   promiseMethod(arg: number): Promise<number>;
 }
 

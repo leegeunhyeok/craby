@@ -23,7 +23,7 @@ impl CodeGenerator {
     pub fn generate(&self, schema: &Schema) -> Result<CodegenResult, anyhow::Error> {
         let spec_code = self.generate_spec(schema)?;
         let impl_code = self.generate_impl(schema)?;
-        let cxx_bridges = self.get_cxx_bridge_funcs(schema)?;
+        let cxx_bridges = self.get_cxx_bridges(schema)?;
 
         Ok(CodegenResult {
             module_name: schema.module_name.clone(),
@@ -124,15 +124,15 @@ impl CodeGenerator {
     ///
     /// ```rust,ignore
     /// // extern function
-    /// #[cxx_name = "myFunc"]
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
+    /// #[cxx_name = "multiply"]
+    /// fn my_module_multiply(a: f64, b: f64) -> f64;
     ///
     /// // impl function
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
-    ///     MyModule::my_func(arg1, arg2)
+    /// fn my_module_multiply(a: f64, b: f64) -> f64 {
+    ///     MyModule::multiply(a, b)
     /// }
     /// ```
-    fn get_cxx_bridge_funcs(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
+    fn get_cxx_bridges(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
         let res = schema
             .spec
             .methods
@@ -553,7 +553,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.get_cxx_bridge_funcs(&schema).unwrap();
+        let result = generator.get_cxx_bridges(&schema).unwrap();
         let result = result.get(0).unwrap();
 
         assert_eq!(

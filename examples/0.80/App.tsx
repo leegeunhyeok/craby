@@ -15,7 +15,6 @@ import {
   objectMethod,
   arrayMethod,
   enumMethod,
-  unionMethod,
   promiseMethod,
   MyEnum,
   type TestObject,
@@ -32,7 +31,6 @@ export function App() {
     object: TestObject | null;
     array: number[] | null;
     enum: string | null;
-    union: string | null;
     promise: number | null;
   }>({
     numeric: null,
@@ -41,7 +39,6 @@ export function App() {
     object: null,
     array: null,
     enum: null,
-    union: null,
     promise: null,
   });
 
@@ -142,18 +139,7 @@ export function App() {
   }, [numericInput]);
 
   useEffect(() => {
-    // Test union function
-    try {
-      setResults(prev => ({ ...prev, union: unionMethod('up') }));
-    } catch (error) {
-      console.warn('Union function error:', error);
-      setResults(prev => ({ ...prev, union: null }));
-    }
-  }, []);
-
-
-  useEffect(() => {
-    // Test union function
+    // Test promise function
     const numValue = parseFloat(numericInput);
 
     if (Number.isNaN(numValue)) {
@@ -179,7 +165,6 @@ export function App() {
       object: null,
       array: null,
       enum: null,
-      union: null,
       promise: null,
     });
   };
@@ -310,20 +295,11 @@ export function App() {
       />
 
       <TestCard
-        title="Union Function"
-        funcName="unionMethod(union)"
-        input={JSON.stringify(results.union)}
-        result={results.union}
-        color="#DCE775"
-        type="union"
-      />
-
-      <TestCard
         title="Promise Function"
         funcName="promiseMethod(number)"
         input={JSON.stringify(results.promise)}
         result={results.promise}
-        color="#78909C"
+        color="#DCE775"
         type="promise"
       />
 

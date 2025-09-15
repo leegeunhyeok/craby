@@ -21,8 +21,6 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["arrayMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["enumMethod"] = MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
-  methodMap_["unionMethod"] =
-      MethodMetadata{1, &CxxCrabyTestModule::unionMethod};
   methodMap_["promiseMethod"] =
       MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
 }
@@ -108,27 +106,6 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<craby::ffi::MyEnum>(rt, args[0], thisModule.callInvoker_);
     auto ret = craby::ffi::enumMethod(arg0);
     return react::bridging::toJs(rt, std::string(ret));
-  }
-
-  throw jsi::JSError(rt, "Expected 1 argument (string)");
-}
-
-jsi::Value CxxCrabyTestModule::unionMethod(jsi::Runtime &rt,
-                                           react::TurboModule &turboModule,
-                                           const jsi::Value args[],
-                                           size_t count) {
-  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
-  if (1 == count && args[0].isString()) {
-    auto arg0 = args[0].asString(rt).utf8(rt);
-
-    if (!(arg0 == "up" || arg0 == "down" || arg0 == "left" ||
-          arg0 == "right")) {
-      throw jsi::JSError(rt, "Invalid union argument");
-    }
-
-    auto ret = jsi::String::createFromUtf8(
-        rt, std::string(craby::ffi::unionMethod(arg0.c_str())));
-    return jsi::Value(rt, ret);
   }
 
   throw jsi::JSError(rt, "Expected 1 argument (string)");

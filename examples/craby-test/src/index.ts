@@ -1,8 +1,4 @@
-import CrabyTestModule, {
-  MyEnum,
-  type Direction,
-  type TestObject,
-} from './NativeCrabyTest';
+import CrabyTestModule, { MyEnum, type TestObject } from './NativeCrabyTest';
 
 export function numericMethod(arg: number) {
   return CrabyTestModule.numericMethod(arg);
@@ -28,13 +24,9 @@ export function enumMethod(arg: MyEnum) {
   return CrabyTestModule.enumMethod(arg);
 }
 
-export function unionMethod(arg: Direction) {
-  return CrabyTestModule.unionMethod(arg);
-}
-
 export function promiseMethod(arg: number) {
   return CrabyTestModule.promiseMethod(arg);
 }
 
-export type { TestObject, Direction };
+export type { TestObject };
 export { MyEnum };
