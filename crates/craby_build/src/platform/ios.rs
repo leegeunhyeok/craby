@@ -5,7 +5,7 @@ use crate::{
     constants::{ios::Identifier, toolchain::Target},
 };
 
-use craby_codegen::{constants::objc_mod_provider_name, platform::ios::info_plist};
+use craby_codegen::constants::objc_mod_provider_name;
 use craby_common::{
     config::CompleteCrabyConfig, constants::lib_base_name, utils::string::SanitizedString,
 };
@@ -49,7 +49,7 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
             "{}.mm",
             objc_mod_provider_name(&config.project.name)
         )),
-        craby_codegen::platform::ios::objc_mod_provider(&config.project.name),
+        craby_codegen::platform::ios::template::objc_mod_provider(&config.project.name),
     )?;
 
     Ok(())
@@ -58,7 +58,7 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
 fn create_xcframework(config: &CompleteCrabyConfig) -> Result<PathBuf, anyhow::Error> {
     let name = SanitizedString::from(&config.project.name);
     let lib_base_name = lib_base_name(&name);
-    let info_plist_content = info_plist(
+    let info_plist_content = craby_codegen::platform::ios::template::info_plist(
         &config.project.name,
         Identifier::Arm64.to_str(),
         Identifier::Arm64Simulator.to_str(),

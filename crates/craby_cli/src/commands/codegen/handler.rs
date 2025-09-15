@@ -33,7 +33,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     let total_mods = opts.schemas.len();
     let mut mod_names = vec![];
     let mut spec_codes = vec!["use crate::ffi::ffi::*;".to_string()];
-    let mut cxx_functions = vec![];
+    let mut cxx_bridges = vec![];
     let mut impl_mods = vec![];
     let generator = CodeGenerator::new();
 
@@ -58,7 +58,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             let impl_mod_name = impl_mod_name(&schema.module_name);
             let spec_code = generator.generate_spec(&schema)?;
             let impl_code = generator.generate_impl(&schema)?;
-            cxx_functions.extend(generator.get_cxx_functions(&schema)?);
+            cxx_bridges.extend(generator.get_cxx_bridge_funcs(&schema)?);
 
             spec_codes.push(spec_code);
             impl_mods.push(format!("pub(crate) mod {};", impl_mod_name));
@@ -82,7 +82,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     )?;
     write_file(
         crate_src_path.join(format!("{}.rs", FFI_MOD)),
-        with_generated_comment(ffi_rs(&mod_names, &cxx_functions)),
+        with_generated_comment(ffi_rs(&mod_names, &cxx_bridges)),
         true,
     )?;
     write_file(

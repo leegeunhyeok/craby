@@ -1,6 +1,5 @@
 use std::{fs, path::PathBuf};
 
-use craby_codegen::platform::android::{cmakelists, cxx_on_load};
 use craby_common::config::CompleteCrabyConfig;
 use log::debug;
 
@@ -48,13 +47,13 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
     // android/CMakeLists.txt
     fs::write(
         android_path.join("CMakeLists.txt"),
-        cmakelists(&config.project.name),
+        craby_codegen::platform::android::template::cmakelists(&config.project.name),
     )?;
 
     // android/src/main/jni/OnLoad.cpp
     fs::write(
         jni_base_path.join("OnLoad.cpp"),
-        cxx_on_load(&config.project.name),
+        craby_codegen::platform::android::template::cxx_on_load(&config.project.name),
     )?;
 
     Ok(())

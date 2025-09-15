@@ -2,7 +2,11 @@ use craby_common::utils::string::pascal_case;
 use indoc::formatdoc;
 
 use crate::{
-    types::schema::{CxxFunction, Schema},
+    platform::{
+        cxx::{CxxBridge, ToCxxBridge},
+        rust::ToSig,
+    },
+    types::schema::Schema,
     utils::indent_str,
 };
 
@@ -108,12 +112,12 @@ impl CodeGenerator {
     ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn get_cxx_functions(&self, schema: &Schema) -> Result<Vec<CxxFunction>, anyhow::Error> {
+    pub fn get_cxx_bridge_funcs(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
         let res = schema
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_cxx_func(&schema.module_name))
+            .map(|spec| spec.to_cxx_bridge(&schema.module_name))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)
@@ -529,7 +533,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.get_cxx_functions(&schema).unwrap();
+        let result = generator.get_cxx_bridge_funcs(&schema).unwrap();
         let result = result.get(0).unwrap();
 
         assert_eq!(
