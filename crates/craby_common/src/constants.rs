@@ -30,8 +30,6 @@ pub mod android {
 
 pub mod ios {}
 
-pub const GENERATED_MOD: &str = "generated";
-pub const FFI_MOD: &str = "ffi";
 pub const TEMP_DIR: &str = ".craby";
 
 pub fn lib_base_name(name: &SanitizedString) -> String {

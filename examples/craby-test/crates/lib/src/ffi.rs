@@ -3,8 +3,8 @@ use ffi::*;
 use crate::generated::*;
 use crate::craby_test_impl::*;
 
-#[cxx::bridge(namespace = "craby::ffi")]
-pub mod ffi {
+#[cxx::bridge(namespace = "craby::crabytest")]
+pub mod craby_test {
     struct TestObject {
         foo: String,
         bar: f64,

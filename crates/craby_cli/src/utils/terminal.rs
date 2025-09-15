@@ -6,7 +6,10 @@ use syntect::{
 };
 use syntect_assets::assets::HighlightingAssets;
 
-pub fn with_spinner(msg: &str, f: impl FnOnce(&ProgressBar) -> anyhow::Result<()>) -> anyhow::Result<()> {
+pub fn with_spinner(
+    msg: &str,
+    f: impl FnOnce(&ProgressBar) -> anyhow::Result<()>,
+) -> anyhow::Result<()> {
     let pb = ProgressBar::new_spinner();
 
     pb.set_message(msg.to_string());

@@ -66,15 +66,6 @@ pub enum TypeAnnotation {
         name: String,
     },
 
-    // String types
-    StringTypeAnnotation,
-    StringLiteralTypeAnnotation {
-        value: String,
-    },
-    StringLiteralUnionTypeAnnotation {
-        types: Vec<Box<TypeAnnotation>>,
-    },
-
     // Boolean type
     BooleanTypeAnnotation,
 
@@ -87,6 +78,21 @@ pub enum TypeAnnotation {
         value: f64,
     },
 
+    // String types
+    StringTypeAnnotation,
+    StringLiteralTypeAnnotation {
+        value: String,
+    },
+    StringLiteralUnionTypeAnnotation {
+        types: Vec<Box<TypeAnnotation>>,
+    },
+
+    // Array type
+    ArrayTypeAnnotation {
+        #[serde(rename = "elementType")]
+        element_type: Box<TypeAnnotation>,
+    },
+
     // Enum
     EnumDeclaration {
         name: String,
@@ -96,10 +102,10 @@ pub enum TypeAnnotation {
         members: Option<Vec<EnumMember>>,
     },
 
-    // Array type
-    ArrayTypeAnnotation {
-        #[serde(rename = "elementType")]
-        element_type: Box<TypeAnnotation>,
+    // Object types
+    GenericObjectTypeAnnotation,
+    ObjectTypeAnnotation {
+        properties: Option<Vec<ObjectProperty>>,
     },
 
     // Function type
@@ -107,12 +113,6 @@ pub enum TypeAnnotation {
         #[serde(rename = "returnTypeAnnotation")]
         return_type_annotation: Box<TypeAnnotation>,
         params: Vec<Parameter>,
-    },
-
-    // Object types
-    GenericObjectTypeAnnotation,
-    ObjectTypeAnnotation {
-        properties: Option<Vec<ObjectProperty>>,
     },
 
     // Union type
@@ -133,7 +133,7 @@ pub enum TypeAnnotation {
     // Void type
     VoidTypeAnnotation,
 
-    // Nullable wrapper
+    // Nullable type
     NullableTypeAnnotation {
         #[serde(rename = "typeAnnotation")]
         type_annotation: Box<TypeAnnotation>,
@@ -180,4 +180,18 @@ pub struct FunctionSpec {
     pub optional: bool,
     #[serde(rename = "typeAnnotation")]
     pub type_annotation: Box<TypeAnnotation>,
+}
+
+impl FunctionSpec {
+    pub fn args_count(&self) -> Result<usize, anyhow::Error> {
+        if let TypeAnnotation::FunctionTypeAnnotation { params, .. } = self.type_annotation.as_ref()
+        {
+            Ok(params.len())
+        } else {
+            return Err(anyhow::anyhow!(
+                "Function type annotation should be a function: {}",
+                self.name
+            ));
+        }
+    }
 }

@@ -41,7 +41,7 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 
@@ -65,7 +65,7 @@ pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 
@@ -87,7 +87,7 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 
@@ -113,7 +113,7 @@ pub fn show(opts: ShowOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 
@@ -135,7 +135,7 @@ pub fn doctor(opts: DoctorOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 
@@ -157,7 +157,7 @@ pub fn clean(opts: CleanOptions) -> napi::Result<()> {
         Err(e) => {
             error!("Error: {}", e.to_string());
             debug!("Error: {:?}", e);
-        },
+        }
         _ => (),
     };
 

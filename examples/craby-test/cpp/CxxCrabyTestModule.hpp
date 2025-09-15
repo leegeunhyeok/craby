@@ -6,7 +6,20 @@
 #include <react/bridging/Bridging.h>
 #include <jsi/jsi.h>
 
-#include "bridging.hpp"
+#include "cxx.h"
+#include "ffi.rs.h"
+#include "craby-bridging.hpp"
+
+namespace craby {
+namespace helpers {
+
+inline std::string errorMessage(const std::exception &err) {
+  const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+  return std::string(rs_err ? rs_err->what() : err.what());
+}
+
+} // namespace helpers
+} // namespace craby
 
 namespace craby {
 namespace crabytest {

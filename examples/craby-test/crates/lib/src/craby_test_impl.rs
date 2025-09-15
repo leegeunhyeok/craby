@@ -1,4 +1,4 @@
-use crate::{ffi::ffi::*, generated::*};
+use crate::{ffi::craby_test::*, generated::*};
 
 pub struct CrabyTest;
 

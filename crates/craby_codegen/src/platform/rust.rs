@@ -1,16 +1,21 @@
-use craby_common::{constants::impl_mod_name, utils::string::snake_case};
+use craby_common::{
+    constants::impl_mod_name,
+    utils::string::{flat_case, snake_case},
+};
 use indoc::formatdoc;
 use log::error;
 
 use crate::{
     types::{
         schema::{FunctionSpec, Parameter, TypeAnnotation},
-        types::ToType,
+        types::CodegenResult,
     },
     utils::indent_str,
 };
 
-use super::cxx::CxxBridge;
+pub trait ToRsType {
+    fn to_rs_type(&self) -> Result<String, anyhow::Error>;
+}
 
 pub trait ToSig {
     fn to_sig(&self) -> Result<String, anyhow::Error>;
@@ -20,6 +25,52 @@ pub trait ToExternType {
     fn to_extern_type(&self) -> Result<String, anyhow::Error>;
 }
 
+impl ToRsType for TypeAnnotation {
+    fn to_rs_type(&self) -> Result<String, anyhow::Error> {
+        let rs_type = match self {
+            // Boolean type
+            TypeAnnotation::BooleanTypeAnnotation => "bool".to_string(),
+
+            // Number types
+            TypeAnnotation::NumberTypeAnnotation
+            | TypeAnnotation::FloatTypeAnnotation
+            | TypeAnnotation::DoubleTypeAnnotation
+            | TypeAnnotation::Int32TypeAnnotation
+            | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => "f64".to_string(),
+
+            // String types
+            TypeAnnotation::StringTypeAnnotation
+            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => "String".to_string(),
+
+            // Array type
+            TypeAnnotation::ArrayTypeAnnotation { element_type } => {
+                format!("Vec<{}>", element_type.to_rs_type()?)
+            }
+
+            // Type alias
+            TypeAnnotation::TypeAliasTypeAnnotation { .. } => "()".to_string(), // TODO
+
+            // Enum
+            TypeAnnotation::EnumDeclaration { name, .. } => name.clone(),
+
+            // Promise type
+            TypeAnnotation::PromiseTypeAnnotation { element_type } => {
+                format!("Result<{}, anyhow::Error>", element_type.to_rs_type()?)
+            }
+
+            // Void type
+            TypeAnnotation::VoidTypeAnnotation => "()".to_string(),
+
+            _ => {
+                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
+            }
+        };
+
+        Ok(rs_type)
+    }
+}
+
 impl ToSig for FunctionSpec {
     fn to_sig(&self) -> Result<String, anyhow::Error> {
         match &*self.type_annotation {
@@ -27,7 +78,7 @@ impl ToSig for FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_type()?.to_string();
+                let return_type = return_type_annotation.to_rs_type()?;
                 let params_sig = params
                     .iter()
                     .map(|p| p.to_sig())
@@ -69,7 +120,7 @@ impl ToSig for Parameter {
         }
 
         let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let param_type = type_annotation.to_type()?.to_string();
+        let param_type = type_annotation.to_rs_type()?;
 
         let final_type = if self.optional && !is_nullable {
             format!("Option<{}>", param_type)
@@ -89,24 +140,28 @@ impl ToSig for Parameter {
 
 impl ToExternType for TypeAnnotation {
     fn to_extern_type(&self) -> Result<String, anyhow::Error> {
-        let r#type = self.to_type()?;
-        Ok(r#type.to_string())
+        let extern_type = match self {
+            TypeAnnotation::PromiseTypeAnnotation { element_type } => {
+                format!("Result<{}>", element_type.to_rs_type()?)
+            }
+            _ => self.to_rs_type()?,
+        };
+
+        Ok(extern_type)
     }
 }
 
-/// Generate the lib.rs file for the given module names.
+/// Generate the `lib.rs` file for the given code generation results.
 ///
 /// ```rust,ignore
-/// use crate::generated::*;
-///
 /// pub(crate) mod generated;
 /// pub(crate) mod ffi;
 /// pub(crate) mod my_module_impl;
 /// ```
-pub fn lib_rs(impl_mods: &Vec<String>) -> String {
-    let impl_mods = impl_mods
+pub fn lib_rs(codgen_res: &Vec<CodegenResult>) -> String {
+    let impl_mods = codgen_res
         .iter()
-        .map(|name| format!("pub(crate) mod {};", impl_mod_name(name)))
+        .map(|res| format!("pub(crate) mod {};", res.impl_mod.clone()))
         .collect::<Vec<String>>();
 
     formatdoc! {
@@ -118,21 +173,33 @@ pub fn lib_rs(impl_mods: &Vec<String>) -> String {
     }
 }
 
-pub fn ffi_rs(mod_names: &Vec<String>, cxx_bridges: &Vec<CxxBridge>) -> String {
-    let impl_mods = mod_names
+/// Generate the `ffi.rs` file for the given code generation results.
+///
+/// ```rust,ignore
+/// use ffi::*;
+/// use crate::generated::*;
+/// use crate::my_module_impl::*;
+/// 
+/// #[cxx::bridge(namespace = "craby::mymodule")]
+/// pub mod my_module {
+///     extern "Rust" {
+///         #[cxx_name = "numericMethod"]
+///         fn my_module_numeric_method(arg: f64) -> f64;
+///     }
+/// }
+/// 
+/// fn my_module_numeric_method(arg: f64) -> f64 {
+///     MyModule::numeric_method(arg)
+/// }
+/// ```
+pub fn ffi_rs(codgen_res: &Vec<CodegenResult>) -> String {
+    let impl_mods = codgen_res
         .iter()
-        .map(|mod_name| format!("use crate::{}::*;", impl_mod_name(mod_name)))
+        .map(|res| format!("use crate::{}::*;", impl_mod_name(&res.module_name)))
         .collect::<Vec<_>>();
 
-    let cxx_extern = cxx_bridges
-        .iter()
-        .map(|func| func.extern_func.clone())
-        .collect::<Vec<_>>();
-
-    let cxx_impl = cxx_bridges
-        .iter()
-        .map(|func| func.impl_func.clone())
-        .collect::<Vec<_>>();
+    let cxx_externs = cxx_bridging_extern(&codgen_res);
+    let cxx_impls = cxx_bridging_impl(&codgen_res);
 
     formatdoc! {
         r#"
@@ -140,19 +207,78 @@ pub fn ffi_rs(mod_names: &Vec<String>, cxx_bridges: &Vec<CxxBridge>) -> String {
         use crate::generated::*;
         {impl_mods}
 
-        #[cxx::bridge(namespace = "craby::ffi")]
-        pub mod ffi {{
-            {type_defs}
-
-            extern "Rust" {{
         {cxx_extern}
-            }}
-        }}
 
         {cxx_impl}"#,
-        type_defs = "", // TODO
         impl_mods = impl_mods.join("\n"),
-        cxx_extern = indent_str(cxx_extern.join("\n\n"), 8),
-        cxx_impl = cxx_impl.join("\n\n"),
+        cxx_extern = indent_str(cxx_externs.join("\n\n"), 8),
+        cxx_impl = cxx_impls.join("\n\n"),
     }
+}
+
+/// Generate the `generated.rs` file for the given code generation results.
+///
+/// ```rust,ignore
+/// use crate::ffi::my_module::*;
+/// 
+/// pub trait MyModuleSpec {
+///     fn multiply(a: f64, b: f64) -> f64;
+/// }
+/// ```
+pub fn generated_rs(codegen_res: &Vec<CodegenResult>) -> String {
+    let use_mods = codegen_res
+        .iter()
+        .map(|res| format!("use crate::ffi::{}::*;", res.ffi_mod.clone()))
+        .collect::<Vec<_>>();
+
+    let spec_codes = codegen_res
+        .iter()
+        .map(|res| res.spec_code.clone())
+        .collect::<Vec<_>>();
+
+    format!("{}\n\n{}", use_mods.join("\n"), spec_codes.join("\n\n"))
+}
+
+fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
+    codegen_res
+        .iter()
+        .map(|res| {
+            let flat_name = flat_case(&res.module_name);
+            let snake_name = snake_case(&res.module_name);
+            let cxx_extern = res
+                .cxx_bridges
+                .iter()
+                .map(|bridge| bridge.extern_func.clone())
+                .collect::<Vec<_>>();
+
+            formatdoc! {
+                r#"
+                #[cxx::bridge(namespace = "craby::{flat_name}")]
+                pub mod {snake_name} {{
+                    {type_defs}
+
+                    extern "Rust" {{
+                {cxx_extern}
+                    }}
+                }}"#,
+                flat_name = flat_name,
+                snake_name = snake_name,
+                type_defs = "", // TODO
+                cxx_extern = cxx_extern.join("\n\n"),
+            }
+        })
+        .collect::<Vec<_>>()
+}
+
+fn cxx_bridging_impl(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
+    codegen_res
+        .iter()
+        .map(|res| {
+            res.cxx_bridges
+                .iter()
+                .map(|bridge| bridge.impl_func.clone())
+                .collect::<Vec<_>>()
+        })
+        .flatten()
+        .collect::<Vec<_>>()
 }

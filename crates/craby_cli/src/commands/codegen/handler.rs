@@ -2,12 +2,12 @@ use std::path::PathBuf;
 
 use craby_codegen::{
     generator::CodeGenerator,
-    platform::rust::{ffi_rs, lib_rs},
+    platform::rust::{ffi_rs, generated_rs, lib_rs},
     types::schema::Schema,
 };
 use craby_common::{
     config::load_config,
-    constants::{crate_dir, impl_mod_name, FFI_MOD, GENERATED_MOD},
+    constants::{crate_dir, impl_mod_name},
     env::is_initialized,
 };
 use log::info;
@@ -30,17 +30,14 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     info!("{} module schema(s) found", opts.schemas.len());
 
-    let total_mods = opts.schemas.len();
-    let mut mod_names = vec![];
-    let mut spec_codes = vec!["use crate::ffi::ffi::*;".to_string()];
-    let mut cxx_bridges = vec![];
-    let mut impl_mods = vec![];
     let generator = CodeGenerator::new();
+    let total_mods = opts.schemas.len();
+    let mut codegen_res = vec![];
 
     opts.schemas
-        .into_iter()
+        .iter()
         .enumerate()
-        .try_for_each(|(i, schema)| {
+        .try_for_each(|(i, schema)| -> Result<(), anyhow::Error> {
             let schema = serde_json::from_str::<Schema>(&schema)?;
             println!(
                 "Generating for {} module... ({}/{})",
@@ -53,41 +50,33 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
                 return Err(anyhow::anyhow!("Component type is not supported"));
             }
 
+            let res = generator.generate(&schema)?;
+
             print_schema(&schema, &config)?;
-
-            let impl_mod_name = impl_mod_name(&schema.module_name);
-            let spec_code = generator.generate_spec(&schema)?;
-            let impl_code = generator.generate_impl(&schema)?;
-            cxx_bridges.extend(generator.get_cxx_bridge_funcs(&schema)?);
-
-            spec_codes.push(spec_code);
-            impl_mods.push(format!("pub(crate) mod {};", impl_mod_name));
-            mod_names.push(schema.module_name.clone());
-
             write_file(
-                crate_src_path.join(format!("{}.rs", impl_mod_name)),
-                impl_code + "\n",
+                crate_src_path.join(format!("{}.rs", impl_mod_name(&schema.module_name))),
+                format!("{}\n", res.impl_code),
                 false,
             )?;
 
-            Ok::<(), anyhow::Error>(())
-        })?;
+            codegen_res.push(res);
 
-    let spec_code = spec_codes.join("\n\n");
+            Ok(())
+        })?;
 
     write_file(
         crate_src_path.join("lib.rs"),
-        with_generated_comment(lib_rs(&mod_names)),
+        with_generated_comment(lib_rs(&codegen_res)),
         true,
     )?;
     write_file(
-        crate_src_path.join(format!("{}.rs", FFI_MOD)),
-        with_generated_comment(ffi_rs(&mod_names, &cxx_bridges)),
+        crate_src_path.join("ffi.rs"),
+        with_generated_comment(ffi_rs(&codegen_res)),
         true,
     )?;
     write_file(
-        crate_src_path.join(format!("{}.rs", GENERATED_MOD)),
-        with_generated_comment(spec_code),
+        crate_src_path.join("generated.rs"),
+        with_generated_comment(generated_rs(&codegen_res)),
         true,
     )?;
 

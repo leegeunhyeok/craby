@@ -1,4 +1,7 @@
-use craby_common::utils::string::pascal_case;
+use craby_common::{
+    constants::impl_mod_name,
+    utils::string::{pascal_case, snake_case},
+};
 use indoc::formatdoc;
 
 use crate::{
@@ -6,7 +9,7 @@ use crate::{
         cxx::{CxxBridge, ToCxxBridge},
         rust::ToSig,
     },
-    types::schema::Schema,
+    types::{schema::Schema, types::CodegenResult},
     utils::indent_str,
 };
 
@@ -17,6 +20,21 @@ impl CodeGenerator {
         Self
     }
 
+    pub fn generate(&self, schema: &Schema) -> Result<CodegenResult, anyhow::Error> {
+        let spec_code = self.generate_spec(schema)?;
+        let impl_code = self.generate_impl(schema)?;
+        let cxx_bridges = self.get_cxx_bridge_funcs(schema)?;
+
+        Ok(CodegenResult {
+            module_name: schema.module_name.clone(),
+            ffi_mod: snake_case(&schema.module_name),
+            impl_mod: impl_mod_name(&schema.module_name),
+            spec_code,
+            impl_code,
+            cxx_bridges,
+        })
+    }
+
     /// Generate the spec trait for the given schema.
     ///
     /// ```rust,ignore
@@ -24,7 +42,7 @@ impl CodeGenerator {
     ///     fn multiply(a: f64, b: f64) -> f64;
     /// }
     /// ```
-    pub fn generate_spec(&self, schema: &Schema) -> Result<String, anyhow::Error> {
+    fn generate_spec(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
         let methods = schema
             .spec
@@ -51,7 +69,7 @@ impl CodeGenerator {
     /// Generate the empty module for the given schema.
     ///
     /// ```rust,ignore
-    /// use crate::{ffi::ffi::*, generated::*};
+    /// use crate::{ffi::my_module::*, generated::*};
     ///
     /// pub struct MyModule;
     ///
@@ -61,8 +79,9 @@ impl CodeGenerator {
     ///     }
     /// }
     /// ```
-    pub fn generate_impl(&self, schema: &Schema) -> Result<String, anyhow::Error> {
+    fn generate_impl(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let mod_name = pascal_case(schema.module_name.as_str());
+        let snake_name = snake_case(schema.module_name.as_str());
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
 
         let methods = schema
@@ -85,13 +104,14 @@ impl CodeGenerator {
 
         let code = formatdoc! {
           r#"
-          use crate::{{ffi::ffi::*, generated::*}};
+          use crate::{{ffi::{snake_name}::*, generated::*}};
 
           pub struct {mod_name};
 
           impl {trait_name} for {mod_name} {{
           {methods}
           }}"#,
+          snake_name = snake_name,
           trait_name = trait_name,
           mod_name= mod_name,
           methods = indent_str(methods.join("\n\n"), 4),
@@ -112,7 +132,7 @@ impl CodeGenerator {
     ///     MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub fn get_cxx_bridge_funcs(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
+    fn get_cxx_bridge_funcs(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
         let res = schema
             .spec
             .methods
@@ -475,7 +495,7 @@ mod tests {
         assert_eq!(
             result,
             [
-                "use crate::{ffi::ffi::*, generated::*};",
+                "use crate::{ffi::my_module::*, generated::*};",
                 "",
                 "pub struct MyModule;",
                 "",
@@ -540,7 +560,7 @@ mod tests {
             result.extern_func,
             [
                 "#[cxx_name = \"multiply\"]",
-                "fn multiply(a: f64, b: String) -> f64;",
+                "fn my_module_multiply(a: f64, b: String) -> f64;",
             ]
             .join("\n")
         );
@@ -548,7 +568,7 @@ mod tests {
         assert_eq!(
             result.impl_func,
             [
-                "fn multiply(a: f64, b: String) -> f64 {",
+                "fn my_module_multiply(a: f64, b: String) -> f64 {",
                 "    MyModule::multiply(a, b)",
                 "}",
             ]
