@@ -1,4 +1,4 @@
-use crate::platform::cxx::CxxBridge;
+use crate::platform::rust::CxxBridge;
 
 pub struct CodegenResult {
     /// Module name from Schema (TurboModule name)

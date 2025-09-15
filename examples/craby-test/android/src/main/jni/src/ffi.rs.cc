@@ -819,16 +819,16 @@ public:
 #endif
 
 namespace craby {
-  namespace ffi {
+  namespace crabytest {
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
   }
 }
 
 namespace craby {
-namespace ffi {
-#ifndef CXXBRIDGE1_STRUCT_craby$ffi$TestObject
-#define CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
@@ -836,82 +836,74 @@ struct TestObject final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 
-#ifndef CXXBRIDGE1_ENUM_craby$ffi$MyEnum
-#define CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+#ifndef CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
+#define CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
 enum class MyEnum : ::std::uint8_t {
   FOO = 0,
   BAR = 1,
   BAZ = 2,
 };
-#endif // CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+#endif // CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
 
 extern "C" {
-double craby$ffi$cxxbridge1$numeric_method(double arg) noexcept;
+double craby$crabytest$cxxbridge1$craby_test_numeric_method(double arg) noexcept;
 
-bool craby$ffi$cxxbridge1$boolean_method(bool arg) noexcept;
+bool craby$crabytest$cxxbridge1$craby_test_boolean_method(bool arg) noexcept;
 
-void craby$ffi$cxxbridge1$string_method(::rust::String *arg, ::rust::String *return$) noexcept;
+void craby$crabytest$cxxbridge1$craby_test_string_method(::rust::String *arg, ::rust::String *return$) noexcept;
 
-void craby$ffi$cxxbridge1$object_method(::craby::ffi::TestObject *arg, ::craby::ffi::TestObject *return$) noexcept;
+void craby$crabytest$cxxbridge1$craby_test_object_method(::craby::crabytest::TestObject *arg, ::craby::crabytest::TestObject *return$) noexcept;
 
-void craby$ffi$cxxbridge1$array_method(::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
+void craby$crabytest$cxxbridge1$craby_test_array_method(::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
-void craby$ffi$cxxbridge1$enum_method(::craby::ffi::MyEnum arg, ::rust::String *return$) noexcept;
+void craby$crabytest$cxxbridge1$craby_test_enum_method(::craby::crabytest::MyEnum arg, ::rust::String *return$) noexcept;
 
-void craby$ffi$cxxbridge1$union_method(::rust::String *arg, ::rust::String *return$) noexcept;
-
-::rust::repr::PtrLen craby$ffi$cxxbridge1$promise_method(double arg, double *return$) noexcept;
+::rust::repr::PtrLen craby$crabytest$cxxbridge1$craby_test_promise_method(double arg, double *return$) noexcept;
 } // extern "C"
 
 double numericMethod(double arg) noexcept {
-  return craby$ffi$cxxbridge1$numeric_method(arg);
+  return craby$crabytest$cxxbridge1$craby_test_numeric_method(arg);
 }
 
 bool booleanMethod(bool arg) noexcept {
-  return craby$ffi$cxxbridge1$boolean_method(arg);
+  return craby$crabytest$cxxbridge1$craby_test_boolean_method(arg);
 }
 
 ::rust::String stringMethod(::rust::String arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  craby$ffi$cxxbridge1$string_method(&arg, &return$.value);
+  craby$crabytest$cxxbridge1$craby_test_string_method(&arg, &return$.value);
   return ::std::move(return$.value);
 }
 
-::craby::ffi::TestObject objectMethod(::craby::ffi::TestObject arg) noexcept {
-  ::rust::ManuallyDrop<::craby::ffi::TestObject> arg$(::std::move(arg));
-  ::rust::MaybeUninit<::craby::ffi::TestObject> return$;
-  craby$ffi$cxxbridge1$object_method(&arg$.value, &return$.value);
+::craby::crabytest::TestObject objectMethod(::craby::crabytest::TestObject arg) noexcept {
+  ::rust::ManuallyDrop<::craby::crabytest::TestObject> arg$(::std::move(arg));
+  ::rust::MaybeUninit<::craby::crabytest::TestObject> return$;
+  craby$crabytest$cxxbridge1$craby_test_object_method(&arg$.value, &return$.value);
   return ::std::move(return$.value);
 }
 
 ::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept {
   ::rust::ManuallyDrop<::rust::Vec<double>> arg$(::std::move(arg));
   ::rust::MaybeUninit<::rust::Vec<double>> return$;
-  craby$ffi$cxxbridge1$array_method(&arg$.value, &return$.value);
+  craby$crabytest$cxxbridge1$craby_test_array_method(&arg$.value, &return$.value);
   return ::std::move(return$.value);
 }
 
-::rust::String enumMethod(::craby::ffi::MyEnum arg) noexcept {
+::rust::String enumMethod(::craby::crabytest::MyEnum arg) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  craby$ffi$cxxbridge1$enum_method(arg, &return$.value);
-  return ::std::move(return$.value);
-}
-
-::rust::String unionMethod(::rust::String arg) noexcept {
-  ::rust::MaybeUninit<::rust::String> return$;
-  craby$ffi$cxxbridge1$union_method(&arg, &return$.value);
+  craby$crabytest$cxxbridge1$craby_test_enum_method(arg, &return$.value);
   return ::std::move(return$.value);
 }
 
 double promiseMethod(double arg) {
   ::rust::MaybeUninit<double> return$;
-  ::rust::repr::PtrLen error$ = craby$ffi$cxxbridge1$promise_method(arg, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$crabytest$cxxbridge1$craby_test_promise_method(arg, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
   return ::std::move(return$.value);
 }
-} // namespace ffi
+} // namespace crabytest
 } // namespace craby

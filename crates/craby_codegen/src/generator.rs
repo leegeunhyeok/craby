@@ -5,10 +5,7 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
-    platform::{
-        cxx::{CxxBridge, ToCxxBridge},
-        rust::ToSig,
-    },
+    platform::rust::{CxxBridge, ToCxxBridge, ToSig},
     types::{schema::Schema, types::CodegenResult},
     utils::indent_str,
 };

@@ -37,10 +37,6 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
-    fn union_method(arg: String) -> String {
-        format!("Union: {}", arg)
-    }
-
     fn promise_method(arg: f64) -> Result<f64, anyhow::Error> {
         if arg >= 0.0 {
           Ok(arg * 2.0)

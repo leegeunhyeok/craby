@@ -749,16 +749,16 @@ std::size_t align_of() {
 #endif
 
 namespace craby {
-  namespace ffi {
+  namespace crabytest {
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
   }
 }
 
 namespace craby {
-namespace ffi {
-#ifndef CXXBRIDGE1_STRUCT_craby$ffi$TestObject
-#define CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
@@ -766,16 +766,16 @@ struct TestObject final {
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$ffi$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 
-#ifndef CXXBRIDGE1_ENUM_craby$ffi$MyEnum
-#define CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+#ifndef CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
+#define CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
 enum class MyEnum : ::std::uint8_t {
   FOO = 0,
   BAR = 1,
   BAZ = 2,
 };
-#endif // CXXBRIDGE1_ENUM_craby$ffi$MyEnum
+#endif // CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
 
 double numericMethod(double arg) noexcept;
 
@@ -783,16 +783,14 @@ bool booleanMethod(bool arg) noexcept;
 
 ::rust::String stringMethod(::rust::String arg) noexcept;
 
-::craby::ffi::TestObject objectMethod(::craby::ffi::TestObject arg) noexcept;
+::craby::crabytest::TestObject objectMethod(::craby::crabytest::TestObject arg) noexcept;
 
 ::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept;
 
-::rust::String enumMethod(::craby::ffi::MyEnum arg) noexcept;
-
-::rust::String unionMethod(::rust::String arg) noexcept;
+::rust::String enumMethod(::craby::crabytest::MyEnum arg) noexcept;
 
 double promiseMethod(double arg);
-} // namespace ffi
+} // namespace crabytest
 } // namespace craby
 
 #ifdef __clang__

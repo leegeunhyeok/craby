@@ -5,7 +5,7 @@ use crate::{
     constants::{ios::Identifier, toolchain::Target},
 };
 
-use craby_codegen::constants::objc_mod_provider_name;
+use craby_codegen::constants::{objc_mod_provider_name, GENERATED_COMMENT};
 use craby_common::{
     config::CompleteCrabyConfig, constants::lib_base_name, utils::string::SanitizedString,
 };
@@ -49,7 +49,11 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
             "{}.mm",
             objc_mod_provider_name(&config.project.name)
         )),
-        craby_codegen::platform::ios::template::objc_mod_provider(&config.project.name),
+        format!(
+            "// {}\n{}\n",
+            GENERATED_COMMENT,
+            craby_codegen::platform::ios::template::objc_mod_provider(&config.project.name)
+        ),
     )?;
 
     Ok(())

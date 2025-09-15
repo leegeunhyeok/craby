@@ -22,11 +22,11 @@ pub mod template {
 
             @implementation {objc_mod_provider_name}
             + (void)load {{
-                facebook::react::registerCxxModuleToGlobalModuleMap(
-                    craby::{flat_name}::{cxx_mod_cls_name}::kModuleName,
-                    [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
-                    return std::make_shared<craby::{flat_name}::{cxx_mod_cls_name}>(jsInvoker);
-                    }});
+              facebook::react::registerCxxModuleToGlobalModuleMap(
+                  craby::{flat_name}::{cxx_mod_cls_name}::kModuleName,
+                  [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
+                  return std::make_shared<craby::{flat_name}::{cxx_mod_cls_name}>(jsInvoker);
+                  }});
             }}
             @end"#,
           cxx_mod_cls_name = cxx_mod_cls_name,

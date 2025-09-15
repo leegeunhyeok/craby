@@ -1,4 +1,4 @@
-use craby_common::utils::string::{flat_case, pascal_case, snake_case};
+use craby_common::utils::string::flat_case;
 use indoc::formatdoc;
 use template::{cxx_arg_ref, cxx_arg_var};
 
@@ -7,14 +7,6 @@ use crate::{
     types::schema::{FunctionSpec, TypeAnnotation},
     utils::indent_str,
 };
-
-use super::rust::{ToExternType, ToRsType, ToSig};
-
-#[derive(Debug, Clone)]
-pub struct CxxBridge {
-    pub extern_func: String,
-    pub impl_func: String,
-}
 
 #[derive(Debug, Clone)]
 pub struct CxxMethod {
@@ -30,22 +22,6 @@ pub trait ToCxxType {
 pub trait ToCxxBridging {
     fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error>;
     fn to_js(&self) -> Result<String, anyhow::Error>;
-}
-
-pub trait ToCxxBridge {
-    /// Returns the cxx(FFI) function signature for the `FunctionSpec`.
-    ///
-    /// ```rust,ignore
-    /// // extern function
-    /// #[cxx_name = "myFunc"]
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
-    ///
-    /// // impl function
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
-    ///     MyModule::my_func(arg1, arg2)
-    /// }
-    /// ```
-    fn to_cxx_bridge(&self, mod_name: &String) -> Result<CxxBridge, anyhow::Error>;
 }
 
 pub trait ToCxxMethod {
@@ -185,74 +161,6 @@ impl ToCxxBridging for TypeAnnotation {
         };
 
         Ok(to_js)
-    }
-}
-
-impl ToCxxBridge for FunctionSpec {
-    fn to_cxx_bridge(&self, mod_name: &String) -> Result<CxxBridge, anyhow::Error> {
-        match &*self.type_annotation {
-            TypeAnnotation::FunctionTypeAnnotation {
-                return_type_annotation,
-                params,
-            } => {
-                let ret_type = return_type_annotation.to_rs_type()?;
-                let ret_extern_type = return_type_annotation.to_extern_type()?.to_string();
-                let params_sig = params
-                    .iter()
-                    .map(|p| p.to_sig())
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(|p| p.join(", "))?;
-
-                let impl_name = pascal_case(mod_name);
-                let mod_name = snake_case(mod_name);
-                let fn_name = snake_case(&self.name);
-                let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
-                let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
-
-                // If the return type is `void`, return an empty tuple.
-                // Otherwise, return the given return type.
-                let ret_extern_annotation = if ret_extern_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", ret_extern_type)
-                };
-
-                let ret_annotation = if ret_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", ret_type)
-                };
-
-                let extern_func = formatdoc! {
-                    r#"
-                    #[cxx_name = "{orig_fn_name}"]
-                    fn {prefixed_fn_name}({params_sig}){ret};"#,
-                    orig_fn_name = self.name,
-                    prefixed_fn_name = prefixed_fn_name,
-                    params_sig = params_sig,
-                    ret = ret_extern_annotation,
-                };
-
-                let impl_func = formatdoc! {
-                    r#"
-                    fn {prefixed_fn_name}({params_sig}){ret} {{
-                        {impl_name}::{fn_name}({fn_args})
-                    }}"#,
-                    params_sig = params_sig,
-                    ret = ret_annotation,
-                    impl_name = impl_name,
-                    prefixed_fn_name = prefixed_fn_name,
-                    fn_name = fn_name.to_string(),
-                    fn_args = fn_args.join(", "),
-                };
-
-                Ok(CxxBridge {
-                    extern_func,
-                    impl_func,
-                })
-            }
-            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
-        }
     }
 }
 
