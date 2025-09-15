@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use craby_common::{
     config::CompleteCrabyConfig,
-    constants::{crate_target_dir, cxx_dir, lib_base_name},
+    constants::{crate_target_dir, cxx_bridge_dir, lib_base_name},
     utils::string::SanitizedString,
 };
 use log::debug;
@@ -27,9 +27,9 @@ impl Artifacts {
         config: &CompleteCrabyConfig,
         target: &Target,
     ) -> Result<Artifacts, anyhow::Error> {
-        let cxx_dir = cxx_dir(&config.project_root, target.to_str());
-        let cxx_srcs = collect_files(&cxx_dir, &["c", "cc"])?;
-        let cxx_headers = collect_files(&cxx_dir, &["h", "hh"])?;
+        let cxx_bridge_dir = cxx_bridge_dir(&config.project_root, target.to_str());
+        let cxx_srcs = collect_files(&cxx_bridge_dir, &["c", "cc"])?;
+        let cxx_headers = collect_files(&cxx_bridge_dir, &["h", "hh"])?;
 
         let lib_name = SanitizedString::from(&config.project.name);
         let lib = crate_target_dir(&config.project_root, target.to_str())

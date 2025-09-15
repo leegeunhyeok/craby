@@ -101,7 +101,7 @@ impl ToCxxType for TypeAnnotation {
 
 impl ToCxxBridging for TypeAnnotation {
     fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error> {
-        let is_supported = match &*self {
+        let to_cxx = match &*self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation
             // Number types
@@ -119,19 +119,17 @@ impl ToCxxBridging for TypeAnnotation {
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
-            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => true,
-            _ => false,
+            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => {
+              let cxx_type = self.to_cxx_type(mod_name)?;
+              format!(
+                  "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
+                  cxx_type, ident
+              )
+            },
+            _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
-        if is_supported {
-            let cxx_type = self.to_cxx_type(mod_name)?;
-            Ok(format!(
-                "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
-                cxx_type, ident
-            ))
-        } else {
-            Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self))
-        }
+        Ok(to_cxx)
     }
 
     fn to_js(&self) -> Result<String, anyhow::Error> {
@@ -144,16 +142,19 @@ impl ToCxxBridging for TypeAnnotation {
             | TypeAnnotation::DoubleTypeAnnotation { .. }
             | TypeAnnotation::Int32TypeAnnotation { .. }
             | TypeAnnotation::NumberLiteralTypeAnnotation { .. }
-            // String types
-            | TypeAnnotation::StringTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. }
             // Array type
             | TypeAnnotation::ArrayTypeAnnotation { .. }
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
             | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!("react::bridging::toJs(rt, ret)"),
+
+            // String types
+            | TypeAnnotation::StringTypeAnnotation { .. }
+            | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => format!("react::bridging::toJs(rt, std::string(ret))"),
+
+            // Promise type
             TypeAnnotation::PromiseTypeAnnotation { .. } => format!("react::bridging::toJs(rt, promise)"),
             _ => {
               return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
@@ -216,8 +217,7 @@ impl ToCxxMethod for FunctionSpec {
                     formatdoc! {
                         r#"
                         auto ret = craby::{flat_name}::{fn_name}({fn_args});
-                        return {ret};
-                        "#,
+                        return {ret};"#,
                         flat_name = flat_case(mod_name),
                         fn_name = self.name,
                         fn_args = args.join(", "),
@@ -236,8 +236,7 @@ impl ToCxxMethod for FunctionSpec {
 
         let metadata = formatdoc! {
             r#"
-            MethodMetadata{{{args_count}, &{cxx_mod}::{fn_name}}}
-            "#,
+            MethodMetadata{{{args_count}, &{cxx_mod}::{fn_name}}}"#,
             fn_name = self.name,
             cxx_mod = cxx_mod,
             args_count = args_count,
@@ -253,21 +252,19 @@ impl ToCxxMethod for FunctionSpec {
               auto callInvoker = thisModule.callInvoker_;
 
               try {{
-                if (count != {args_count}) {{
+                if ({args_count} != count) {{
                   throw jsi::JSError(rt, "Expected {args_count} argument{plural}");
                 }}
 
             {args_decls}
 
             {invoke_stmts}
-
               }} catch (const jsi::JSError &err) {{
                 throw err;
               }} catch (const std::exception &err) {{
                 throw jsi::JSError(rt, craby::helpers::errorMessage(err));
               }}
-            }}
-            "#,
+            }}"#,
             fn_name = self.name,
             cxx_mod = cxx_mod,
             args_count = args_count,
@@ -288,41 +285,123 @@ pub mod template {
     use craby_common::utils::string::flat_case;
     use indoc::formatdoc;
 
-    use crate::{constants::cxx_mod_cls_name, utils::indent_str};
+    use crate::{constants::cxx_mod_cls_name, types::types::CodegenResult, utils::indent_str};
 
-    pub fn cxx_mod(name: &String) -> String {
-        let flat_name = flat_case(name);
-        let cxx_mod = cxx_mod_cls_name(name);
+    pub fn mod_cxx(codegen_res: &Vec<CodegenResult>) -> String {
+        let mut headers = vec![];
+        let mod_namespaces = codegen_res
+            .iter()
+            .map(|res| {
+                let flat_name = flat_case(&res.module_name);
+                let cxx_mod = cxx_mod_cls_name(&res.module_name);
+
+                // Assign method metadata with function pointer to the TurboModule's method map
+                //
+                // ```cpp
+                // methodMap_["multiply"] = MethodMetadata{1, &CxxMyTestModule::multiply};
+                // ```
+                let method_maps = res
+                    .cxx_methods
+                    .iter()
+                    .map(|method| format!("methodMap_[\"{}\"] = {};", method.name, method.metadata))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                // Functions implementations
+                //
+                // ```cpp
+                // jsi::Value CxxMyTestModule::multiply(jsi::Runtime &rt,
+                //                                    react::TurboModule &turboModule,
+                //                                    const jsi::Value args[],
+                //                                    size_t count) {
+                //     // ...
+                // }
+                // ```
+                let method_impls = res
+                    .cxx_methods
+                    .iter()
+                    .map(|method| method.impl_func.clone())
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+
+                headers.push(format!("#include \"{cxx_mod}.hpp\"", cxx_mod = cxx_mod));
+
+                formatdoc! {
+                    r#"
+                    namespace {flat_name} {{
+
+                    {cxx_mod}::{cxx_mod}(
+                        std::shared_ptr<react::CallInvoker> jsInvoker)
+                        : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
+                      callInvoker_ = std::move(jsInvoker);
+                    
+                    {method_maps}
+                    }}
+                    
+                    {method_impls}
+                    
+                    }} // namespace {flat_name}"#,
+                    flat_name = flat_name,
+                    cxx_mod = cxx_mod,
+                    method_maps = indent_str(method_maps, 2),
+                    method_impls = method_impls,
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
         formatdoc! {
             r#"
-            #include "{cxx_mod}.hpp"
-            #include "cxx.h"
-            #include "ffi.rs.h"
+            {headers}
 
             using namespace facebook;
 
             namespace craby {{
-            namespace {flat_name} {{
-
-            {cxx_mod}::{cxx_mod}(
-                std::shared_ptr<react::CallInvoker> jsInvoker)
-                : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
-              callInvoker_ = std::move(jsInvoker);
-            {method_maps}
-            }}
-
-            }} // namespace {flat_name}
+            {mod_namespaces}
             }} // namespace craby"#,
-            flat_name = flat_name,
-            cxx_mod = cxx_mod,
-            method_maps = indent_str("".to_string(), 2), // TODO
+            headers = headers.join("\n"),
+            mod_namespaces = mod_namespaces,
         }
     }
 
-    pub fn cxx_mod_header(name: &String, turbo_module_name: &String) -> String {
-        let flat_name = flat_case(name);
-        let cxx_mod = cxx_mod_cls_name(name);
+    pub fn mod_cxx_h(codegen_res: &Vec<CodegenResult>) -> String {
+        let mod_namespaces = codegen_res
+            .iter()
+            .map(|res| {
+                let flat_name = flat_case(&res.module_name);
+                let cxx_mod = cxx_mod_cls_name(&res.module_name);
+                let method_defs = res
+                    .cxx_methods
+                    .iter()
+                    .map(|method| cxx_method_def(&method.name))
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+
+                formatdoc! {
+                    r#"
+                    namespace {flat_name} {{
+
+                    class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
+                    public:
+                      static constexpr const char *kModuleName = "{turbo_module_name}";
+
+                      {cxx_mod}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
+
+                    {method_defs}
+
+                    protected:
+                      std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
+                    }};
+
+                    }} // namespace {flat_name}"#,
+                    flat_name = flat_name,
+                    cxx_mod = cxx_mod,
+                    turbo_module_name = res.module_name,
+                    method_defs = indent_str(method_defs, 2),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
         formatdoc! {
             r#"
@@ -335,31 +414,70 @@ pub mod template {
 
             #include "cxx.h"
             #include "ffi.rs.h"
-
-            #include "bridging.hpp"
-            #include "helpers.hpp"
+            #include "craby-bridging.hpp"
 
             namespace craby {{
-            namespace {flat_name} {{
+            namespace helpers {{
 
-            class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
-            public:
-              static constexpr const char *kModuleName = "{turbo_module_name}";
+            inline std::string errorMessage(const std::exception &err) {{
+              const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+              return std::string(rs_err ? rs_err->what() : err.what());
+            }}
 
-              {cxx_mod}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
+            }} // namespace helpers
+            
+            {mod_namespaces}
+            }} // namespace craby"#,
+            mod_namespaces = mod_namespaces,
+        }
+    }
 
-            {method_defs}
+    pub fn cxx_bridging_h(_codegen_res: &Vec<CodegenResult>) -> String {
+        formatdoc! {
+            r#"
+            #pragma once
 
-            protected:
-              std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
+            #include <react/bridging/Bridging.h>
+            #include "cxx.h"
+            #include "ffi.rs.h"
+
+            using namespace facebook;
+
+            namespace facebook {{
+            namespace react {{
+
+            template <typename T>
+            struct Bridging<rust::Vec<T>> {{
+
+              static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
+                auto array = value.asObject(rt).asArray(rt);
+                size_t len = array.length(rt);
+                rust::Vec<T> vec;
+                vec.reserve(len);
+
+                for (size_t i = 0; i < len; i++) {{
+                  auto element = array.getValueAtIndex(rt, i);
+                  vec.push_back(std::move(react::bridging::fromJs<T>(rt, element, callInvoker)));
+                }}
+
+                return vec;
+              }}
+
+              static jsi::Array toJs(jsi::Runtime& rt, const rust::Vec<T>& vec) {{
+                auto array = jsi::Array(rt, vec.size());
+
+                for (size_t i = 0; i < vec.size(); i++) {{
+                  auto jsElement = react::bridging::toJs(rt, vec[i]);
+                  array.setValueAtIndex(rt, i, jsElement);
+                }}
+
+                return array;
+              }}
             }};
 
-            }} // namespace {flat_name}
-            }} // namespace craby"#,
-            flat_name = flat_name,
-            cxx_mod = cxx_mod,
-            turbo_module_name = turbo_module_name,
-            method_defs = indent_str("".to_string(), 2), // TODO
+            }} // namespace react
+            }} // namespace facebook"#,
+            using_mods = using_mods,
         }
     }
 
@@ -368,9 +486,8 @@ pub mod template {
             r#"
             static facebook::jsi::Value
             {name}(facebook::jsi::Runtime &rt,
-                    facebook::react::TurboModule &turboModule,
-                    const facebook::jsi::Value args[], size_t count)
-            "#,
+                facebook::react::TurboModule &turboModule,
+                const facebook::jsi::Value args[], size_t count);"#,
             name = name,
         }
     }
@@ -380,6 +497,6 @@ pub mod template {
     }
 
     pub fn cxx_arg_var(idx: usize) -> String {
-        format!("__arg{}", idx)
+        format!("arg{}", idx)
     }
 }

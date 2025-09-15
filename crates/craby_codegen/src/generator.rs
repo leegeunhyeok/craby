@@ -5,7 +5,10 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
-    platform::rust::{CxxBridge, ToCxxBridge, ToSig},
+    platform::{
+        cxx::{CxxMethod, ToCxxMethod},
+        rust::{CxxBridge, ToCxxBridge, ToSig},
+    },
     types::{schema::Schema, types::CodegenResult},
     utils::indent_str,
 };
@@ -21,6 +24,7 @@ impl CodeGenerator {
         let spec_code = self.generate_spec(schema)?;
         let impl_code = self.generate_impl(schema)?;
         let cxx_bridges = self.get_cxx_bridges(schema)?;
+        let cxx_methods = self.get_cxx_methods(schema)?;
 
         Ok(CodegenResult {
             module_name: schema.module_name.clone(),
@@ -29,6 +33,7 @@ impl CodeGenerator {
             spec_code,
             impl_code,
             cxx_bridges,
+            cxx_methods,
         })
     }
 
@@ -135,6 +140,17 @@ impl CodeGenerator {
             .methods
             .iter()
             .map(|spec| spec.to_cxx_bridge(&schema.module_name))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(res)
+    }
+
+    fn get_cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
+        let res = schema
+            .spec
+            .methods
+            .iter()
+            .map(|spec| spec.to_cxx_method(&schema.module_name))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)

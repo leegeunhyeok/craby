@@ -19,9 +19,7 @@ inline std::string errorMessage(const std::exception &err) {
 }
 
 } // namespace helpers
-} // namespace craby
 
-namespace craby {
 namespace crabytest {
 
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
@@ -32,38 +30,38 @@ public:
 
   static facebook::jsi::Value
   numericMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   booleanMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   stringMethod(facebook::jsi::Runtime &rt,
-               facebook::react::TurboModule &turboModule,
-               const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   objectMethod(facebook::jsi::Runtime &rt,
-               facebook::react::TurboModule &turboModule,
-               const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   arrayMethod(facebook::jsi::Runtime &rt,
-              facebook::react::TurboModule &turboModule,
-              const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   enumMethod(facebook::jsi::Runtime &rt,
-             facebook::react::TurboModule &turboModule,
-             const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
   promiseMethod(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
 
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;

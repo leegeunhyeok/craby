@@ -1,4 +1,4 @@
-use crate::platform::rust::CxxBridge;
+use crate::platform::{cxx::CxxMethod, rust::CxxBridge};
 
 pub struct CodegenResult {
     /// Module name from Schema (TurboModule name)
@@ -11,6 +11,8 @@ pub struct CodegenResult {
     pub spec_code: String,
     /// Code for the snippet of the current module's spec
     pub impl_code: String,
-    /// cxx function signatures
+    /// cxx bridging function signatures
     pub cxx_bridges: Vec<CxxBridge>,
+    /// cxx implementations
+    pub cxx_methods: Vec<CxxMethod>,
 }

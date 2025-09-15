@@ -1,14 +1,14 @@
 use std::path::PathBuf;
 
 use craby_codegen::{
-    constants::GENERATED_COMMENT,
+    constants::{cxx_mod_cls_name, GENERATED_COMMENT},
     generator::CodeGenerator,
-    platform::rust::{ffi_rs, generated_rs, lib_rs},
+    platform::{cxx, rust},
     types::schema::Schema,
 };
 use craby_common::{
     config::load_config,
-    constants::{crate_dir, impl_mod_name},
+    constants::{crate_dir, cxx_dir, impl_mod_name},
     env::is_initialized,
 };
 use log::info;
@@ -25,9 +25,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
     }
 
+    let config = load_config(&opts.project_root)?;
     let crate_path = crate_dir(&opts.project_root);
     let crate_src_path = crate_path.join("src");
-    let config = load_config(&opts.project_root)?;
+    let cxx_dir = cxx_dir(&opts.project_root);
+    let cxx_mod_cls_name = cxx_mod_cls_name(&config.project.name);
 
     info!("{} module schema(s) found", opts.schemas.len());
 
@@ -67,19 +69,35 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     write_file(
         crate_src_path.join("lib.rs"),
-        with_generated_comment(lib_rs(&codegen_res)),
+        with_generated_comment(rust::template::lib_rs(&codegen_res)),
         true,
     )?;
     write_file(
         crate_src_path.join("ffi.rs"),
-        with_generated_comment(ffi_rs(&codegen_res)),
+        with_generated_comment(rust::template::ffi_rs(&codegen_res)),
         true,
     )?;
     write_file(
         crate_src_path.join("generated.rs"),
-        with_generated_comment(generated_rs(&codegen_res)),
+        with_generated_comment(rust::template::generated_rs(&codegen_res)),
         true,
     )?;
+    write_file(
+        cxx_dir.join(format!("{}.cpp", cxx_mod_cls_name)),
+        with_generated_comment(cxx::template::mod_cxx(&codegen_res)),
+        true,
+    )?;
+    write_file(
+        cxx_dir.join(format!("{}.hpp", cxx_mod_cls_name)),
+        with_generated_comment(cxx::template::mod_cxx_h(&codegen_res)),
+        true,
+    )?;
+    // TODO: Generate craby-bridging.hpp
+    // write_file(
+    //     cxx_dir.join(format!("craby-bridging.hpp", cxx_mod_cls_name)),
+    //     with_generated_comment(cxx::template::cxx_bridging_h(&codegen_res)),
+    //     true,
+    // )?;
 
     info!("Codegen completed successfully 🎉");
 

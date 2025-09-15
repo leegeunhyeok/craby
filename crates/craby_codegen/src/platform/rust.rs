@@ -1,7 +1,4 @@
-use craby_common::{
-    constants::impl_mod_name,
-    utils::string::{flat_case, pascal_case, snake_case},
-};
+use craby_common::utils::string::{flat_case, pascal_case, snake_case};
 use indoc::formatdoc;
 use log::error;
 
@@ -241,100 +238,6 @@ impl ToCxxBridge for FunctionSpec {
     }
 }
 
-/// Generate the `lib.rs` file for the given code generation results.
-///
-/// ```rust,ignore
-/// pub(crate) mod generated;
-/// pub(crate) mod ffi;
-/// pub(crate) mod my_module_impl;
-/// ```
-pub fn lib_rs(codgen_res: &Vec<CodegenResult>) -> String {
-    let impl_mods = codgen_res
-        .iter()
-        .map(|res| format!("pub(crate) mod {};", res.impl_mod.clone()))
-        .collect::<Vec<String>>();
-
-    formatdoc! {
-        r#"
-        pub(crate) mod ffi;
-        pub(crate) mod generated;
-        {impl_mods}"#,
-        impl_mods = impl_mods.join("\n"),
-    }
-}
-
-/// Generate the `ffi.rs` file for the given code generation results.
-///
-/// ```rust,ignore
-/// use ffi::*;
-/// use crate::generated::*;
-/// use crate::my_module_impl::*;
-///
-/// #[cxx::bridge(namespace = "craby::mymodule")]
-/// pub mod my_module {
-///     extern "Rust" {
-///         #[cxx_name = "numericMethod"]
-///         fn my_module_numeric_method(arg: f64) -> f64;
-///     }
-/// }
-///
-/// fn my_module_numeric_method(arg: f64) -> f64 {
-///     MyModule::numeric_method(arg)
-/// }
-/// ```
-pub fn ffi_rs(codgen_res: &Vec<CodegenResult>) -> String {
-    let impl_mods = codgen_res
-        .iter()
-        .map(|res| format!("use crate::{}::*;", impl_mod_name(&res.module_name)))
-        .collect::<Vec<_>>();
-
-    let ffi_mods = codgen_res
-        .iter()
-        .map(|res| format!("use {}::*;", res.ffi_mod.clone()))
-        .collect::<Vec<_>>();
-
-    let cxx_externs = cxx_bridging_extern(&codgen_res);
-    let cxx_impls = cxx_bridging_impl(&codgen_res);
-
-    formatdoc! {
-        r#"
-        {ffi_mods}
-        {impl_mods}
-        use crate::generated::*;
-
-        {cxx_extern}
-
-        {cxx_impl}"#,
-        ffi_mods = ffi_mods.join("\n"),
-        impl_mods = impl_mods.join("\n"),
-        cxx_extern = cxx_externs.join("\n\n"),
-        cxx_impl = cxx_impls.join("\n\n"),
-    }
-}
-
-/// Generate the `generated.rs` file for the given code generation results.
-///
-/// ```rust,ignore
-/// use crate::ffi::my_module::*;
-///
-/// pub trait MyModuleSpec {
-///     fn multiply(a: f64, b: f64) -> f64;
-/// }
-/// ```
-pub fn generated_rs(codegen_res: &Vec<CodegenResult>) -> String {
-    let use_mods = codegen_res
-        .iter()
-        .map(|res| format!("use crate::ffi::{}::*;", res.ffi_mod.clone()))
-        .collect::<Vec<_>>();
-
-    let spec_codes = codegen_res
-        .iter()
-        .map(|res| res.spec_code.clone())
-        .collect::<Vec<_>>();
-
-    format!("{}\n\n{}", use_mods.join("\n"), spec_codes.join("\n\n"))
-}
-
 fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
     codegen_res
         .iter()
@@ -367,15 +270,116 @@ fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
         .collect::<Vec<_>>()
 }
 
-fn cxx_bridging_impl(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
-    codegen_res
-        .iter()
-        .map(|res| {
-            res.cxx_bridges
-                .iter()
-                .map(|bridge| bridge.impl_func.clone())
-                .collect::<Vec<_>>()
-        })
-        .flatten()
-        .collect::<Vec<_>>()
+pub mod template {
+    use craby_common::constants::impl_mod_name;
+    use indoc::formatdoc;
+
+    use crate::{platform::rust::cxx_bridging_extern, types::types::CodegenResult};
+
+    /// Generate the `lib.rs` file for the given code generation results.
+    ///
+    /// ```rust,ignore
+    /// pub(crate) mod generated;
+    /// pub(crate) mod ffi;
+    /// pub(crate) mod my_module_impl;
+    /// ```
+    pub fn lib_rs(codgen_res: &Vec<CodegenResult>) -> String {
+        let impl_mods = codgen_res
+            .iter()
+            .map(|res| format!("pub(crate) mod {};", res.impl_mod.clone()))
+            .collect::<Vec<String>>();
+
+        formatdoc! {
+            r#"
+            pub(crate) mod ffi;
+            pub(crate) mod generated;
+            {impl_mods}"#,
+            impl_mods = impl_mods.join("\n"),
+        }
+    }
+
+    /// Generate the `ffi.rs` file for the given code generation results.
+    ///
+    /// ```rust,ignore
+    /// use ffi::*;
+    /// use crate::generated::*;
+    /// use crate::my_module_impl::*;
+    ///
+    /// #[cxx::bridge(namespace = "craby::mymodule")]
+    /// pub mod my_module {
+    ///     extern "Rust" {
+    ///         #[cxx_name = "numericMethod"]
+    ///         fn my_module_numeric_method(arg: f64) -> f64;
+    ///     }
+    /// }
+    ///
+    /// fn my_module_numeric_method(arg: f64) -> f64 {
+    ///     MyModule::numeric_method(arg)
+    /// }
+    /// ```
+    pub fn ffi_rs(codgen_res: &Vec<CodegenResult>) -> String {
+        let impl_mods = codgen_res
+            .iter()
+            .map(|res| format!("use crate::{}::*;", impl_mod_name(&res.module_name)))
+            .collect::<Vec<_>>();
+
+        let ffi_mods = codgen_res
+            .iter()
+            .map(|res| format!("use {}::*;", res.ffi_mod.clone()))
+            .collect::<Vec<_>>();
+
+        let cxx_externs = cxx_bridging_extern(&codgen_res);
+        let cxx_impls = cxx_bridging_impl(&codgen_res);
+
+        formatdoc! {
+            r#"
+            {ffi_mods}
+            {impl_mods}
+            use crate::generated::*;
+
+            {cxx_extern}
+
+            {cxx_impl}"#,
+            ffi_mods = ffi_mods.join("\n"),
+            impl_mods = impl_mods.join("\n"),
+            cxx_extern = cxx_externs.join("\n\n"),
+            cxx_impl = cxx_impls.join("\n\n"),
+        }
+    }
+
+    /// Generate the `generated.rs` file for the given code generation results.
+    ///
+    /// ```rust,ignore
+    /// use crate::ffi::my_module::*;
+    ///
+    /// pub trait MyModuleSpec {
+    ///     fn multiply(a: f64, b: f64) -> f64;
+    /// }
+    /// ```
+    pub fn generated_rs(codegen_res: &Vec<CodegenResult>) -> String {
+        let use_mods = codegen_res
+            .iter()
+            .map(|res| format!("use crate::ffi::{}::*;", res.ffi_mod.clone()))
+            .collect::<Vec<_>>();
+
+        let spec_codes = codegen_res
+            .iter()
+            .map(|res| res.spec_code.clone())
+            .collect::<Vec<_>>();
+
+        format!("{}\n\n{}", use_mods.join("\n"), spec_codes.join("\n\n"))
+    }
+
+    fn cxx_bridging_impl(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
+        codegen_res
+            .iter()
+            .map(|res| {
+                res.cxx_bridges
+                    .iter()
+                    .map(|bridge| bridge.impl_func.clone())
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect::<Vec<_>>()
+    }
 }

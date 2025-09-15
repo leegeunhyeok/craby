@@ -64,6 +64,10 @@ pub fn crate_manifest_path(project_root: &PathBuf) -> PathBuf {
     crate_dir(project_root).join("Cargo.toml")
 }
 
-pub fn cxx_dir(project_root: &PathBuf, target: &str) -> PathBuf {
+pub fn cxx_bridge_dir(project_root: &PathBuf, target: &str) -> PathBuf {
     project_root.join("target").join(target).join("cxxbridge")
+}
+
+pub fn cxx_dir(project_root: &PathBuf) -> PathBuf {
+    project_root.join("cpp")
 }
