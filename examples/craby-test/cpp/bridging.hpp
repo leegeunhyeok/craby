@@ -1,0 +1,115 @@
+#pragma once
+
+#include <react/bridging/Bridging.h>
+#include "cxx.h"
+#include "ffi.rs.h"
+
+using namespace facebook;
+using namespace craby::ffi;
+
+namespace facebook {
+namespace react {
+
+template <>
+struct Bridging<TestObject> {
+  static TestObject fromJs(jsi::Runtime &rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
+    try {
+      auto obj = value.asObject(rt);
+      auto __foo = obj.getProperty(rt, "foo");
+      auto __bar = obj.getProperty(rt, "bar");
+      auto __baz = obj.getProperty(rt, "baz");
+
+      if (!(__foo.isString() && __bar.isNumber() &&
+          __baz.isBool())) {
+        throw jsi::JSError(rt, "Invalid argument (TestObject)");
+      }
+
+      TestObject ret = {
+        react::bridging::fromJs<std::string>(rt, __foo, callInvoker),
+        react::bridging::fromJs<double>(rt, __bar, callInvoker),
+        react::bridging::fromJs<bool>(rt, __baz, callInvoker)
+      };
+
+      return ret;
+    } catch (const std::exception &e) {
+      throw jsi::JSError(rt, e.what());
+    }
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, TestObject value) {
+    jsi::Object obj = jsi::Object(rt);
+    obj.setProperty(rt, "foo", react::bridging::toJs(rt, std::string(value.foo)));
+    obj.setProperty(rt, "bar", react::bridging::toJs(rt, value.bar));
+    obj.setProperty(rt, "baz", react::bridging::toJs(rt, value.baz));
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <typename T>
+struct Bridging<rust::Vec<T>> {
+
+  static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (!value.isObject()) {
+      throw jsi::JSError(rt, "Expected an array");
+    }
+
+    auto array = value.asObject(rt).asArray(rt);
+    size_t len = array.length(rt);
+    rust::Vec<T> vec;
+    vec.reserve(len);
+
+    for (size_t i = 0; i < len; i++) {
+      auto element = array.getValueAtIndex(rt, i);
+
+      T convertedElement = react::bridging::fromJs<T>(rt, element, callInvoker);
+      vec.push_back(std::move(convertedElement));
+    }
+
+    return vec;
+  }
+
+  static jsi::Array toJs(jsi::Runtime& rt, const rust::Vec<T>& vec) {
+    auto array = jsi::Array(rt, vec.size());
+
+    for (size_t i = 0; i < vec.size(); i++) {
+      auto jsElement = react::bridging::toJs(rt, vec[i]);
+      array.setValueAtIndex(rt, i, jsElement);
+    }
+
+    return array;
+  }
+};
+
+template <>
+struct Bridging<MyEnum> {
+  static MyEnum fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto raw = value.asString(rt).utf8(rt);
+    MyEnum enum_value;
+
+    if (raw == "FOO") {
+      enum_value = craby::ffi::MyEnum::FOO;
+    } else if (raw == "BAR") {
+      enum_value = craby::ffi::MyEnum::BAR;
+    } else if (raw == "BAZ") {
+      enum_value = craby::ffi::MyEnum::BAZ;
+    } else {
+      throw jsi::JSError(rt, "Invalid argument (MyEnum)");
+    }
+
+    return enum_value;
+  }
+
+  static jsi::Value toJs(jsi::Runtime& rt, const MyEnum& value) {
+    switch (value) {
+      case MyEnum::FOO:
+        return react::bridging::toJs(rt, std::string("FOO"));
+      case MyEnum::BAR:
+        return react::bridging::toJs(rt, std::string("BAR"));
+      case MyEnum::BAZ:
+        return react::bridging::toJs(rt, std::string("BAZ"));
+    }
+  }
+};
+
+} // namespace react
+} // namespace facebook
