@@ -39,7 +39,7 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(),
     )?;
 
     // Type Aliases
-    println!("├─ Type Aliases ({})", schema.alias_map.len());
+    println!("├─ Alias types ({})", schema.alias_map.len());
     schema.alias_map.keys().enumerate().for_each(|(i, name)| {
         if i == schema.alias_map.len() - 1 {
             print!("│   └─ ");
@@ -48,10 +48,23 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(),
         }
         println!("{}", name.blue());
     });
+    if schema.alias_map.is_empty() {
+        println!("   {}", "(None)".dimmed());
+    }
 
     // Enums
-    println!("└─ Enums (0)");
-    println!("   {}", "(None)".dimmed());
+    println!("└─ Enum types ({})", schema.enum_map.len());
+    schema.enum_map.keys().enumerate().for_each(|(i, name)| {
+        if i == schema.alias_map.len() - 1 {
+            print!("    └─ ");
+        } else {
+            print!("    ├─ ");
+        }
+        println!("{}", name.blue());
+    });
+    if schema.enum_map.is_empty() {
+        println!("   {}", "(None)".dimmed());
+    }
 
     Ok(())
 }

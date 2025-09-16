@@ -12,16 +12,15 @@ namespace react {
 
 template <typename T>
 struct Bridging<rust::Vec<T>> {
-
   static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto arr = value.asObject(rt).asArray(rt);
     size_t len = arr.length(rt);
-    rust::Vec<T> rsVec;
-    rsVec.reserve(len);
+    rust::Vec<T> vec;
+    vec.reserve(len);
 
     for (size_t i = 0; i < len; i++) {
-      auto el = arr.getValueAtIndex(rt, i);
-      rsVec.push_back(react::bridging::fromJs<T>(rt, el, callInvoker)));
+      auto element = arr.getValueAtIndex(rt, i);
+      vec.push_back(react::bridging::fromJs<T>(rt, element, callInvoker));
     }
 
     return vec;
@@ -31,8 +30,8 @@ struct Bridging<rust::Vec<T>> {
     auto arr = jsi::Array(rt, vec.size());
 
     for (size_t i = 0; i < vec.size(); i++) {
-      auto el = react::bridging::toJs(rt, vec[i]);
-      arr.setValueAtIndex(rt, i, el);
+      auto jsElement = react::bridging::toJs(rt, vec[i]);
+      arr.setValueAtIndex(rt, i, jsElement);
     }
 
     return arr;
@@ -41,16 +40,20 @@ struct Bridging<rust::Vec<T>> {
 
 template <>
 struct Bridging<craby::crabytest::TestObject> {
-  static craby::crabytest::TestObject fromJs(jsi::Runtime &rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
+  static craby::crabytest::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
     auto obj$foo = obj.getProperty(rt, "foo");
     auto obj$bar = obj.getProperty(rt, "bar");
     auto obj$baz = obj.getProperty(rt, "baz");
 
+    auto _obj$foo = react::bridging::fromJs<std::string>(rt, obj$foo, callInvoker);
+    auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
+    auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
+
     craby::crabytest::TestObject ret = {
-      react::bridging::fromJs<std::string>(rt, obj$foo, callInvoker),
-      react::bridging::fromJs<double>(rt, obj$bar, callInvoker),
-      react::bridging::fromJs<bool>(rt, obj$baz, callInvoker)
+      _obj$foo,
+      _obj$bar,
+      _obj$baz
     };
 
     return ret;
@@ -58,16 +61,21 @@ struct Bridging<craby::crabytest::TestObject> {
 
   static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::TestObject value) {
     jsi::Object obj = jsi::Object(rt);
-    obj.setProperty(rt, "foo", react::bridging::toJs(rt, std::string(value.foo)));
-    obj.setProperty(rt, "bar", react::bridging::toJs(rt, value.bar));
-    obj.setProperty(rt, "baz", react::bridging::toJs(rt, value.baz));
+    auto _obj$foo = react::bridging::toJs(rt, std::string(value.foo));
+    auto _obj$bar = react::bridging::toJs(rt, value.bar);
+    auto _obj$baz = react::bridging::toJs(rt, value.baz);
+
+    obj.setProperty(rt, "foo", _obj$foo);
+    obj.setProperty(rt, "bar", _obj$bar);
+    obj.setProperty(rt, "baz", _obj$baz);
+
     return jsi::Value(rt, obj);
   }
 };
 
 template <>
 struct Bridging<craby::crabytest::MyEnum> {
-  static craby::crabytest::MyEnum fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+  static craby::crabytest::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto raw = value.asString(rt).utf8(rt);
     if (raw == "FOO") {
       return craby::crabytest::MyEnum::FOO;
@@ -80,14 +88,14 @@ struct Bridging<craby::crabytest::MyEnum> {
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime& rt, const craby::crabytest::MyEnum& value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::MyEnum value) {
     switch (value) {
       case craby::crabytest::MyEnum::FOO:
-        return react::bridging::toJs(rt, std::string("FOO"));
+        return react::bridging::toJs(rt, "FOO");
       case craby::crabytest::MyEnum::BAR:
-        return react::bridging::toJs(rt, std::string("BAR"));
+        return react::bridging::toJs(rt, "BAR");
       case craby::crabytest::MyEnum::BAZ:
-        return react::bridging::toJs(rt, std::string("BAZ"));
+        return react::bridging::toJs(rt, "BAZ");
       default:
         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
     }

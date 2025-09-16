@@ -194,7 +194,7 @@ impl ToCxxMethod for FunctionSpec {
                           }} catch (const jsi::JSError &err) {{
                             promise.reject(err.getMessage());
                           }} catch (const std::exception &err) {{
-                            promise.reject(craby::helpers::errorMessage(err));
+                            promise.reject(craby::utils::errorMessage(err));
                           }}
                         }}).detach();
                         
@@ -257,7 +257,7 @@ impl ToCxxMethod for FunctionSpec {
               }} catch (const jsi::JSError &err) {{
                 throw err;
               }} catch (const std::exception &err) {{
-                throw jsi::JSError(rt, craby::helpers::errorMessage(err));
+                throw jsi::JSError(rt, craby::utils::errorMessage(err));
               }}
             }}"#,
             fn_name = self.name,
@@ -280,7 +280,16 @@ pub mod template {
     use craby_common::utils::string::flat_case;
     use indoc::formatdoc;
 
-    use crate::{constants::cxx_mod_cls_name, types::types::CodegenResult, utils::indent_str};
+    use crate::{
+        constants::cxx_mod_cls_name,
+        types::{
+            schema::{Alias, Enum},
+            types::CodegenResult,
+        },
+        utils::indent_str,
+    };
+
+    use super::ToCxxBridging;
 
     pub fn mod_cxx(codegen_res: &Vec<CodegenResult>) -> String {
         let mut headers = vec![];
@@ -415,22 +424,27 @@ pub mod template {
             #include <jsi/jsi.h>
 
             namespace craby {{
-            namespace helpers {{
-
-            inline std::string errorMessage(const std::exception &err) {{
-              const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
-              return std::string(rs_err ? rs_err->what() : err.what());
-            }}
-
-            }} // namespace helpers
-            
             {mod_namespaces}
             }} // namespace craby"#,
             mod_namespaces = mod_namespaces,
         }
     }
 
-    pub fn cxx_bridging_h(_codegen_res: &Vec<CodegenResult>) -> String {
+    pub fn cxx_bridging_h(codegen_res: &Vec<CodegenResult>) -> String {
+        let mut has_template = false;
+        let bridging_templates = codegen_res
+            .iter()
+            .map(|res| {
+                has_template = has_template || !res.cxx_bridging_templates.is_empty();
+                res.cxx_bridging_templates
+                    .iter()
+                    .map(|template| template.clone())
+                    .collect::<Vec<_>>()
+            })
+            .flatten()
+            .collect::<Vec<_>>()
+            .join("\n\n");
+
         formatdoc! {
             r#"
             #pragma once
@@ -446,36 +460,239 @@ pub mod template {
 
             template <typename T>
             struct Bridging<rust::Vec<T>> {{
-
               static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
-                auto array = value.asObject(rt).asArray(rt);
-                size_t len = array.length(rt);
+                auto arr = value.asObject(rt).asArray(rt);
+                size_t len = arr.length(rt);
                 rust::Vec<T> vec;
                 vec.reserve(len);
 
                 for (size_t i = 0; i < len; i++) {{
-                  auto element = array.getValueAtIndex(rt, i);
-                  vec.push_back(std::move(react::bridging::fromJs<T>(rt, element, callInvoker)));
+                  auto element = arr.getValueAtIndex(rt, i);
+                  vec.push_back(react::bridging::fromJs<T>(rt, element, callInvoker));
                 }}
 
                 return vec;
               }}
 
               static jsi::Array toJs(jsi::Runtime& rt, const rust::Vec<T>& vec) {{
-                auto array = jsi::Array(rt, vec.size());
+                auto arr = jsi::Array(rt, vec.size());
 
                 for (size_t i = 0; i < vec.size(); i++) {{
                   auto jsElement = react::bridging::toJs(rt, vec[i]);
-                  array.setValueAtIndex(rt, i, jsElement);
+                  arr.setValueAtIndex(rt, i, jsElement);
                 }}
 
-                return array;
+                return arr;
               }}
             }};
-
+            {bridging_templates}
             }} // namespace react
             }} // namespace facebook"#,
+            bridging_templates = if has_template { format!("\n{}\n", bridging_templates) } else { "".to_string() },
         }
+    }
+
+    pub fn cxx_struct_bridging_template(
+        mod_name: &String,
+        name: &String,
+        alias: &Alias,
+    ) -> Result<String, anyhow::Error> {
+        if alias.r#type != "ObjectTypeAnnotation" {
+            return Err(anyhow::anyhow!("Alias type should be ObjectTypeAnnotation"));
+        }
+
+        let flat_name = flat_case(mod_name);
+        let struct_namespace = format!("craby::{}::{}", flat_name, name);
+
+        let mut get_props = vec![];
+        let mut set_props = vec![];
+        let mut from_js_stmts = vec![];
+        let mut from_js_ident = vec![];
+        let mut to_js_stmts = vec![];
+
+        alias
+            .properties
+            .iter()
+            .try_for_each(|prop| -> Result<(), anyhow::Error> {
+                let ident = format!("obj${}", prop.name);
+                let converted_ident = format!("_{}", ident);
+                let cxx = prop.type_annotation.to_cxx(&mod_name, &ident)?;
+                let js = prop
+                    .type_annotation
+                    .to_js(&format!("value.{}", prop.name))?;
+                let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
+                let set_prop = format!(
+                    "obj.setProperty(rt, \"{}\", {});",
+                    prop.name, converted_ident
+                );
+                let from_js_stmt = format!("auto {} = {};", converted_ident, cxx);
+                let to_js_stmt = format!("auto {} = {};", converted_ident, js);
+
+                get_props.push(get_prop);
+                from_js_stmts.push(from_js_stmt);
+                from_js_ident.push(converted_ident);
+                set_props.push(set_prop);
+                to_js_stmts.push(to_js_stmt);
+
+                Ok(())
+            })?;
+
+        let from_js_impl = formatdoc! {
+            r#"
+            auto obj = value.asObject(rt);
+            {get_props}
+
+            {from_js_stmts}
+
+            {struct_namespace} ret = {{
+            {from_js_ident}
+            }};
+
+            return ret;"#,
+            struct_namespace = struct_namespace,
+            get_props = get_props.join("\n"),
+            from_js_stmts = from_js_stmts.join("\n"),
+            from_js_ident = indent_str(from_js_ident.join(",\n"), 2),
+        };
+
+        let to_js_impl = formatdoc! {
+            r#"
+            jsi::Object obj = jsi::Object(rt);
+            {to_js_stmts}
+
+            {set_props}
+
+            return jsi::Value(rt, obj);"#,
+            to_js_stmts = to_js_stmts.join("\n"),
+            set_props = set_props.join("\n"),
+        };
+
+        let template = cxx_bridging_template(&struct_namespace, from_js_impl, to_js_impl);
+
+        Ok(template)
+    }
+
+    pub fn cxx_enum_bridging_template(
+        mod_name: &String,
+        name: &String,
+        enum_spec: &Enum,
+    ) -> Result<String, anyhow::Error> {
+        if enum_spec.r#type != "EnumDeclarationWithMembers" {
+            return Err(anyhow::anyhow!(
+                "Enum type should be EnumDeclarationWithMembers"
+            ));
+        }
+
+        if !(enum_spec.member_type == "StringTypeAnnotation"
+            || enum_spec.member_type == "NumberTypeAnnotation")
+        {
+            return Err(anyhow::anyhow!(
+                "Enum member type should be StringTypeAnnotation or NumberTypeAnnotation: {}",
+                name
+            ));
+        }
+
+        if enum_spec.members.is_none() {
+            return Err(anyhow::anyhow!("Enum members are required: {}", name));
+        }
+
+        let flat_name = flat_case(mod_name);
+        let enum_namespace = format!("craby::{}::{}", flat_name, name);
+        let get_raw_value = match enum_spec.member_type.as_str() {
+            "StringTypeAnnotation" => "value.asString(rt).utf8(rt)",
+            "NumberTypeAnnotation" => "value.asNumber()",
+            _ => unreachable!(),
+        };
+
+        let raw_member = |value: &String| -> String {
+            match enum_spec.member_type.as_str() {
+                "StringTypeAnnotation" => format!("\"{}\"", value),
+                "NumberTypeAnnotation" => value.clone(),
+                _ => unreachable!(),
+            }
+        };
+
+        let mut from_js_conds = vec![];
+        let mut to_js_conds = vec![];
+
+        enum_spec
+            .members
+            .as_ref()
+            .unwrap()
+            .iter()
+            .enumerate()
+            .try_for_each(|(idx, member)| -> Result<(), anyhow::Error> {
+                let enum_namespace = format!("{}::{}", enum_namespace, member.name);
+                let raw_member = raw_member(&member.value.value);
+
+                let from_js_cond = if idx == 0 {
+                    formatdoc! {
+                        r#"
+                        if (raw == {raw_member}) {{
+                          return {enum_namespace};
+                        }}"#,
+                        raw_member = raw_member,
+                        enum_namespace = enum_namespace,
+                    }
+                } else {
+                    formatdoc! {
+                        r#"
+                        else if (raw == {raw_member}) {{
+                          return {enum_namespace};
+                        }}"#,
+                        raw_member = raw_member,
+                        enum_namespace = enum_namespace,
+                    }
+                };
+
+                let to_js_cond = formatdoc! {
+                    r#"
+                    case {enum_namespace}:
+                      return react::bridging::toJs(rt, {raw_member});"#,
+                    enum_namespace = enum_namespace,
+                    raw_member = raw_member,
+                };
+
+                from_js_conds.push(from_js_cond);
+                to_js_conds.push(to_js_cond);
+
+                Ok(())
+            })?;
+
+        from_js_conds.push(formatdoc! {
+            r#"
+            else {{
+              throw jsi::JSError(rt, "Invalid enum value ({name})");
+            }}"#,
+            name = name,
+        });
+
+        to_js_conds.push(formatdoc! {
+            r#"
+            default:
+              throw jsi::JSError(rt, "Invalid enum value ({name})");"#,
+            name = name,
+        });
+
+        let from_js = formatdoc! {
+            r#"
+            auto raw = {get_raw_value};
+            {from_js_conds}"#,
+            get_raw_value = get_raw_value,
+            from_js_conds = from_js_conds.join(" "),
+        };
+
+        let to_js = formatdoc! {
+            r#"
+            switch (value) {{
+            {to_js_conds}
+            }}"#,
+            to_js_conds = indent_str(to_js_conds.join("\n"), 2),
+        };
+
+        let template = cxx_bridging_template(&enum_namespace, from_js, to_js);
+
+        Ok(template)
     }
 
     pub fn cxx_method_def(name: &String) -> String {
@@ -486,6 +703,29 @@ pub mod template {
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);"#,
             name = name,
+        }
+    }
+
+    pub fn cxx_bridging_template(
+        target_type: &String,
+        from_js_impl: String,
+        to_js_impl: String,
+    ) -> String {
+        formatdoc! {
+            r#"
+            template <>
+            struct Bridging<{target_type}> {{
+              static {target_type} fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
+            {from_js_impl}
+              }}
+
+              static jsi::Value toJs(jsi::Runtime &rt, {target_type} value) {{
+            {to_js_impl}
+              }}
+            }};"#,
+            target_type = target_type,
+            from_js_impl = indent_str(from_js_impl, 4),
+            to_js_impl = indent_str(to_js_impl, 4),
         }
     }
 

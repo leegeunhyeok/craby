@@ -6,7 +6,10 @@ use indoc::formatdoc;
 
 use crate::{
     platform::{
-        cxx::{CxxMethod, ToCxxMethod},
+        cxx::{
+            template::{cxx_enum_bridging_template, cxx_struct_bridging_template},
+            CxxMethod, ToCxxMethod,
+        },
         rust::{CxxBridge, ToCxxBridge},
     },
     types::{schema::Schema, types::CodegenResult},
@@ -23,8 +26,9 @@ impl CodeGenerator {
     pub fn generate(&self, schema: &Schema) -> Result<CodegenResult, anyhow::Error> {
         let spec_code = self.generate_spec(schema)?;
         let impl_code = self.generate_impl(schema)?;
-        let cxx_bridges = self.get_cxx_bridges(schema)?;
+        let cxx_bridge = self.get_cxx_bridges(schema)?;
         let cxx_methods = self.get_cxx_methods(schema)?;
+        let cxx_bridging_templates = self.get_cxx_bridging_templates(schema)?;
 
         Ok(CodegenResult {
             module_name: schema.module_name.clone(),
@@ -32,8 +36,9 @@ impl CodeGenerator {
             impl_mod: impl_mod_name(&schema.module_name),
             spec_code,
             impl_code,
-            cxx_bridges,
+            cxx_bridge,
             cxx_methods,
+            cxx_bridging_templates,
         })
     }
 
@@ -134,15 +139,8 @@ impl CodeGenerator {
     ///     MyModule::multiply(a, b)
     /// }
     /// ```
-    fn get_cxx_bridges(&self, schema: &Schema) -> Result<Vec<CxxBridge>, anyhow::Error> {
-        let res = schema
-            .spec
-            .methods
-            .iter()
-            .map(|spec| spec.to_cxx_bridge(&schema.module_name))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(res)
+    fn get_cxx_bridges(&self, schema: &Schema) -> Result<CxxBridge, anyhow::Error> {
+        schema.to_cxx_bridge()
     }
 
     fn get_cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
@@ -154,6 +152,31 @@ impl CodeGenerator {
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)
+    }
+
+    fn get_cxx_bridging_templates(&self, schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
+        let mut bridging_templates = vec![];
+
+        schema.alias_map.iter().try_for_each(
+            |(name, alias_spec)| -> Result<(), anyhow::Error> {
+                let struct_template =
+                    cxx_struct_bridging_template(&schema.module_name, name, alias_spec)?;
+                bridging_templates.push(struct_template);
+                Ok(())
+            },
+        )?;
+
+        schema
+            .enum_map
+            .iter()
+            .try_for_each(|(name, enum_spec)| -> Result<(), anyhow::Error> {
+                let enum_template =
+                    cxx_enum_bridging_template(&schema.module_name, name, enum_spec)?;
+                bridging_templates.push(enum_template);
+                Ok(())
+            })?;
+
+        Ok(bridging_templates)
     }
 }
 
@@ -567,7 +590,6 @@ mod tests {
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
         let result = generator.get_cxx_bridges(&schema).unwrap();
-        let result = result.get(0).unwrap();
 
         assert_eq!(
             result.extern_func,

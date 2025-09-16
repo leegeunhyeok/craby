@@ -12,7 +12,9 @@ pub struct CodegenResult {
     /// Code for the snippet of the current module's spec
     pub impl_code: String,
     /// cxx bridging function signatures
-    pub cxx_bridges: Vec<CxxBridge>,
+    pub cxx_bridge: CxxBridge,
     /// cxx implementations
     pub cxx_methods: Vec<CxxMethod>,
+    /// cxx bridging templates
+    pub cxx_bridging_templates: Vec<String>,
 }

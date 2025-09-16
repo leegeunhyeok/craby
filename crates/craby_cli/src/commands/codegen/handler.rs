@@ -92,12 +92,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         with_generated_comment(cxx::template::mod_cxx_h(&codegen_res)),
         true,
     )?;
-    // TODO: Generate craby-bridging.hpp
-    // write_file(
-    //     cxx_dir.join(format!("craby-bridging.hpp", cxx_mod_cls_name)),
-    //     with_generated_comment(cxx::template::cxx_bridging_h(&codegen_res)),
-    //     true,
-    // )?;
+    write_file(
+        cxx_dir.join("bridging-generated.hpp"),
+        with_generated_comment(cxx::template::cxx_bridging_h(&codegen_res)),
+        true,
+    )?;
 
     info!("Codegen completed successfully 🎉");
 
