@@ -47,7 +47,7 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -70,7 +70,7 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -93,7 +93,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -116,7 +116,7 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -139,7 +139,7 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -162,7 +162,7 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 
@@ -188,7 +188,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
       } catch (const std::exception &err) {
-        promise.reject(craby::utils::errorMessage(err));
+        promise.reject(errorMessage(err));
       }
     }).detach();
 
@@ -196,7 +196,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, errorMessage(err));
   }
 }
 

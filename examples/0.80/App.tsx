@@ -50,10 +50,10 @@ export function App() {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      {/* React Logo */}
+      {/* Logo */}
       <View style={styles.logoContainer}>
         <View style={styles.logo}>
-          <Image style={styles.logo} source={require('./assets/react.png')} />
+          <Image style={styles.logo} source={require('./assets/logo.png')} />
         </View>
       </View>
 
@@ -107,7 +107,7 @@ function TestResultCard({
   error,
 }: {
   label: string;
-  description: string;
+  description?: string;
   result: any;
   error?: string;
 }) {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     height: 80,
-    aspectRatio: 1,
+    resizeMode: 'contain',
     marginBottom: 24,
   },
   title: {
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   runButton: {
     width: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#387ca0',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',

@@ -12,7 +12,7 @@ namespace react {
 
 template <typename T>
 struct Bridging<rust::Vec<T>> {
-  static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+  static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
     auto arr = value.asObject(rt).asArray(rt);
     size_t len = arr.length(rt);
     rust::Vec<T> vec;
