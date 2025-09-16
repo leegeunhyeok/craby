@@ -10,7 +10,7 @@ use crate::{
             template::{cxx_enum_bridging_template, cxx_struct_bridging_template},
             CxxMethod, ToCxxMethod,
         },
-        rust::{CxxBridge, ToCxxBridge},
+        rust::{RsCxxBridge, ToRsCxxBridge},
     },
     types::{schema::Schema, types::CodegenResult},
     utils::indent_str,
@@ -26,7 +26,7 @@ impl CodeGenerator {
     pub fn generate(&self, schema: &Schema) -> Result<CodegenResult, anyhow::Error> {
         let spec_code = self.generate_spec(schema)?;
         let impl_code = self.generate_impl(schema)?;
-        let cxx_bridge = self.get_cxx_bridges(schema)?;
+        let rs_cxx_bridge = self.get_rs_cxx_bridges(schema)?;
         let cxx_methods = self.get_cxx_methods(schema)?;
         let cxx_bridging_templates = self.get_cxx_bridging_templates(schema)?;
 
@@ -36,7 +36,7 @@ impl CodeGenerator {
             impl_mod: impl_mod_name(&schema.module_name),
             spec_code,
             impl_code,
-            cxx_bridge,
+            rs_cxx_bridge,
             cxx_methods,
             cxx_bridging_templates,
         })
@@ -139,8 +139,8 @@ impl CodeGenerator {
     ///     MyModule::multiply(a, b)
     /// }
     /// ```
-    fn get_cxx_bridges(&self, schema: &Schema) -> Result<CxxBridge, anyhow::Error> {
-        schema.to_cxx_bridge()
+    fn get_rs_cxx_bridges(&self, schema: &Schema) -> Result<RsCxxBridge, anyhow::Error> {
+        schema.to_rs_cxx_bridge()
     }
 
     fn get_cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
@@ -589,7 +589,7 @@ mod tests {
 
         let generator = CodeGenerator::new();
         let schema = serde_json::from_str::<Schema>(json_schema).unwrap();
-        let result = generator.get_cxx_bridges(&schema).unwrap();
+        let result = generator.get_rs_cxx_bridges(&schema).unwrap();
 
         assert_eq!(
             result.extern_func,

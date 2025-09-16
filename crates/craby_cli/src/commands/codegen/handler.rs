@@ -55,7 +55,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
             let res = generator.generate(&schema)?;
 
-            print_schema(&schema, &config)?;
+            print_schema(&schema)?;
             write_file(
                 crate_src_path.join(format!("{}.rs", impl_mod_name(&schema.module_name))),
                 format!("{}\n", res.impl_code),

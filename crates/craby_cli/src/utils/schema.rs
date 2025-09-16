@@ -1,11 +1,10 @@
 use craby_codegen::types::schema::Schema;
-use craby_common::config::CompleteCrabyConfig;
 use log::error;
 use owo_colors::OwoColorize;
 
 use crate::utils::terminal::CodeHighlighter;
 
-pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
+pub fn print_schema(schema: &Schema) -> Result<(), anyhow::Error> {
     println!("├─ Methods ({})", schema.spec.methods.len());
 
     let highlighter = CodeHighlighter::new();
@@ -19,14 +18,7 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(),
                     } else {
                         print!("│   ├─ ");
                     }
-
-                    if config.is_excluded_method(&method.name) {
-                        println!("{} {}", method_sig.dimmed(), "(excluded)".yellow());
-                    } else if config.is_included_method(&method.name) {
-                        highlighter.highlight_code(&method_sig, "rs");
-                    } else {
-                        println!("{} {}", method.name, "(not included)".dimmed());
-                    }
+                    highlighter.highlight_code(&method_sig, "rs");
                 }
                 Err(e) => {
                     error!("Failed to get method signature: {}", method.name);

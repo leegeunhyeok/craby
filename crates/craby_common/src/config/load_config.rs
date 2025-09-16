@@ -1,10 +1,8 @@
 use std::{fs, path::PathBuf};
 
-use regex::Regex;
-
 use crate::{constants::crate_dir, utils::string::flat_case};
 
-use super::{types::CrabyConfig, CargoManifest, CompleteCodegenConfig, CompleteCrabyConfig};
+use super::{types::CrabyConfig, CargoManifest, CompleteCrabyConfig};
 
 pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow::Error> {
     let manifest_path = crate_dir(project_root).join("Cargo.toml");
@@ -15,25 +13,9 @@ pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow
     let config = fs::read_to_string(config_path)?;
     let config = toml::from_str::<CrabyConfig>(&config)?;
 
-    let codegen = CompleteCodegenConfig {
-        exclude: config
-            .codegen
-            .exclude
-            .iter()
-            .map(|s| Regex::new(s).unwrap())
-            .collect(),
-        include: config
-            .codegen
-            .include
-            .iter()
-            .map(|s| Regex::new(s).unwrap())
-            .collect(),
-    };
-
     Ok(CompleteCrabyConfig {
         project_root: project_root.clone(),
         project: config.project,
-        codegen,
     })
 }
 

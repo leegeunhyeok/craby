@@ -20,14 +20,9 @@ pub fn get_podspec_path(project_root: &PathBuf) -> Result<Option<String>, anyhow
 }
 
 pub fn is_podspec_configured(project_root: &PathBuf) -> Result<bool, anyhow::Error> {
-    let podspec_path = get_podspec_path(project_root)?;
-
-    if podspec_path.is_none() {
-        return Err(anyhow::anyhow!("`podspec` file not found"));
-    }
-
     let mut passed = true;
-    let podspec_path = podspec_path.unwrap();
+    let podspec_path = get_podspec_path(project_root)?
+        .ok_or_else(|| anyhow::anyhow!("`podspec` file not found"))?;
     let content = fs::read_to_string(&podspec_path)?;
     passed &= content.contains(".vendored_frameworks");
 

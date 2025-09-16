@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 
 use craby_codegen::types::schema::Schema;
-use craby_common::config::load_config;
 use log::info;
 use owo_colors::OwoColorize;
 
@@ -14,7 +13,6 @@ pub struct ShowOptions {
 }
 
 pub fn perform(opts: ShowOptions) -> anyhow::Result<()> {
-    let config = load_config(&opts.project_root)?;
     let total_mods = opts.schemas.len();
     info!(
         "{} module(s) found in {} package\n",
@@ -24,7 +22,7 @@ pub fn perform(opts: ShowOptions) -> anyhow::Result<()> {
     for (i, schema) in opts.schemas.iter().enumerate() {
         let schema = serde_json::from_str::<Schema>(&schema)?;
         println!("{} ({}/{})", schema.module_name.bold(), i + 1, total_mods);
-        print_schema(&schema, &config)?;
+        print_schema(&schema)?;
     }
 
     Ok(())

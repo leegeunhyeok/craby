@@ -6,6 +6,5 @@ pub fn write_file(path: PathBuf, content: String, overwrite: bool) -> anyhow::Re
     }
 
     fs::write(path, content)?;
-
     Ok(true)
 }

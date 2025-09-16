@@ -1,11 +1,3 @@
-pub fn capitalize_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-        None => String::new(),
-    }
-}
-
 pub fn indent_str(str: String, indent_size: usize) -> String {
     let indent_str = " ".repeat(indent_size);
     str.lines()
@@ -23,12 +15,6 @@ pub fn indent_str(str: String, indent_size: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_capitalize_first() {
-        assert_eq!(capitalize_first("sum"), "Sum");
-        assert_eq!(capitalize_first("hello-world"), "Hello-world");
-    }
 
     #[test]
     fn test_indent_str() {

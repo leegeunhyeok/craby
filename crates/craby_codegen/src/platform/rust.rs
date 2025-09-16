@@ -20,13 +20,13 @@ pub trait ToExternType {
     fn to_extern_type(&self) -> Result<String, anyhow::Error>;
 }
 
-pub trait ToCxxBridge {
+pub trait ToRsCxxBridge {
     /// Returns the cxx(FFI) function declaration and implementation for the `FunctionSpec`.
-    fn to_cxx_bridge(&self) -> Result<CxxBridge, anyhow::Error>;
+    fn to_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error>;
 }
 
 #[derive(Debug, Clone)]
-pub struct CxxBridge {
+pub struct RsCxxBridge {
     /// The extern function declaration.
     ///
     /// **Example**
@@ -109,8 +109,8 @@ impl ToExternType for TypeAnnotation {
     }
 }
 
-impl ToCxxBridge for Schema {
-    fn to_cxx_bridge(&self) -> Result<CxxBridge, anyhow::Error> {
+impl ToRsCxxBridge for Schema {
+    fn to_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error> {
         let mut extern_funcs = vec![];
         let mut impl_funcs = vec![];
         let mut struct_defs = vec![];
@@ -234,7 +234,7 @@ impl ToCxxBridge for Schema {
                 Ok(())
             })?;
 
-        Ok(CxxBridge {
+        Ok(RsCxxBridge {
             struct_def: struct_defs.join("\n\n"),
             enum_def: enum_defs.join("\n\n"),
             extern_func: extern_funcs.join("\n\n"),
@@ -249,9 +249,9 @@ fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
         .map(|res| {
             let flat_name = flat_case(&res.module_name);
             let snake_name = snake_case(&res.module_name);
-            let cxx_extern = res.cxx_bridge.extern_func.clone();
-            let struct_defs = res.cxx_bridge.struct_def.clone();
-            let enum_defs = res.cxx_bridge.enum_def.clone();
+            let cxx_extern = res.rs_cxx_bridge.extern_func.clone();
+            let struct_defs = res.rs_cxx_bridge.struct_def.clone();
+            let enum_defs = res.rs_cxx_bridge.enum_def.clone();
 
             formatdoc! {
                 r#"
@@ -385,7 +385,7 @@ pub mod template {
     fn cxx_bridging_impl(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
         codegen_res
             .iter()
-            .map(|res| res.cxx_bridge.impl_func.clone())
+            .map(|res| res.rs_cxx_bridge.impl_func.clone())
             .collect::<Vec<_>>()
     }
 
