@@ -7,6 +7,18 @@ pub mod template {
 
     use crate::constants::cxx_mod_cls_name;
 
+    /// Returns `JNI_OnLoad` function implementation
+    ///
+    /// ```cpp
+    /// jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+    ///   facebook::react::registerCxxModuleToGlobalModuleMap(
+    ///     craby::mymodule::MyTestModule::kModuleName,
+    ///     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
+    ///       return std::make_shared<craby::mymodule::MyTestModule>(jsInvoker);
+    ///     });
+    ///   return JNI_VERSION_1_6;
+    /// }
+    /// ```
     pub fn cxx_on_load(name: &String) -> String {
         let cxx_mod = cxx_mod_cls_name(name);
         let flat_name = flat_case(name);
@@ -31,6 +43,7 @@ pub mod template {
         }
     }
 
+    /// Returns `CMakeLists.txt`
     pub fn cmakelists(name: &String) -> String {
         let kebab_name = kebab_case(name);
         let lib_name = dest_lib_name(&SanitizedString::from(name));
@@ -80,5 +93,28 @@ pub mod template {
           lib_name = lib_name,
           cxx_mod_cls_name = cxx_mod_cls_name,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use super::*;
+
+    const MODULE_NAME: &str = "CrabyTest";
+
+    #[test]
+    fn test_cxx_on_load() {
+        let result = template::cxx_on_load(&MODULE_NAME.to_string());
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_cmakelists() {
+        let result = template::cmakelists(&MODULE_NAME.to_string());
+
+        assert_snapshot!(result);
     }
 }

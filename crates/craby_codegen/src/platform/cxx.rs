@@ -10,17 +10,44 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct CxxMethod {
+    /// Method name
     pub name: String,
+    /// TurboModule's method metadata
+    ///
+    /// ```cpp
+    /// MethodMetadata{1, &CxxMyTestModule::myFunc}
+    /// ```
     pub metadata: String,
+    /// Cxx function implementation
+    ///
+    /// ```cpp
+    /// jsi::Value CxxMyTestModule::myFunc(jsi::Runtime &rt,
+    ///                                    react::TurboModule &turboModule,
+    ///                                    const jsi::Value args[],
+    ///                                    size_t count) {
+    ///     // Implementation here
+    /// }
+    /// ```
     pub impl_func: String,
 }
 
 pub trait ToCxxType {
+    /// Returns the cxx type for the `TypeAnnotation`.
     fn to_cxx_type(&self, mod_name: &String) -> Result<String, anyhow::Error>;
 }
 
 pub trait ToCxxBridging {
+    /// Returns the cxx `fromJs` for the `TypeAnnotation`.
+    ///
+    /// ```cpp
+    /// facebook::react::bridging::fromJs<T>(rt, value, callInvoker)
+    /// ```
     fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error>;
+    /// Returns the cxx `toJs` for the `TypeAnnotation`.
+    ///
+    /// ```cpp
+    /// react::bridging::toJs(rt, value)
+    /// ```
     fn to_js(&self, ident: &String) -> Result<String, anyhow::Error>;
 }
 
@@ -165,15 +192,17 @@ impl ToCxxMethod for FunctionSpec {
             params,
         } = &*self.type_annotation
         {
+            // ["arg0", "arg1", "arg2"]
             let mut args = vec![];
+            // ["auto arg0 = facebook::react::bridging::fromJs<T>(rt, value, callInvoker)", "..."]
             let mut args_decls = vec![];
 
             for (idx, param) in params.iter().enumerate() {
                 let arg_ref = cxx_arg_ref(idx);
                 let arg_var = cxx_arg_var(idx);
-                let cxx_type = param.type_annotation.to_cxx(mod_name, &arg_ref)?;
+                let from_js = param.type_annotation.to_cxx(mod_name, &arg_ref)?;
                 args.push(arg_var.clone());
-                args_decls.push(format!("auto {} = {};", arg_var, cxx_type));
+                args_decls.push(format!("auto {} = {};", arg_var, from_js));
             }
 
             let invoke_stmts = match &**return_type_annotation {
@@ -183,6 +212,23 @@ impl ToCxxMethod for FunctionSpec {
                     bind_args.extend(args);
 
                     // Create a promise object and invoke the FFI function in a separate thread
+                    //
+                    // ```cpp
+                    // react::AsyncPromise<T> promise(rt, callInvoker);
+                    //
+                    // std::thread([promise, arg0, arg1, arg2]() mutable {{
+                    //   try {{
+                    //     auto ret = craby::mymodule::myFunc(arg0, arg1, arg2);
+                    //     promise.resolve(ret);
+                    //   }} catch (const jsi::JSError &err) {{
+                    //     promise.reject(err.getMessage());
+                    //   }} catch (const std::exception &err) {{
+                    //     promise.reject(errorMessage(err));
+                    //   }}
+                    // }}).detach();
+                    //
+                    // return promise;
+                    // ```
                     formatdoc! {
                         r#"
                         react::AsyncPromise<{ret_type}> promise(rt, callInvoker);
@@ -194,7 +240,7 @@ impl ToCxxMethod for FunctionSpec {
                           }} catch (const jsi::JSError &err) {{
                             promise.reject(err.getMessage());
                           }} catch (const std::exception &err) {{
-                            promise.reject(craby::utils::errorMessage(err));
+                            promise.reject(errorMessage(err));
                           }}
                         }}).detach();
 
@@ -209,6 +255,11 @@ impl ToCxxMethod for FunctionSpec {
                 }
                 _ => {
                     // Invoke the FFI function synchronously and return the result
+                    //
+                    // ```cpp
+                    // auto ret = craby::mymodule::myFunc(arg0, arg1, arg2);
+                    // return ret;
+                    // ```
                     formatdoc! {
                         r#"
                         auto ret = craby::{flat_name}::{fn_name}({fn_args});
@@ -230,6 +281,9 @@ impl ToCxxMethod for FunctionSpec {
         let cxx_mod = cxx_mod_cls_name(mod_name);
         let args_count = self.args_count()?;
 
+        // ```cpp
+        // MethodMetadata{{1, &CxxMyTestModule::myFunc}}
+        // ```
         let metadata = formatdoc! {
             r#"
             MethodMetadata{{{args_count}, &{cxx_mod}::{fn_name}}}"#,
@@ -257,7 +311,7 @@ impl ToCxxMethod for FunctionSpec {
               }} catch (const jsi::JSError &err) {{
                 throw err;
               }} catch (const std::exception &err) {{
-                throw jsi::JSError(rt, craby::utils::errorMessage(err));
+                throw jsi::JSError(rt, errorMessage(err));
               }}
             }}"#,
             fn_name = self.name,
@@ -291,6 +345,7 @@ pub mod template {
 
     use super::ToCxxBridging;
 
+    /// Returns the complete cxx TurboModule implementation source file.
     pub fn mod_cxx(codegen_res: &Vec<CodegenResult>) -> String {
         let mut headers = vec![];
         let mod_namespaces = codegen_res
@@ -330,6 +385,21 @@ pub mod template {
 
                 headers.push(format!("#include \"{}.hpp\"", cxx_mod));
 
+                // ```cpp
+                // namespace mymodule {
+                //
+                // CxxMyTestModule::CxxMyTestModule(
+                //     std::shared_ptr<react::CallInvoker> jsInvoker)
+                //     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
+                //   callInvoker_ = std::move(jsInvoker);
+                //
+                //   // Method maps
+                // }
+                //
+                // // Method implementations
+                //
+                // } // namespace mymodule
+                // ```
                 formatdoc! {
                     r#"
                     namespace {flat_name} {{
@@ -354,6 +424,23 @@ pub mod template {
             .collect::<Vec<_>>()
             .join("\n");
 
+        // ```cpp
+        // #include "my_module.hpp"
+        //
+        // #include <thread>
+        // #include <react/bridging/Bridging.h>
+        //
+        // #include "cxx.h"
+        // #include "ffi.rs.h"
+        // #include "bridging-generated.hpp"
+        // #include "utils.hpp"
+        //
+        // using namespace facebook;
+        //
+        // namespace craby {
+        // // TurboModule implementations
+        // } // namespace craby
+        // ```
         formatdoc! {
             r#"
             {headers}
@@ -376,6 +463,7 @@ pub mod template {
         }
     }
 
+    /// Returns the complete cxx TurboModule definition header file.
     pub fn mod_cxx_h(codegen_res: &Vec<CodegenResult>) -> String {
         let mod_namespaces = codegen_res
             .iter()
@@ -430,6 +518,7 @@ pub mod template {
         }
     }
 
+    /// Returns the complete cxx JSI bridging header file.
     pub fn cxx_bridging_h(codegen_res: &Vec<CodegenResult>) -> String {
         let mut has_template = false;
         let bridging_templates = codegen_res
@@ -460,7 +549,7 @@ pub mod template {
 
             template <typename T>
             struct Bridging<rust::Vec<T>> {{
-              static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
+              static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
                 auto arr = value.asObject(rt).asArray(rt);
                 size_t len = arr.length(rt);
                 rust::Vec<T> vec;
@@ -492,6 +581,7 @@ pub mod template {
         }
     }
 
+    /// Returns the cxx JSI bridging template for the `Alias`.
     pub fn cxx_struct_bridging_template(
         mod_name: &String,
         name: &String,
@@ -516,17 +606,33 @@ pub mod template {
             .try_for_each(|prop| -> Result<(), anyhow::Error> {
                 let ident = format!("obj${}", prop.name);
                 let converted_ident = format!("_{}", ident);
-                let cxx = prop.type_annotation.to_cxx(&mod_name, &ident)?;
-                let js = prop
+                let from_js = prop.type_annotation.to_cxx(&mod_name, &ident)?;
+                let to_js = prop
                     .type_annotation
                     .to_js(&format!("value.{}", prop.name))?;
+
+                // ```cpp
+                // auto obj$name = obj.getProperty(rt, "name");
+                // ```
                 let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
+
+                // ```cpp
+                // obj.setProperty(rt, "name", _obj$name);
+                // ```
                 let set_prop = format!(
                     "obj.setProperty(rt, \"{}\", {});",
                     prop.name, converted_ident
                 );
-                let from_js_stmt = format!("auto {} = {};", converted_ident, cxx);
-                let to_js_stmt = format!("auto {} = {};", converted_ident, js);
+
+                // ```cpp
+                // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
+                // ```
+                let from_js_stmt = format!("auto {} = {};", converted_ident, from_js);
+
+                // ```cpp
+                // auto _obj$name = react::bridging::toJs(rt, value.name);
+                // ```
+                let to_js_stmt = format!("auto {} = {};", converted_ident, to_js);
 
                 get_props.push(get_prop);
                 from_js_stmts.push(from_js_stmt);
@@ -572,6 +678,7 @@ pub mod template {
         Ok(template)
     }
 
+    /// Returns the cxx JSI bridging template for the `Enum`.
     pub fn cxx_enum_bridging_template(
         mod_name: &String,
         name: &String,
@@ -598,7 +705,7 @@ pub mod template {
 
         let flat_name = flat_case(mod_name);
         let enum_namespace = format!("craby::{}::{}", flat_name, name);
-        let get_raw_value = match enum_spec.member_type.as_str() {
+        let as_raw = match enum_spec.member_type.as_str() {
             "StringTypeAnnotation" => "value.asString(rt).utf8(rt)",
             "NumberTypeAnnotation" => "value.asNumber()",
             _ => unreachable!(),
@@ -606,7 +713,9 @@ pub mod template {
 
         let raw_member = |value: &String| -> String {
             match enum_spec.member_type.as_str() {
+                // "value"
                 "StringTypeAnnotation" => format!("\"{}\"", value),
+                // 123
                 "NumberTypeAnnotation" => value.clone(),
                 _ => unreachable!(),
             }
@@ -626,6 +735,11 @@ pub mod template {
                 let raw_member = raw_member(&member.value.value);
 
                 let from_js_cond = if idx == 0 {
+                    // ```cpp
+                    // if (raw == "value") {
+                    //   return craby::mymodule::MyEnum::Value;
+                    // }
+                    // ```
                     formatdoc! {
                         r#"
                         if (raw == {raw_member}) {{
@@ -635,6 +749,11 @@ pub mod template {
                         enum_namespace = enum_namespace,
                     }
                 } else {
+                    // ```cpp
+                    // else if (raw == "value2") {
+                    //   return craby::mymodule::MyEnum::Value2;
+                    // }
+                    // ```
                     formatdoc! {
                         r#"
                         else if (raw == {raw_member}) {{
@@ -645,6 +764,10 @@ pub mod template {
                     }
                 };
 
+                // ```cpp
+                // case craby::mymodule::MyEnum::Value:
+                //   return react::bridging::toJs(rt, "value");
+                // ```
                 let to_js_cond = formatdoc! {
                     r#"
                     case {enum_namespace}:
@@ -659,6 +782,11 @@ pub mod template {
                 Ok(())
             })?;
 
+        // ```cpp
+        // else {
+        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        // }
+        // ```
         from_js_conds.push(formatdoc! {
             r#"
             else {{
@@ -667,6 +795,10 @@ pub mod template {
             name = name,
         });
 
+        // ```cpp
+        // default:
+        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        // ```
         to_js_conds.push(formatdoc! {
             r#"
             default:
@@ -674,14 +806,34 @@ pub mod template {
             name = name,
         });
 
+        // ```cpp
+        // auto raw = value.asString(rt).utf8(rt);
+        // if (raw == "value") {
+        //   return craby::mymodule::MyEnum::Value;
+        // } else if (raw == "value2") {
+        //   return craby::mymodule::MyEnum::Value2;
+        // } else {
+        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        // }
+        // ```
         let from_js = formatdoc! {
             r#"
-            auto raw = {get_raw_value};
+            auto raw = {as_raw};
             {from_js_conds}"#,
-            get_raw_value = get_raw_value,
+            as_raw = as_raw,
             from_js_conds = from_js_conds.join(" "),
         };
 
+        // ```cpp
+        // switch (value) {{
+        //   case craby::mymodule::MyEnum::Value:
+        //     return react::bridging::toJs(rt, "value");
+        //   case craby::mymodule::MyEnum::Value2:
+        //     return react::bridging::toJs(rt, "value2");
+        //   default:
+        //     throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        // }}
+        // ```
         let to_js = formatdoc! {
             r#"
             switch (value) {{
@@ -695,17 +847,7 @@ pub mod template {
         Ok(template)
     }
 
-    pub fn cxx_method_def(name: &String) -> String {
-        formatdoc! {
-            r#"
-            static facebook::jsi::Value
-            {name}(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);"#,
-            name = name,
-        }
-    }
-
+    /// Returns the cxx JSI bridging (`fromJs`, `toJs`) template.
     pub fn cxx_bridging_template(
         target_type: &String,
         from_js_impl: String,
@@ -729,11 +871,63 @@ pub mod template {
         }
     }
 
+    /// Returns the cxx JSI method definition.
+    ///
+    /// ```cpp
+    /// static facebook::jsi::Value
+    /// myFunc(facebook::jsi::Runtime &rt,
+    ///        facebook::react::TurboModule &turboModule,
+    ///        const facebook::jsi::Value args[], size_t count);
+    /// ```
+    pub fn cxx_method_def(name: &String) -> String {
+        formatdoc! {
+            r#"
+            static facebook::jsi::Value
+            {name}(facebook::jsi::Runtime &rt,
+                facebook::react::TurboModule &turboModule,
+                const facebook::jsi::Value args[], size_t count);"#,
+            name = name,
+        }
+    }
+
     pub fn cxx_arg_ref(idx: usize) -> String {
         format!("args[{}]", idx)
     }
 
     pub fn cxx_arg_var(idx: usize) -> String {
         format!("arg{}", idx)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use crate::tests::load_schema_as_codegen_res;
+
+    use super::*;
+
+    #[test]
+    fn test_mod_cxx() {
+        let codegen_res = load_schema_as_codegen_res();
+        let result = template::mod_cxx(&vec![codegen_res]);
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_mod_cxx_h() {
+        let codegen_res = load_schema_as_codegen_res();
+        let result = template::mod_cxx_h(&vec![codegen_res]);
+
+        assert_snapshot!(result);
+    }
+
+    #[test]
+    fn test_cxx_bridging_h() {
+        let codegen_res = load_schema_as_codegen_res();
+        let result = template::cxx_bridging_h(&vec![codegen_res]);
+
+        assert_snapshot!(result);
     }
 }

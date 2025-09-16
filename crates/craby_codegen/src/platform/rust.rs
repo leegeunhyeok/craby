@@ -21,7 +21,7 @@ pub trait ToExternType {
 }
 
 pub trait ToRsCxxBridge {
-    /// Returns the cxx(FFI) function declaration and implementation for the `FunctionSpec`.
+    /// Returns the Rust cxx bridging function declaration and implementation for the `FunctionSpec`.
     fn to_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error>;
 }
 
@@ -130,9 +130,9 @@ impl ToRsCxxBridge for Schema {
                         let ret_extern_type = return_type_annotation.to_extern_type()?.to_string();
                         let params_sig = params
                             .iter()
-                            .map(|param| param.to_sig())
+                            .map(|param| param.as_sig())
                             .collect::<Result<Vec<_>, _>>()
-                            .map(|param| param.join(", "))?;
+                            .map(|params| params.join(", "))?;
 
                         let impl_name = pascal_case(&self.module_name);
                         let mod_name = snake_case(&self.module_name);

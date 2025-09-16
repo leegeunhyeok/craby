@@ -16,11 +16,9 @@ pub fn build_setup(project_root: &PathBuf) {
 
     // TODO
     // See: https://github.com/dtolnay/cxx/tree/master/demo
-    cxx_build::bridge("src/main.rs")
-        .file("src/blobstore.cc")
+    cxx_build::bridge("src/ffi.rs")
         .std("c++17")
-        .compile("cxxbridge-demo");
+        .compile("cxxbridge");
 
-    println!("cargo:rerun-if-changed=src/blobstore.cc");
-    println!("cargo:rerun-if-changed=include/blobstore.h");
+    println!("cargo:rerun-if-changed=src/ffi.rs");
 }

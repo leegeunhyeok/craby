@@ -179,7 +179,7 @@ pub struct Parameter {
 }
 
 impl Parameter {
-    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
+    pub fn as_sig(&self) -> Result<String, anyhow::Error> {
         if let TypeAnnotation::ObjectTypeAnnotation { .. }
         | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
         {
@@ -233,7 +233,7 @@ impl FunctionSpec {
         }
     }
 
-    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
+    pub fn as_sig(&self) -> Result<String, anyhow::Error> {
         match &*self.type_annotation {
             TypeAnnotation::FunctionTypeAnnotation {
                 return_type_annotation,
@@ -242,9 +242,9 @@ impl FunctionSpec {
                 let return_type = return_type_annotation.to_rs_type()?;
                 let params_sig = params
                     .iter()
-                    .map(|p| p.to_sig())
+                    .map(|param| param.as_sig())
                     .collect::<Result<Vec<_>, _>>()
-                    .map(|p| p.join(", "))?;
+                    .map(|params| params.join(", "))?;
 
                 let fn_name = snake_case(&self.name);
                 let ret_annotation = if return_type == "()" {

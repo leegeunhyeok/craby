@@ -4,13 +4,7 @@
 #include "cxx.h"
 #include "ffi.rs.h"
 
-namespace craby {
-namespace utils {
-
 inline std::string errorMessage(const std::exception &err) {
   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
   return std::string(rs_err ? rs_err->what() : err.what());
 }
-
-} // namespace utils
-} // namespace craby
