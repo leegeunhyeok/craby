@@ -4,7 +4,7 @@ use craby_build::{
     constants::{android::Abi, ios::Identifier, toolchain::Target},
     platform::{android as android_build, ios as ios_build},
 };
-use craby_common::{config::load_config, env::is_initialized, utils::string::SanitizedString};
+use craby_common::{config::load_config, env::is_initialized};
 use log::info;
 use owo_colors::OwoColorize;
 
@@ -25,7 +25,6 @@ pub struct BuildOptions {
 
 pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     let config = load_config(&opts.project_root)?;
-    let lib_name = SanitizedString::from(&config.project.name);
 
     if !is_initialized(&opts.project_root) {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
@@ -57,7 +56,7 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     ios_build::crate_libs(&config)?;
 
     info!("Build completed successfully 🎉");
-    guide::print_guide(&lib_name);
+    guide::print_guide(&config.project.name);
 
     Ok(())
 }

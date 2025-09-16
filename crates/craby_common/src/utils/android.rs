@@ -7,8 +7,9 @@ pub fn is_gradle_configured(project_root: &PathBuf) -> Result<bool, anyhow::Erro
 
     let mut passed = true;
     let content = fs::read_to_string(gradle_path)?;
-    passed &= content.contains("jniLibs.srcDirs");
-    passed &= content.contains("src/main/jniLibs");
+    passed &= content.contains("externalNativeBuild");
+    passed &= content.contains("cmake");
+    passed &= content.contains("CMakeLists.txt");
     Ok(passed)
 }
 

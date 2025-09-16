@@ -1,101 +1,68 @@
-use craby_common::utils::string::SanitizedString;
+use craby_common::utils::{
+    ios::xcframework_name,
+    string::{kebab_case, SanitizedString},
+};
+use indoc::formatdoc;
 use owo_colors::OwoColorize;
 
 use crate::utils::terminal::CodeHighlighter;
 
-pub fn print_guide(lib_name: &SanitizedString) {
-    print_usage(lib_name);
-}
-
-fn print_usage(lib_name: &SanitizedString) {
+pub fn print_guide(mod_name: &String) {
+    let sanitized_mod_name = SanitizedString::from(mod_name);
     let highlighter = CodeHighlighter::new();
 
-    println!("\nAndroid setup and usage:\n");
+    // Android
     println!(
-        "Open `{}` file and add the following line:\n",
-        "android/build.gradle".underline()
+        "{}",
+        formatdoc! {
+            r#"
+
+            👉 Android setup:
+
+            Open `{gradle_path}` file and add the following line:
+            "#,
+            gradle_path = "android/build.gradle".underline(),
+        }
     );
-    let content = r#"android {
-  // ...
+    let gradle_code = formatdoc! {
+        r#"
+        android {{
+          externalNativeBuild {{
+            // Add CMake build configuration
+            cmake {{
+              path "CMakeLists.txt"
+              targets "cxx-{kebab_name}"
 
-  sourceSets {
-    main {
-      // Add this line
-      jniLibs.srcDirs += ["src/main/jniLibs"]
-    }
-  }
-}"#;
-    println!("```gradle");
-    highlighter.highlight_code(&content.to_string(), "gradle");
-    println!();
-    println!("```\n");
+              // ...
+            }}
+          }}
+        }}"#,
+        kebab_name = kebab_case(&mod_name),
+    };
+    highlighter.highlight_code_with_box(&gradle_code, "gradle");
 
-    let content = format!(
-        r#"@ReactModule(name = SomeModule.NAME)
-class SomeModule(reactContext: ReactApplicationContext) :
-  NativeSomeModuleSpec(reactContext) {{
-  
-  init {{
-    // Load static library to use native methods
-    System.loadLibrary("{}")
-  }}
-
-  // Declare the native method
-  private external fun nativeSomeMethod(a: Double, b: Double): Double
-
-  // ...
-
-  override fun someMethod(a: Double, b: Double): Double {{
-    // Call the native method
-    return nativeSomeMethod(a, b);
-  }}
-}}"#,
-        lib_name.to_string()
-    );
-    println!("```kt");
-    highlighter.highlight_code(&content, "java");
-    println!();
-    println!("```\n");
-
-    println!("iOS setup and usage:\n");
+    // iOS
     println!(
-        "Open `{}` file and add the following line:\n",
-        "<ModuleName>.podspec".underline()
+        "{}",
+        formatdoc! {
+            r#"
+        
+            👉 iOS setup:
+            
+            Open `{podspec_path}` file and add the following line:
+            "#,
+            podspec_path = "<ModuleName>.podspec".underline(),
+        }
     );
-    let content = format!(
-        r#"Pod::Spec.new do |s|
-  # ...
-
-  # Add this line to use Rust module
-  s.vendored_frameworks = "ios/framework/lib{}.xcframework"
-end"#,
-        lib_name.to_string()
-    );
-    println!("```rb");
-    highlighter.highlight_code(&content, "rb");
-    println!();
-    println!("```\n");
-
-    let content = format!(
-        r#"import "SomeModule.h"
-import "lib{}.h" // Add this line
-
-@implementation SomeModule
-RCT_EXPORT_MODULE()
-
-- (NSNumber *)someMethod:(double *)a b:(double *)b {{
-  // Call the native method
-  NSNumber *result = @(someMethod(a, b));
-  return result;
-}}
-
-// ...
-
-@end"#,
-        lib_name.to_string()
-    );
-    println!("```objc");
-    highlighter.highlight_code(&content, "mm");
-    println!();
-    println!("```\n");
+    let podspec_content = formatdoc! {
+        r#"
+        Pod::Spec.new do |s|
+          # Add these lines
+          s.source_files = ["ios/**/*.{{h,m,mm,cc,cpp}}", "cpp/**/*.{{hpp,cpp}}"]
+          s.private_header_files = "ios/include/*.h"
+          s.vendored_frameworks = "ios/framework/{xcframework_name}"
+        end"#,
+        xcframework_name = xcframework_name(&sanitized_mod_name),
+    };
+    highlighter.highlight_code_with_box(&podspec_content, "rb");
 }

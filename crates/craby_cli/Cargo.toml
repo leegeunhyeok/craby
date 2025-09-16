@@ -11,6 +11,10 @@ repository = "https://github.com/leegeunhyeok/craby"
 craby_build    = { path = "../craby_build" }
 craby_codegen  = { path = "../craby_codegen" }
 craby_common   = { path = "../craby_common" }
+anyhow         = { workspace = true }
+log            = { workspace = true }
+owo-colors     = { workspace = true }
+serde_json     = { workspace = true }
 clap           = { version = "4.5.41", features = ["derive"] }
 handlebars     = { version = "6.3.2", features = ["walkdir"] }
 walkdir        = "2.5.0"
@@ -18,7 +22,4 @@ inquire        = "0.7.5"
 indicatif      = "0.18.0"
 syntect        = "5.2.0"
 syntect-assets = "0.23.6"
-anyhow         = { workspace = true }
-log            = { workspace = true }
-owo-colors     = { workspace = true }
-serde_json     = { workspace = true }
+indoc          = "2.0.6"
