@@ -1,177 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   Image,
 } from 'react-native';
-import {
-  numericMethod,
-  booleanMethod,
-  stringMethod,
-  objectMethod,
-  arrayMethod,
-  enumMethod,
-  promiseMethod,
-  MyEnum,
-  type TestObject,
-} from 'craby-test';
+import { TEST_SUITES } from 'test-suites';
 
 export function App() {
-  const [numericInput, setNumericInput] = useState('');
-  const [stringInput, setStringInput] = useState('');
-  const [booleanInput, setBooleanInput] = useState(false);
-  const [results, setResults] = useState<{
-    numeric: number | null;
-    string: string | null;
-    boolean: boolean | null;
-    object: TestObject | null;
-    array: number[] | null;
-    enum: string | null;
-    promise: number | null;
-  }>({
-    numeric: null,
-    string: null,
-    boolean: null,
-    object: null,
-    array: null,
-    enum: null,
-    promise: null,
-  });
+  const [testResults, setTestResults] = useState<Array<{
+    label: string;
+    description?: string;
+    result: any;
+    error?: string;
+  }>>([]);
+  const [isRunning, setIsRunning] = useState(false);
 
-  useEffect(() => {
-    // Test numeric function
-    const numValue = parseFloat(numericInput);
-    if (!isNaN(numValue)) {
+  const runAllTests = async () => {
+    setIsRunning(true);
+    setTestResults([]);
+
+    const results = [];
+    for (const test of TEST_SUITES) {
       try {
-        setResults(prev => ({ ...prev, numeric: numericMethod(numValue) }));
+        const result = await test.action();
+        results.push({
+          label: test.label,
+          description: test.description,
+          result: result,
+        });
       } catch (error) {
-        console.warn('Numeric function error:', error);
-        setResults(prev => ({ ...prev, numeric: null }));
+        results.push({
+          label: test.label,
+          description: test.description,
+          result: null,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
-    } else {
-      setResults(prev => ({ ...prev, numeric: null }));
-    }
-  }, [numericInput]);
-
-  useEffect(() => {
-    // Test string function
-    if (stringInput.trim()) {
-      try {
-        setResults(prev => ({ ...prev, string: stringMethod(stringInput) }));
-      } catch (error) {
-        console.warn('String function error:', error);
-        setResults(prev => ({ ...prev, string: null }));
-      }
-    } else {
-      setResults(prev => ({ ...prev, string: null }));
-    }
-  }, [stringInput]);
-
-  useEffect(() => {
-    // Test boolean function
-    try {
-      setResults(prev => ({ ...prev, boolean: booleanMethod(booleanInput) }));
-    } catch (error) {
-      console.warn('Boolean function error:', error);
-      setResults(prev => ({ ...prev, boolean: null }));
-    }
-  }, [booleanInput]);
-
-  useEffect(() => {
-    // Test object function
-    try {
-      const numValue = parseFloat(numericInput);
-      const stringValue = stringInput.trim();
-      const booleanValue = booleanInput;
-
-      if (Number.isNaN(numValue) || typeof stringValue !== 'string') {
-        return;
-      }
-
-      setResults(prev => ({
-        ...prev,
-        object: objectMethod({
-          foo: stringValue,
-          bar: numValue,
-          baz: booleanValue,
-          sub: {
-            a: stringValue,
-            b: numValue,
-            c: booleanValue,
-          },
-        }),
-      }));
-    } catch (error) {
-      console.warn('Object function error:', error);
-      setResults(prev => ({ ...prev, object: null }));
-    }
-  }, [numericInput, stringInput, booleanInput]);
-
-  useEffect(() => {
-    // Test array function
-    try {
-      const numValue = parseFloat(numericInput);
-
-      if (Number.isNaN(numValue)) {
-        return;
-      }
-
-      setResults(prev => ({
-        ...prev,
-        array: arrayMethod([numValue, numValue, numValue]),
-      }));
-    } catch (error) {
-      console.warn('Array function error:', error);
-      setResults(prev => ({ ...prev, array: null }));
-    }
-  }, [numericInput]);
-
-  useEffect(() => {
-    // Test enum function
-    try {
-      setResults(prev => ({
-        ...prev,
-        enum: enumMethod(MyEnum.FOO),
-      }));
-    } catch (error) {
-      console.warn('Enum function error:', error);
-      setResults(prev => ({ ...prev, array: null }));
-    }
-  }, [numericInput]);
-
-  useEffect(() => {
-    // Test promise function
-    const numValue = parseFloat(numericInput);
-
-    if (Number.isNaN(numValue)) {
-      return;
     }
 
-    promiseMethod(numValue).then((result) => {
-      setResults(prev => ({ ...prev, promise: result }));
-    }).catch((error) => {
-      console.warn('Promise function error:', error);
-      setResults(prev => ({ ...prev, promise: null }));
-    });
-  }, [numericInput]);
-
-  const clear = () => {
-    setNumericInput('');
-    setStringInput('');
-    setBooleanInput(false);
-    setResults({
-      numeric: null,
-      string: null,
-      boolean: null,
-      object: null,
-      array: null,
-      enum: null,
-      promise: null,
-    });
+    setTestResults(results);
+    setIsRunning(false);
   };
 
   return (
@@ -187,197 +58,97 @@ export function App() {
       </View>
 
       {/* Title */}
-      <Text style={styles.title}>Basic Module Tester</Text>
+      <Text style={styles.title}>Test Suite Runner</Text>
 
       {/* Description */}
       <Text style={styles.description}>
-        Test numeric, string, boolean, and array functions from basic-module
+        Run all test suites and view results
       </Text>
 
-      {/* Input Section */}
-      <View style={styles.inputCard}>
-        <View style={styles.inputHeader}>
-          <Text style={styles.inputTitle}>Test Inputs</Text>
-        </View>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Numeric input (e.g., 42)"
-          value={numericInput}
-          onChangeText={text => setNumericInput(text.replace(/[^0-9.-]/g, ''))}
-          keyboardType="numeric"
-          placeholderTextColor="#999"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="String input (e.g., Hello World)"
-          value={stringInput}
-          onChangeText={setStringInput}
-          placeholderTextColor="#999"
-        />
-
-        <View style={styles.booleanContainer}>
-          <Text style={styles.booleanLabel}>Boolean input:</Text>
-          <TouchableOpacity
-            style={[
-              styles.booleanButton,
-              booleanInput && styles.booleanButtonActive,
-            ]}
-            onPress={() => setBooleanInput(!booleanInput)}
-          >
-            <Text
-              style={[
-                styles.booleanButtonText,
-                booleanInput && styles.booleanButtonTextActive,
-              ]}
-            >
-              {booleanInput ? 'true' : 'false'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.clearButton} onPress={clear}>
-            <Text style={styles.clearButtonText}>Clear All</Text>
-          </TouchableOpacity>
-        </View>
+      {/* Run Test Button */}
+      <View style={styles.buttonCard}>
+        <TouchableOpacity
+          style={[styles.runButton, isRunning && styles.runButtonDisabled]}
+          onPress={runAllTests}
+          disabled={isRunning}
+        >
+          <Text style={styles.runButtonText}>
+            {isRunning ? 'Running Tests...' : 'Run All Tests'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Test Result Cards */}
-      <TestCard
-        title="Numeric Function"
-        funcName="numericMethod(number)"
-        input={numericInput}
-        result={results.numeric}
-        color="#10B981"
-        type="number"
-      />
-
-      <TestCard
-        title="String Function"
-        funcName="stringMethod(string)"
-        input={stringInput}
-        result={results.string}
-        color="#3B82F6"
-        type="string"
-      />
-
-      <TestCard
-        title="Boolean Function"
-        funcName="booleanMethod(boolean)"
-        input={booleanInput.toString()}
-        result={results.boolean}
-        color="#8B5CF6"
-        type="boolean"
-      />
-
-      <TestCard
-        title="Object Function"
-        funcName="objectMethod(object)"
-        input={JSON.stringify(results.object)}
-        result={results.object}
-        color="#F59E0B"
-        type="object"
-      />
-
-      <TestCard
-        title="Array Function"
-        funcName="arrayMethod(array)"
-        input={JSON.stringify(results.array)}
-        result={results.array}
-        color="#EF5350"
-        type="array"
-      />
-
-      <TestCard
-        title="Enum Function"
-        funcName="enumMethod(enum)"
-        input={JSON.stringify(results.enum)}
-        result={results.enum}
-        color="#26A69A"
-        type="enum"
-      />
-
-      <TestCard
-        title="Promise Function"
-        funcName="promiseMethod(number)"
-        input={JSON.stringify(results.promise)}
-        result={results.promise}
-        color="#DCE775"
-        type="promise"
-      />
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Basic Module Function Tester</Text>
-      </View>
+      {/* Test Results */}
+      {testResults.map((testResult, index) => (
+        <TestResultCard
+          key={index}
+          label={testResult.label}
+          description={testResult.description}
+          result={testResult.result}
+          error={testResult.error}
+        />
+      ))}
     </ScrollView>
   );
 }
 
-function TestCard({
-  title,
-  funcName,
-  input,
+function Code({ children }: { children: string }) {
+  return (
+    <View style={styles.codeContainer}>
+      <Text style={styles.codeText}>{children}</Text>
+    </View>
+  );
+}
+
+function TestResultCard({
+  label,
+  description,
   result,
-  color,
-  type,
+  error,
 }: {
-  title: string;
-  funcName: string;
-  input: string;
+  label: string;
+  description: string;
   result: any;
-  color: string;
-  type: string;
+  error?: string;
 }) {
-  const formatResult = (value: any, dataType: string) => {
-    if (value === null) return '—';
+  const formatResult = (value: any) => {
+    if (value === null || value === undefined) return '—';
 
-    switch (dataType) {
-      case 'array':
-        return Array.isArray(value) ? `[${value.join(', ')}]` : String(value);
-      case 'string':
-        return `"${value}"`;
-      case 'boolean':
-        return String(value);
-      case 'number':
-        return String(value);
-      case 'object':
-        return JSON.stringify(value, null, 2);
-      default:
-        return String(value);
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 4);
     }
+
+    return String(value);
   };
 
-  const formatInput = (value: any, dataType: string) => {
-    if (!value) return 'No input';
-
-    switch (dataType) {
-      case 'array':
-        return `[${value}]`;
-      case 'string':
-        return `"${value}"`;
-      default:
-        return value;
-    }
-  };
+  const isSuccess = !error;
+  const statusColor = isSuccess ? '#10B981' : '#EF4444';
+  const formattedResult = formatResult(result);
+  const isJsonData = typeof result === 'object' && result !== null;
 
   return (
     <View style={styles.card}>
-      <View style={styles.cardContent}>
-        <View style={styles.cardLeft}>
-          <Text style={styles.cardTitle}>{title}</Text>
-          <Text style={styles.cardSubtitle}>{funcName}</Text>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>{label}</Text>
+        <Text style={[styles.cardStatus, { color: statusColor }]}>
+          {isSuccess ? 'Passed' : 'Error'}
+        </Text>
+      </View>
+
+      {description ? (
+        <View style={styles.cardDescription}>
+          <Text style={styles.cardDescriptionText}>{description}</Text>
         </View>
-        <View style={styles.cardRight}>
-          <Text style={[styles.cardResult, { color }]}>
-            {formatResult(result, type)}
-          </Text>
-          <Text style={styles.cardOperation}>
-            {input ? `Input: ${formatInput(input, type)}` : 'No input'}
-          </Text>
-        </View>
+      ) : null}
+
+      <View style={styles.cardBody}>
+        {error ? (
+          <Text style={styles.cardError}>{error}</Text>
+        ) : isJsonData ? (
+          <Code>{formattedResult}</Code>
+        ) : (
+          <Text style={styles.cardResult}>{formattedResult}</Text>
+        )}
       </View>
     </View>
   );
@@ -386,7 +157,7 @@ function TestCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#fff',
   },
   contentContainer: {
     alignItems: 'center',
@@ -416,138 +187,78 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     textAlign: 'center',
   },
-  inputCard: {
+  buttonCard: {
     width: '100%',
-    backgroundColor: '#DBEAFE',
-    borderRadius: 12,
-    padding: 16,
     marginTop: 30,
     marginBottom: 20,
   },
-  inputHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  inputTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
-  },
-  input: {
-    backgroundColor: '#FFF',
+  runButton: {
+    width: '100%',
+    backgroundColor: '#3B82F6',
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  booleanContainer: {
-    flexDirection: 'row',
+    padding: 16,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
   },
-  booleanLabel: {
-    fontSize: 16,
-    color: '#374151',
-    fontWeight: '500',
+  runButtonDisabled: {
+    backgroundColor: '#9CA3AF',
   },
-  booleanButton: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 12,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  booleanButtonActive: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
-  },
-  booleanButtonText: {
-    color: '#374151',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  booleanButtonTextActive: {
+  runButtonText: {
     color: '#FFF',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  clearButton: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-  },
-  clearButtonText: {
-    color: '#374151',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   card: {
     width: '100%',
-    backgroundColor: '#FFF',
-    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E9ECEF',
   },
-  cardContent: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  cardLeft: {
-    flex: 1,
+    marginBottom: 12,
   },
   cardTitle: {
     fontSize: 18,
     fontWeight: '500',
     color: '#000',
-    marginBottom: 4,
   },
-  cardSubtitle: {
+  cardStatus: {
     fontSize: 14,
-    color: '#6B7280',
+    fontWeight: '500',
   },
-  cardRight: {
-    alignItems: 'flex-end',
+  cardDescription: {
+    marginTop: -8,
+    marginBottom: 12,
   },
-  cardResult: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cardOperation: {
+  cardDescriptionText: {
     fontSize: 12,
     color: '#6B7280',
   },
-  footer: {
-    marginTop: 20,
-    paddingHorizontal: 20,
+  cardBody: {
+    width: '100%',
   },
-  footerText: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
+  cardResult: {
+    fontSize: 16,
+    color: '#374151',
     fontFamily: 'monospace',
+  },
+  cardError: {
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  codeContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  codeText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    color: '#495057',
+    lineHeight: 16,
   },
 });

@@ -13,7 +13,8 @@
   "dependencies": {
     "craby-test": "workspace:*",
     "react": "19.1.0",
-    "react-native": "0.80.1"
+    "react-native": "0.80.1",
+    "test-suites": "workspace:*"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
