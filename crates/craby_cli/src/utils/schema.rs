@@ -1,4 +1,4 @@
-use craby_codegen::{platform::rust::ToSig, types::schema::Schema};
+use craby_codegen::types::schema::Schema;
 use craby_common::config::CompleteCrabyConfig;
 use log::error;
 use owo_colors::OwoColorize;

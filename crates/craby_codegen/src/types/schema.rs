@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
+use craby_common::utils::string::snake_case;
+use log::error;
 use serde::{Deserialize, Serialize};
+
+use crate::platform::rust::ToRsType;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Schema {
@@ -174,6 +178,40 @@ pub struct Parameter {
     pub type_annotation: Box<TypeAnnotation>,
 }
 
+impl Parameter {
+    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
+        if let TypeAnnotation::ObjectTypeAnnotation { .. }
+        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
+        {
+            error!("Object type is not supported for parameters");
+            error!("Use defined type alias instead");
+            unimplemented!();
+        }
+
+        if let TypeAnnotation::FunctionTypeAnnotation { .. } = *self.type_annotation {
+            error!("Function type is not supported for parameters");
+            unimplemented!();
+        }
+
+        let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
+        let param_type = type_annotation.to_rs_type()?;
+
+        let final_type = if self.optional && !is_nullable {
+            format!("Option<{}>", param_type)
+        } else if is_nullable || self.optional {
+            if param_type.starts_with("Option<") {
+                param_type
+            } else {
+                format!("Option<{}>", param_type)
+            }
+        } else {
+            param_type
+        };
+
+        Ok(format!("{}: {}", self.name, final_type))
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct FunctionSpec {
     pub name: String,
@@ -192,6 +230,37 @@ impl FunctionSpec {
                 "Function type annotation should be a function: {}",
                 self.name
             ));
+        }
+    }
+
+    pub fn to_sig(&self) -> Result<String, anyhow::Error> {
+        match &*self.type_annotation {
+            TypeAnnotation::FunctionTypeAnnotation {
+                return_type_annotation,
+                params,
+            } => {
+                let return_type = return_type_annotation.to_rs_type()?;
+                let params_sig = params
+                    .iter()
+                    .map(|p| p.to_sig())
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|p| p.join(", "))?;
+
+                let fn_name = snake_case(&self.name);
+                let ret_annotation = if return_type == "()" {
+                    String::new()
+                } else {
+                    format!(" -> {}", return_type)
+                };
+
+                Ok(format!(
+                    "fn {}({}){}",
+                    fn_name.to_string(),
+                    params_sig,
+                    ret_annotation
+                ))
+            }
+            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
     }
 }

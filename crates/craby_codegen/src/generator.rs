@@ -7,7 +7,7 @@ use indoc::formatdoc;
 use crate::{
     platform::{
         cxx::{CxxMethod, ToCxxMethod},
-        rust::{CxxBridge, ToCxxBridge, ToSig},
+        rust::{CxxBridge, ToCxxBridge},
     },
     types::{schema::Schema, types::CodegenResult},
     utils::indent_str,

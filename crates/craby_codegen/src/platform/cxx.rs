@@ -21,22 +21,22 @@ pub trait ToCxxType {
 
 pub trait ToCxxBridging {
     fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error>;
-    fn to_js(&self) -> Result<String, anyhow::Error>;
+    fn to_js(&self, ident: &String) -> Result<String, anyhow::Error>;
 }
 
 pub trait ToCxxMethod {
     /// Returns the cxx function's metadata and implementation for the `FunctionSpec`.
     ///
     /// ```cpp
-    /// // metadata
+    /// // Metadata (args count, function pointer)
     /// MethodMetadata{1, &CxxMyTestModule::myFunc}
     ///
-    /// // impl function
+    /// // Function implementation
     /// jsi::Value CxxMyTestModule::myFunc(jsi::Runtime &rt,
     ///                                    react::TurboModule &turboModule,
     ///                                    const jsi::Value args[],
     ///                                    size_t count) {
-    ///     // Implementation
+    ///     // Implementation here
     /// }
     /// ```
     fn to_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error>;
@@ -86,13 +86,11 @@ impl ToCxxType for TypeAnnotation {
                 return Err(anyhow::anyhow!(
                     "Use strict type alias instead of object type: {:?}",
                     self
-                ));
+                ))
             }
 
             // Unsupported types
-            _ => {
-                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
-            }
+            _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
         Ok(cxx_type)
@@ -119,20 +117,17 @@ impl ToCxxBridging for TypeAnnotation {
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
-            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => {
-              let cxx_type = self.to_cxx_type(mod_name)?;
-              format!(
-                  "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
-                  cxx_type, ident
-              )
-            },
+            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!(
+                "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
+                self.to_cxx_type(mod_name)?, ident
+            ),
             _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
         Ok(to_cxx)
     }
 
-    fn to_js(&self) -> Result<String, anyhow::Error> {
+    fn to_js(&self, ident: &String) -> Result<String, anyhow::Error> {
         let to_js = match &*self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation
@@ -147,18 +142,16 @@ impl ToCxxBridging for TypeAnnotation {
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
-            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!("react::bridging::toJs(rt, ret)"),
+            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!("react::bridging::toJs(rt, {})", ident),
 
             // String types
             | TypeAnnotation::StringTypeAnnotation { .. }
             | TypeAnnotation::StringLiteralTypeAnnotation { .. }
-            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => format!("react::bridging::toJs(rt, std::string(ret))"),
+            | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => format!("react::bridging::toJs(rt, std::string({}))", ident),
 
             // Promise type
-            TypeAnnotation::PromiseTypeAnnotation { .. } => format!("react::bridging::toJs(rt, promise)"),
-            _ => {
-              return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
-            },
+            TypeAnnotation::PromiseTypeAnnotation { .. } => format!("react::bridging::toJs(rt, {})", ident),
+            _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
         Ok(to_js)
@@ -189,6 +182,7 @@ impl ToCxxMethod for FunctionSpec {
                     let mut bind_args = vec!["promise".to_string()];
                     bind_args.extend(args);
 
+                    // Create a promise object and invoke the FFI function in a separate thread
                     formatdoc! {
                         r#"
                         react::AsyncPromise<{ret_type}> promise(rt, callInvoker);
@@ -210,10 +204,11 @@ impl ToCxxMethod for FunctionSpec {
                         fn_args = fn_args,
                         flat_name = flat_case(mod_name),
                         ret_type = element_type.to_cxx_type(mod_name)?,
-                        ret = return_type_annotation.to_js()?,
+                        ret = return_type_annotation.to_js(&"promise".to_string())?,
                     }
                 }
                 _ => {
+                    // Invoke the FFI function synchronously and return the result
                     formatdoc! {
                         r#"
                         auto ret = craby::{flat_name}::{fn_name}({fn_args});
@@ -221,7 +216,7 @@ impl ToCxxMethod for FunctionSpec {
                         flat_name = flat_case(mod_name),
                         fn_name = self.name,
                         fn_args = args.join(", "),
-                        ret = return_type_annotation.to_js()?,
+                        ret = return_type_annotation.to_js(&"ret".to_string())?,
                     }
                 }
             };
@@ -324,7 +319,7 @@ pub mod template {
                     .collect::<Vec<_>>()
                     .join("\n\n");
 
-                headers.push(format!("#include \"{cxx_mod}.hpp\"", cxx_mod = cxx_mod));
+                headers.push(format!("#include \"{}.hpp\"", cxx_mod));
 
                 formatdoc! {
                     r#"
@@ -353,6 +348,14 @@ pub mod template {
         formatdoc! {
             r#"
             {headers}
+
+            #include <thread>
+            #include <react/bridging/Bridging.h>
+
+            #include "cxx.h"
+            #include "ffi.rs.h"
+            #include "bridging-generated.hpp"
+            #include "utils.hpp"
 
             using namespace facebook;
 
@@ -407,14 +410,9 @@ pub mod template {
             r#"
             #pragma once
 
-            #include <thread>
+            #include <memory>
             #include <ReactCommon/TurboModule.h>
-            #include <react/bridging/Bridging.h>
             #include <jsi/jsi.h>
-
-            #include "cxx.h"
-            #include "ffi.rs.h"
-            #include "craby-bridging.hpp"
 
             namespace craby {{
             namespace helpers {{
@@ -477,7 +475,6 @@ pub mod template {
 
             }} // namespace react
             }} // namespace facebook"#,
-            using_mods = using_mods,
         }
     }
 

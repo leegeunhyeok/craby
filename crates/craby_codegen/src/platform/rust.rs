@@ -1,46 +1,49 @@
 use craby_common::utils::string::{flat_case, pascal_case, snake_case};
 use indoc::formatdoc;
-use log::error;
 
 use crate::{
     types::{
-        schema::{FunctionSpec, Parameter, TypeAnnotation},
+        schema::{FunctionSpec, TypeAnnotation},
         types::CodegenResult,
     },
     utils::indent_str,
 };
 
 pub trait ToRsType {
+    /// Returns the Rust type for the given `TypeAnnotation`.
     fn to_rs_type(&self) -> Result<String, anyhow::Error>;
 }
 
-pub trait ToSig {
-    fn to_sig(&self) -> Result<String, anyhow::Error>;
-}
-
 pub trait ToExternType {
+    /// Returns the Rust type for the given `TypeAnnotation` that is used in the cxx extern function.
     fn to_extern_type(&self) -> Result<String, anyhow::Error>;
 }
 
 pub trait ToCxxBridge {
-    /// Returns the cxx(FFI) function signature for the `FunctionSpec`.
-    ///
-    /// ```rust,ignore
-    /// // extern function
-    /// #[cxx_name = "myFunc"]
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
-    ///
-    /// // impl function
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
-    ///     MyModule::my_func(arg1, arg2)
-    /// }
-    /// ```
+    /// Returns the cxx(FFI) function declaration and implementation for the `FunctionSpec`.
     fn to_cxx_bridge(&self, mod_name: &String) -> Result<CxxBridge, anyhow::Error>;
 }
 
 #[derive(Debug, Clone)]
 pub struct CxxBridge {
+    /// The extern function declaration.
+    ///
+    /// **Example**
+    ///
+    /// ```rust,ignore
+    /// #[cxx_name = "myFunc"]
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
+    /// ```
     pub extern_func: String,
+    /// The implementation function of the extern function.
+    ///
+    /// **Example**
+    ///
+    /// ```rust,ignore
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
+    ///   MyModule::my_func(arg1, arg2)
+    /// }
+    /// ```
     pub impl_func: String,
 }
 
@@ -87,73 +90,6 @@ impl ToRsType for TypeAnnotation {
         };
 
         Ok(rs_type)
-    }
-}
-
-impl ToSig for FunctionSpec {
-    fn to_sig(&self) -> Result<String, anyhow::Error> {
-        match &*self.type_annotation {
-            TypeAnnotation::FunctionTypeAnnotation {
-                return_type_annotation,
-                params,
-            } => {
-                let return_type = return_type_annotation.to_rs_type()?;
-                let params_sig = params
-                    .iter()
-                    .map(|p| p.to_sig())
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(|p| p.join(", "))?;
-
-                let fn_name = snake_case(&self.name);
-                let ret_annotation = if return_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", return_type)
-                };
-
-                Ok(format!(
-                    "fn {}({}){}",
-                    fn_name.to_string(),
-                    params_sig,
-                    ret_annotation
-                ))
-            }
-            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
-        }
-    }
-}
-
-impl ToSig for Parameter {
-    fn to_sig(&self) -> Result<String, anyhow::Error> {
-        if let TypeAnnotation::ObjectTypeAnnotation { .. }
-        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
-        {
-            error!("Object type is not supported for parameters");
-            error!("Use defined type alias instead");
-            unimplemented!();
-        }
-
-        if let TypeAnnotation::FunctionTypeAnnotation { .. } = *self.type_annotation {
-            error!("Function type is not supported for parameters");
-            unimplemented!();
-        }
-
-        let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let param_type = type_annotation.to_rs_type()?;
-
-        let final_type = if self.optional && !is_nullable {
-            format!("Option<{}>", param_type)
-        } else if is_nullable || self.optional {
-            if param_type.starts_with("Option<") {
-                param_type
-            } else {
-                format!("Option<{}>", param_type)
-            }
-        } else {
-            param_type
-        };
-
-        Ok(format!("{}: {}", self.name, final_type))
     }
 }
 
@@ -286,7 +222,7 @@ pub mod template {
     pub fn lib_rs(codgen_res: &Vec<CodegenResult>) -> String {
         let impl_mods = codgen_res
             .iter()
-            .map(|res| format!("pub(crate) mod {};", res.impl_mod.clone()))
+            .map(|res| format!("pub(crate) mod {};", res.impl_mod))
             .collect::<Vec<String>>();
 
         formatdoc! {
@@ -325,7 +261,7 @@ pub mod template {
 
         let ffi_mods = codgen_res
             .iter()
-            .map(|res| format!("use {}::*;", res.ffi_mod.clone()))
+            .map(|res| format!("use {}::*;", res.ffi_mod))
             .collect::<Vec<_>>();
 
         let cxx_externs = cxx_bridging_extern(&codgen_res);
@@ -359,7 +295,7 @@ pub mod template {
     pub fn generated_rs(codegen_res: &Vec<CodegenResult>) -> String {
         let use_mods = codegen_res
             .iter()
-            .map(|res| format!("use crate::ffi::{}::*;", res.ffi_mod.clone()))
+            .map(|res| format!("use crate::ffi::{}::*;", res.ffi_mod))
             .collect::<Vec<_>>();
 
         let spec_codes = codegen_res
