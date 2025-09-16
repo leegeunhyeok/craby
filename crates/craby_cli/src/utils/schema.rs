@@ -55,7 +55,7 @@ pub fn print_schema(schema: &Schema, config: &CompleteCrabyConfig) -> Result<(),
     // Enums
     println!("└─ Enum types ({})", schema.enum_map.len());
     schema.enum_map.keys().enumerate().for_each(|(i, name)| {
-        if i == schema.alias_map.len() - 1 {
+        if i == schema.enum_map.len() - 1 {
             print!("    └─ ");
         } else {
             print!("    ├─ ");
