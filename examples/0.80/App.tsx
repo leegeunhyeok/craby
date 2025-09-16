@@ -82,7 +82,7 @@ export function App() {
   }, [booleanInput]);
 
   useEffect(() => {
-    // Test boolean function
+    // Test object function
     try {
       const numValue = parseFloat(numericInput);
       const stringValue = stringInput.trim();
@@ -98,6 +98,11 @@ export function App() {
           foo: stringValue,
           bar: numValue,
           baz: booleanValue,
+          sub: {
+            a: stringValue,
+            b: numValue,
+            c: booleanValue,
+          },
         }),
       }));
     } catch (error) {

@@ -6,10 +6,17 @@ use crate::generated::*;
 #[cxx::bridge(namespace = "craby::crabytest")]
 pub mod craby_test {
     // Type definitions
+    struct SubObject {
+        a: String,
+        b: f64,
+        c: bool,
+    }
+
     struct TestObject {
         foo: String,
         bar: f64,
         baz: bool,
+        sub: SubObject,
     }
 
     enum MyEnum {

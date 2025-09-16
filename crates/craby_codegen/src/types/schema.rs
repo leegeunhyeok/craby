@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use craby_common::utils::string::snake_case;
 use log::error;
@@ -13,9 +13,9 @@ pub struct Schema {
     // NativeModule, Component
     pub r#type: String,
     #[serde(rename = "aliasMap")]
-    pub alias_map: HashMap<String, Alias>,
+    pub alias_map: BTreeMap<String, Alias>,
     #[serde(rename = "enumMap")]
-    pub enum_map: HashMap<String, Enum>,
+    pub enum_map: BTreeMap<String, Enum>,
     pub spec: Spec,
 }
 

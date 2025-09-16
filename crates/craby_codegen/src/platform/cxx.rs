@@ -186,7 +186,7 @@ impl ToCxxMethod for FunctionSpec {
                     formatdoc! {
                         r#"
                         react::AsyncPromise<{ret_type}> promise(rt, callInvoker);
-      
+
                         std::thread([{bind_args}]() mutable {{
                           try {{
                             auto ret = craby::{flat_name}::{fn_name}({fn_args});
@@ -197,7 +197,7 @@ impl ToCxxMethod for FunctionSpec {
                             promise.reject(craby::utils::errorMessage(err));
                           }}
                         }}).detach();
-                        
+
                         return {ret};"#,
                         bind_args = bind_args.join(", "),
                         fn_name = self.name,
@@ -212,6 +212,7 @@ impl ToCxxMethod for FunctionSpec {
                     formatdoc! {
                         r#"
                         auto ret = craby::{flat_name}::{fn_name}({fn_args});
+
                         return {ret};"#,
                         flat_name = flat_case(mod_name),
                         fn_name = self.name,
@@ -252,7 +253,6 @@ impl ToCxxMethod for FunctionSpec {
                 }}
 
             {args_decls}
-
             {invoke_stmts}
               }} catch (const jsi::JSError &err) {{
                 throw err;

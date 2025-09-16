@@ -750,6 +750,7 @@ std::size_t align_of() {
 
 namespace craby {
   namespace crabytest {
+    struct SubObject;
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
   }
@@ -757,12 +758,24 @@ namespace craby {
 
 namespace craby {
 namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
+struct SubObject final {
+  ::rust::String a;
+  double b CXX_DEFAULT_VALUE(0);
+  bool c CXX_DEFAULT_VALUE(false);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
+
 #ifndef CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 #define CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
+  ::craby::crabytest::SubObject sub;
 
   using IsRelocatable = ::std::true_type;
 };

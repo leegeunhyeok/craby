@@ -5,6 +5,13 @@ export interface TestObject {
   foo: string;
   bar: number;
   baz: boolean;
+  sub: SubObject;
+}
+
+export interface SubObject {
+  a?: string;
+  b: number;
+  c: boolean;
 }
 
 export enum MyEnum {
