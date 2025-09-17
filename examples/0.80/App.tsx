@@ -111,20 +111,25 @@ function TestResultCard({
   result: any;
   error?: string;
 }) {
-  const formatResult = (value: any) => {
-    if (value === null || value === undefined) return '—';
-
-    if (typeof value === 'object') {
-      return JSON.stringify(value, null, 4);
+  const formatResult = (value: any): string => {
+    if (value === null) {
+      return 'null';
     }
 
-    return String(value);
+    if (value === undefined) {
+      return 'undefined';
+    }
+
+    if (Array.isArray(value)) {
+      return `[${value.map(formatResult).join(', ')}]`;
+    }
+
+    return JSON.stringify(value, null, 4);
   };
 
   const isSuccess = !error;
   const statusColor = isSuccess ? '#10B981' : '#EF4444';
   const formattedResult = formatResult(result);
-  const isJsonData = typeof result === 'object' && result !== null;
 
   return (
     <View style={styles.card}>
@@ -142,13 +147,7 @@ function TestResultCard({
       ) : null}
 
       <View style={styles.cardBody}>
-        {error ? (
-          <Text style={styles.cardError}>{error}</Text>
-        ) : isJsonData ? (
-          <Code>{formattedResult}</Code>
-        ) : (
-          <Text style={styles.cardResult}>{formattedResult}</Text>
-        )}
+        {error ? <Text style={styles.cardError}>{error}</Text> : <Code>{formattedResult}</Code>}
       </View>
     </View>
   );
@@ -209,7 +208,8 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#E9ECEF',
   },

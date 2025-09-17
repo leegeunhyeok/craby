@@ -28,6 +28,10 @@ export function enumMethod(arg: MyEnum) {
   return CrabyTestModule.enumMethod(arg);
 }
 
+export function nullableMethod(arg: number | null) {
+  return CrabyTestModule.nullableMethod(arg);
+}
+
 export function promiseMethod(arg: number) {
   return CrabyTestModule.promiseMethod(arg);
 }

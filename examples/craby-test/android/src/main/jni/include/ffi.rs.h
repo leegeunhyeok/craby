@@ -753,6 +753,7 @@ namespace craby {
     struct SubObject;
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
+    struct NullableNumber;
   }
 }
 
@@ -790,6 +791,16 @@ enum class MyEnum : ::std::uint8_t {
 };
 #endif // CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
 
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+struct NullableNumber final {
+  bool _null CXX_DEFAULT_VALUE(false);
+  double _val CXX_DEFAULT_VALUE(0);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+
 double numericMethod(double arg) noexcept;
 
 bool booleanMethod(bool arg) noexcept;
@@ -801,6 +812,8 @@ bool booleanMethod(bool arg) noexcept;
 ::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept;
 
 ::rust::String enumMethod(::craby::crabytest::MyEnum arg) noexcept;
+
+::craby::crabytest::NullableNumber nullableMethod(::craby::crabytest::NullableNumber arg) noexcept;
 
 double promiseMethod(double arg);
 } // namespace crabytest

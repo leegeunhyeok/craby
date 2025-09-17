@@ -25,6 +25,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["objectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["enumMethod"] = MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
+  methodMap_["nullableMethod"] = MethodMetadata{1, &CxxCrabyTestModule::nullableMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
 }
 
@@ -159,6 +160,29 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
     auto ret = craby::crabytest::enumMethod(arg0);
 
     return react::bridging::toJs(rt, std::string(ret));
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<craby::crabytest::NullableNumber>(rt, args[0], callInvoker);
+    auto ret = craby::crabytest::nullableMethod(arg0);
+
+    return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

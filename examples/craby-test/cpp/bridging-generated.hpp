@@ -142,5 +142,27 @@ struct Bridging<craby::crabytest::MyEnum> {
   }
 };
 
+template <>
+struct Bridging<craby::crabytest::NullableNumber> {
+  static craby::crabytest::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::crabytest::NullableNumber{true, 0.0};
+    }
+
+    auto val = react::bridging::fromJs<double>(rt, value, callInvoker);
+    auto ret = craby::crabytest::NullableNumber{false, val};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::NullableNumber value) {
+    if (value._null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value._val);
+  }
+};
+
 } // namespace react
 } // namespace facebook

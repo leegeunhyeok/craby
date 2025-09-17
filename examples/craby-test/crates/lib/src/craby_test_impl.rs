@@ -1,13 +1,15 @@
-use crate::{ffi::craby_test::*, generated::*};
+use crate::ffi::bridging::*;
+use crate::generated::*;
+use crate::types::*;
 
 pub struct CrabyTest;
 
 impl CrabyTestSpec for CrabyTest {
-    fn numeric_method(arg: f64) -> f64 {
+    fn numeric_method(arg: Number) -> Number {
         arg * 2.0
     }
 
-    fn boolean_method(arg: bool) -> bool {
+    fn boolean_method(arg: Boolean) -> Boolean {
         !arg
     }
 
@@ -22,7 +24,7 @@ impl CrabyTestSpec for CrabyTest {
         arg
     }
 
-    fn array_method(mut arg: Vec<f64>) -> Vec<f64> {
+    fn array_method(mut arg: Array<Number>) -> Array<Number> {
         arg.extend(vec![1.0, 2.0, 3.0]);
         arg.iter_mut().for_each(|x| *x *= 2.0);
         arg
@@ -37,11 +39,24 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
-    fn promise_method(arg: f64) -> Result<f64, anyhow::Error> {
+    fn nullable_method(arg: NullableNumber) -> NullableNumber {
+        match arg.value_of() {
+            Some(val) => {
+                if val < 0.0 {
+                    NullableNumber::new(None)
+                } else {
+                    arg.value(val * 10.0)
+                }
+            }
+            None => NullableNumber::new(Some(123.0)),
+        }
+    }
+
+    fn promise_method(arg: Number) -> Promise<Number> {
         if arg >= 0.0 {
-          Ok(arg * 2.0)
+            promise::resolve(arg * 2.0)
         } else {
-          Err(anyhow::anyhow!("Boom!"))
+            promise::rejected("Boom!")
         }
     }
 }

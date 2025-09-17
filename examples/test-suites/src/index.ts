@@ -59,6 +59,21 @@ const TEST_SUITES: TestSuite[] = [
     },
   },
   {
+    label: 'Nullable',
+    description: '(Non null)',
+    action: () => Module.nullableMethod(123),
+  },
+  {
+    label: 'Nullable',
+    description: '(Null -> Non null)',
+    action: () => Module.nullableMethod(null),
+  },
+  {
+    label: 'Nullable',
+    description: '(Non null -> Null)',
+    action: () => Module.nullableMethod(-123),
+  },
+  {
     label: 'Promise',
     action: () => Module.promiseMethod(123),
   },
