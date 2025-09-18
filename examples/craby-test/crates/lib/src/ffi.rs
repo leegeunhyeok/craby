@@ -82,7 +82,7 @@ fn craby_test_enum_method(arg: MyEnum) -> String {
 }
 
 fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber {
-    CrabyTest::nullable_method(arg)
+    CrabyTest::nullable_method(arg.into()).into()
 }
 
 fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {

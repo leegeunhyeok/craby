@@ -39,16 +39,17 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
-    fn nullable_method(arg: NullableNumber) -> NullableNumber {
+    fn nullable_method(arg: Nullable<Number>) -> Nullable<Number> {
         match arg.value_of() {
             Some(val) => {
-                if val < 0.0 {
-                    NullableNumber::new(None)
+                if *val < 0.0 {
+                    Nullable::<Number>::none()
                 } else {
-                    arg.value(val * 10.0)
+                    let new_val = val * 10.0;
+                    arg.value(new_val)
                 }
             }
-            None => NullableNumber::new(Some(123.0)),
+            None => Nullable::<Number>::some(123.0),
         }
     }
 

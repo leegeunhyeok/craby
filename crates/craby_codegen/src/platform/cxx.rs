@@ -74,6 +74,62 @@ impl TypeAnnotation {
                 format!("craby::{}::{}", flat_case(mod_name), name)
             }
 
+            // Nullable type
+            TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
+                let cxx_struct = match &**type_annotation {
+                    TypeAnnotation::BooleanTypeAnnotation => "NullableBoolean".to_string(),
+                    TypeAnnotation::NumberTypeAnnotation
+                    | TypeAnnotation::FloatTypeAnnotation
+                    | TypeAnnotation::DoubleTypeAnnotation
+                    | TypeAnnotation::Int32TypeAnnotation
+                    | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => {
+                        "NullableNumber".to_string()
+                    }
+                    TypeAnnotation::StringTypeAnnotation
+                    | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+                    | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => {
+                        "NullableString".to_string()
+                    }
+                    TypeAnnotation::TypeAliasTypeAnnotation { name } => format!("Nullable{}", name),
+                    TypeAnnotation::EnumDeclaration { name, .. } => format!("Nullable{}", name),
+                    TypeAnnotation::ArrayTypeAnnotation { element_type } => match &**element_type {
+                        TypeAnnotation::BooleanTypeAnnotation => "NullableBooleanArray".to_string(),
+                        TypeAnnotation::NumberTypeAnnotation
+                        | TypeAnnotation::FloatTypeAnnotation
+                        | TypeAnnotation::DoubleTypeAnnotation
+                        | TypeAnnotation::Int32TypeAnnotation
+                        | TypeAnnotation::NumberLiteralTypeAnnotation { .. } => {
+                            "NullableNumberArray".to_string()
+                        }
+                        TypeAnnotation::StringTypeAnnotation
+                        | TypeAnnotation::StringLiteralTypeAnnotation { .. }
+                        | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => {
+                            "NullableStringArray".to_string()
+                        }
+                        TypeAnnotation::TypeAliasTypeAnnotation { name } => {
+                            format!("Nullable{}Array", name)
+                        }
+                        TypeAnnotation::EnumDeclaration { name, .. } => {
+                            format!("Nullable{}Array", name)
+                        }
+                        _ => {
+                            return Err(anyhow::anyhow!(
+                                "Unsupported type annotation for nullable array type: {:?}",
+                                element_type
+                            ))
+                        }
+                    },
+                    _ => {
+                        return Err(anyhow::anyhow!(
+                            "Unsupported type annotation for nullable type: {:?}",
+                            type_annotation
+                        ))
+                    }
+                };
+
+                format!("craby::{}::{}", flat_case(mod_name), cxx_struct)
+            }
+
             // Unsupported types with message
             TypeAnnotation::FunctionTypeAnnotation { .. } => {
                 return Err(anyhow::anyhow!(
@@ -123,7 +179,9 @@ impl TypeAnnotation {
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
-            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!(
+            | TypeAnnotation::TypeAliasTypeAnnotation { .. }
+            // Nullable type
+            | TypeAnnotation::NullableTypeAnnotation { .. } => format!(
                 "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
                 self.as_cxx_type(mod_name)?, ident
             ),
@@ -153,13 +211,13 @@ impl TypeAnnotation {
             // Enum type
             | TypeAnnotation::EnumDeclaration { .. }
             // Type alias (Object)
-            | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!("react::bridging::toJs(rt, {})", ident),
-
+            | TypeAnnotation::TypeAliasTypeAnnotation { .. }
+            // Nullable type
+            | TypeAnnotation::NullableTypeAnnotation { .. }=> format!("react::bridging::toJs(rt, {})", ident),
             // String types
             | TypeAnnotation::StringTypeAnnotation { .. }
             | TypeAnnotation::StringLiteralTypeAnnotation { .. }
             | TypeAnnotation::StringLiteralUnionTypeAnnotation { .. } => format!("react::bridging::toJs(rt, std::string({}))", ident),
-
             // Promise type
             TypeAnnotation::PromiseTypeAnnotation { .. } => format!("react::bridging::toJs(rt, {})", ident),
             _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),

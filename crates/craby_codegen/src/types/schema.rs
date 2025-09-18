@@ -147,19 +147,6 @@ pub enum TypeAnnotation {
     },
 }
 
-impl TypeAnnotation {
-    /// Unwrap nullable type annotations to get the inner type and nullable flag
-    pub fn unwrap_nullable(&self) -> (&TypeAnnotation, bool) {
-        match self {
-            TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
-                let (inner, _) = type_annotation.unwrap_nullable();
-                (inner, true)
-            }
-            _ => (self, false),
-        }
-    }
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectProperty {
     pub name: String,
@@ -191,22 +178,28 @@ impl Parameter {
             unimplemented!();
         }
 
-        let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let param_type = type_annotation.as_rs_type()?.0;
+        let param_type = self.type_annotation.as_rs_type()?.0;
 
-        let final_type = if self.optional && !is_nullable {
-            format!("Option<{}>", param_type)
-        } else if is_nullable || self.optional {
-            if param_type.starts_with("Option<") {
-                param_type
-            } else {
-                format!("Option<{}>", param_type)
-            }
-        } else {
-            param_type
-        };
+        Ok(format!("{}: {}", self.name, param_type))
+    }
 
-        Ok(format!("{}: {}", self.name, final_type))
+    pub fn as_impl_sig(&self) -> Result<String, anyhow::Error> {
+        if let TypeAnnotation::ObjectTypeAnnotation { .. }
+        | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
+        {
+            error!("Object type is not supported for parameters");
+            error!("Use defined type alias instead");
+            unimplemented!();
+        }
+
+        if let TypeAnnotation::FunctionTypeAnnotation { .. } = *self.type_annotation {
+            error!("Function type is not supported for parameters");
+            unimplemented!();
+        }
+
+        let param_type = self.type_annotation.as_rs_impl_type()?.0;
+
+        Ok(format!("{}: {}", self.name, param_type))
     }
 }
 
@@ -237,10 +230,41 @@ impl FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.as_rs_type()?.0;
+                let return_type = return_type_annotation.as_rs_impl_type()?.0;
                 let params_sig = params
                     .iter()
                     .map(|param| param.as_sig())
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(|params| params.join(", "))?;
+
+                let fn_name = snake_case(&self.name);
+                let ret_annotation = if return_type == "()" {
+                    String::new()
+                } else {
+                    format!(" -> {}", return_type)
+                };
+
+                Ok(format!(
+                    "fn {}({}){}",
+                    fn_name.to_string(),
+                    params_sig,
+                    ret_annotation
+                ))
+            }
+            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
+        }
+    }
+
+    pub fn as_impl_sig(&self) -> Result<String, anyhow::Error> {
+        match &*self.type_annotation {
+            TypeAnnotation::FunctionTypeAnnotation {
+                return_type_annotation,
+                params,
+            } => {
+                let return_type = return_type_annotation.as_rs_impl_type()?.0;
+                let params_sig = params
+                    .iter()
+                    .map(|param| param.as_impl_sig())
                     .collect::<Result<Vec<_>, _>>()
                     .map(|params| params.join(", "))?;
 

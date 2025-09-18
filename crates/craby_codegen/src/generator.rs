@@ -32,7 +32,6 @@ impl CodeGenerator {
 
         Ok(CodegenResult {
             module_name: schema.module_name.clone(),
-            ffi_mod: snake_case(&schema.module_name),
             impl_mod: impl_mod_name(&schema.module_name),
             spec_code,
             impl_code,
@@ -56,7 +55,7 @@ impl CodeGenerator {
             .methods
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
-                let sig = spec.as_sig()?;
+                let sig = spec.as_impl_sig()?;
                 Ok(format!("{};", sig))
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -101,7 +100,7 @@ impl CodeGenerator {
             .methods
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
-                let func_sig = spec.as_sig()?;
+                let func_sig = spec.as_impl_sig()?;
 
                 // ```rust,ignore
                 // fn multiply(a: f64, b: f64) -> f64 {

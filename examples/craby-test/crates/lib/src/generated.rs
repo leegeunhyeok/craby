@@ -32,6 +32,6 @@ pub trait CrabyTestSpec {
     fn object_method(arg: TestObject) -> TestObject;
     fn array_method(arg: Array<Number>) -> Array<Number>;
     fn enum_method(arg: MyEnum) -> String;
-    fn nullable_method(arg: NullableNumber) -> NullableNumber;
+    fn nullable_method(arg: Nullable<Number>) -> Nullable<Number>;
     fn promise_method(arg: Number) -> Promise<Number>;
 }

@@ -3,8 +3,6 @@ use crate::platform::{cxx::CxxMethod, rust::RsCxxBridge};
 pub struct CodegenResult {
     /// Module name from Schema (TurboModule name)
     pub module_name: String,
-    /// Module name for the Rust ffi module
-    pub ffi_mod: String,
     /// Module name for the Rust impl module
     pub impl_mod: String,
     /// Code for the spec trait

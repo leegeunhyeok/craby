@@ -78,6 +78,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         true,
     )?;
     write_file(
+        crate_src_path.join("types.rs"),
+        with_generated_comment(rust::template::types_rs()),
+        true,
+    )?;
+    write_file(
         crate_src_path.join("generated.rs"),
         with_generated_comment(rust::template::generated_rs(&codegen_res)),
         true,
