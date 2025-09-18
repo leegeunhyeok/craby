@@ -8,6 +8,16 @@ use crate::{
     utils::indent_str,
 };
 
+#[derive(Debug)]
+pub struct CxxFromJs {
+    pub expr: String,
+}
+
+#[derive(Debug)]
+pub struct CxxToJs {
+    pub expr: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct CxxMethod {
     /// Method name
@@ -31,46 +41,8 @@ pub struct CxxMethod {
     pub impl_func: String,
 }
 
-pub trait ToCxxType {
-    /// Returns the cxx type for the `TypeAnnotation`.
-    fn to_cxx_type(&self, mod_name: &String) -> Result<String, anyhow::Error>;
-}
-
-pub trait ToCxxBridging {
-    /// Returns the cxx `fromJs` for the `TypeAnnotation`.
-    ///
-    /// ```cpp
-    /// facebook::react::bridging::fromJs<T>(rt, value, callInvoker)
-    /// ```
-    fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error>;
-    /// Returns the cxx `toJs` for the `TypeAnnotation`.
-    ///
-    /// ```cpp
-    /// react::bridging::toJs(rt, value)
-    /// ```
-    fn to_js(&self, ident: &String) -> Result<String, anyhow::Error>;
-}
-
-pub trait ToCxxMethod {
-    /// Returns the cxx function's metadata and implementation for the `FunctionSpec`.
-    ///
-    /// ```cpp
-    /// // Metadata (args count, function pointer)
-    /// MethodMetadata{1, &CxxMyTestModule::myFunc}
-    ///
-    /// // Function implementation
-    /// jsi::Value CxxMyTestModule::myFunc(jsi::Runtime &rt,
-    ///                                    react::TurboModule &turboModule,
-    ///                                    const jsi::Value args[],
-    ///                                    size_t count) {
-    ///     // Implementation here
-    /// }
-    /// ```
-    fn to_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error>;
-}
-
-impl ToCxxType for TypeAnnotation {
-    fn to_cxx_type(&self, mod_name: &String) -> Result<String, anyhow::Error> {
+impl TypeAnnotation {
+    fn as_cxx_type(&self, mod_name: &String) -> Result<String, anyhow::Error> {
         let cxx_type = match self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation => "bool".to_string(),
@@ -89,7 +61,7 @@ impl ToCxxType for TypeAnnotation {
 
             // Array type
             TypeAnnotation::ArrayTypeAnnotation { element_type } => {
-                format!("rust::Vec<{}>", element_type.to_cxx_type(mod_name)?)
+                format!("rust::Vec<{}>", element_type.as_cxx_type(mod_name)?)
             }
 
             // Enum
@@ -122,11 +94,18 @@ impl ToCxxType for TypeAnnotation {
 
         Ok(cxx_type)
     }
-}
 
-impl ToCxxBridging for TypeAnnotation {
-    fn to_cxx(&self, mod_name: &String, ident: &String) -> Result<String, anyhow::Error> {
-        let to_cxx = match &*self {
+    /// Returns the cxx `fromJs` for the `TypeAnnotation`.
+    ///
+    /// ```cpp
+    /// facebook::react::bridging::fromJs<T>(rt, value, callInvoker)
+    /// ```
+    pub fn as_cxx_from_js(
+        &self,
+        mod_name: &String,
+        ident: &String,
+    ) -> Result<CxxFromJs, anyhow::Error> {
+        let from_js_expr = match &*self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation
             // Number types
@@ -146,16 +125,21 @@ impl ToCxxBridging for TypeAnnotation {
             // Type alias (Object)
             | TypeAnnotation::TypeAliasTypeAnnotation { .. } => format!(
                 "react::bridging::fromJs<{}>(rt, {}, callInvoker)",
-                self.to_cxx_type(mod_name)?, ident
+                self.as_cxx_type(mod_name)?, ident
             ),
             _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
-        Ok(to_cxx)
+        Ok(CxxFromJs { expr: from_js_expr })
     }
 
-    fn to_js(&self, ident: &String) -> Result<String, anyhow::Error> {
-        let to_js = match &*self {
+    /// Returns the cxx `toJs` for the `TypeAnnotation`.
+    ///
+    /// ```cpp
+    /// react::bridging::toJs(rt, value)
+    /// ```
+    pub fn as_cxx_to_js(&self, ident: &String) -> Result<CxxToJs, anyhow::Error> {
+        let to_js_expr = match &*self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation
             // Number types
@@ -181,12 +165,12 @@ impl ToCxxBridging for TypeAnnotation {
             _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
         };
 
-        Ok(to_js)
+        Ok(CxxToJs { expr: to_js_expr })
     }
 }
 
-impl ToCxxMethod for FunctionSpec {
-    fn to_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error> {
+impl FunctionSpec {
+    pub fn as_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error> {
         let (args_decls, invoke_stmts) = if let TypeAnnotation::FunctionTypeAnnotation {
             return_type_annotation,
             params,
@@ -200,9 +184,9 @@ impl ToCxxMethod for FunctionSpec {
             for (idx, param) in params.iter().enumerate() {
                 let arg_ref = cxx_arg_ref(idx);
                 let arg_var = cxx_arg_var(idx);
-                let from_js = param.type_annotation.to_cxx(mod_name, &arg_ref)?;
+                let from_js = param.type_annotation.as_cxx_from_js(mod_name, &arg_ref)?;
                 args.push(arg_var.clone());
-                args_decls.push(format!("auto {} = {};", arg_var, from_js));
+                args_decls.push(format!("auto {} = {};", arg_var, from_js.expr));
             }
 
             let invoke_stmts = match &**return_type_annotation {
@@ -249,8 +233,8 @@ impl ToCxxMethod for FunctionSpec {
                         fn_name = self.name,
                         fn_args = fn_args,
                         flat_name = flat_case(mod_name),
-                        ret_type = element_type.to_cxx_type(mod_name)?,
-                        ret = return_type_annotation.to_js(&"promise".to_string())?,
+                        ret_type = element_type.as_cxx_type(mod_name)?,
+                        ret = return_type_annotation.as_cxx_to_js(&"promise".to_string())?.expr,
                     }
                 }
                 _ => {
@@ -268,7 +252,7 @@ impl ToCxxMethod for FunctionSpec {
                         flat_name = flat_case(mod_name),
                         fn_name = self.name,
                         fn_args = args.join(", "),
-                        ret = return_type_annotation.to_js(&"ret".to_string())?,
+                        ret = return_type_annotation.as_cxx_to_js(&"ret".to_string())?.expr,
                     }
                 }
             };
@@ -342,8 +326,6 @@ pub mod template {
         },
         utils::indent_str,
     };
-
-    use super::ToCxxBridging;
 
     /// Returns the complete cxx TurboModule implementation source file.
     pub fn mod_cxx(codegen_res: &Vec<CodegenResult>) -> String {
@@ -606,10 +588,10 @@ pub mod template {
             .try_for_each(|prop| -> Result<(), anyhow::Error> {
                 let ident = format!("obj${}", prop.name);
                 let converted_ident = format!("_{}", ident);
-                let from_js = prop.type_annotation.to_cxx(&mod_name, &ident)?;
+                let from_js = prop.type_annotation.as_cxx_from_js(&mod_name, &ident)?;
                 let to_js = prop
                     .type_annotation
-                    .to_js(&format!("value.{}", prop.name))?;
+                    .as_cxx_to_js(&format!("value.{}", prop.name))?;
 
                 // ```cpp
                 // auto obj$name = obj.getProperty(rt, "name");
@@ -627,12 +609,12 @@ pub mod template {
                 // ```cpp
                 // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
                 // ```
-                let from_js_stmt = format!("auto {} = {};", converted_ident, from_js);
+                let from_js_stmt = format!("auto {} = {};", converted_ident, from_js.expr);
 
                 // ```cpp
                 // auto _obj$name = react::bridging::toJs(rt, value.name);
                 // ```
-                let to_js_stmt = format!("auto {} = {};", converted_ident, to_js);
+                let to_js_stmt = format!("auto {} = {};", converted_ident, to_js.expr);
 
                 get_props.push(get_prop);
                 from_js_stmts.push(from_js_stmt);

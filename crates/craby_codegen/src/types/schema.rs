@@ -4,8 +4,6 @@ use craby_common::utils::string::snake_case;
 use log::error;
 use serde::{Deserialize, Serialize};
 
-use crate::platform::rust::ToRsType;
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Schema {
     #[serde(rename = "moduleName")]
@@ -194,7 +192,7 @@ impl Parameter {
         }
 
         let (type_annotation, is_nullable) = self.type_annotation.unwrap_nullable();
-        let param_type = type_annotation.to_rs_type()?;
+        let param_type = type_annotation.as_rs_type()?.0;
 
         let final_type = if self.optional && !is_nullable {
             format!("Option<{}>", param_type)
@@ -239,7 +237,7 @@ impl FunctionSpec {
                 return_type_annotation,
                 params,
             } => {
-                let return_type = return_type_annotation.to_rs_type()?;
+                let return_type = return_type_annotation.as_rs_type()?.0;
                 let params_sig = params
                     .iter()
                     .map(|param| param.as_sig())

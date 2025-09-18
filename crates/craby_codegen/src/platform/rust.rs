@@ -10,23 +10,34 @@ use crate::{
     utils::indent_str,
 };
 
-pub trait ToRsType {
-    /// Returns the Rust type for the given `TypeAnnotation`.
-    fn to_rs_type(&self) -> Result<String, anyhow::Error>;
-}
+#[derive(Debug)]
+pub struct RsType(pub String);
 
-pub trait ToExternType {
-    /// Returns the Rust type for the given `TypeAnnotation` that is used in the cxx extern function.
-    fn to_extern_type(&self) -> Result<String, anyhow::Error>;
-}
-
-pub trait ToRsCxxBridge {
-    /// Returns the Rust cxx bridging function declaration and implementation for the `FunctionSpec`.
-    fn to_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error>;
-}
+#[derive(Debug)]
+pub struct RsExternType(pub String);
 
 #[derive(Debug, Clone)]
 pub struct RsCxxBridge {
+    /// The struct definition.
+    ///
+    /// ```rust,ignore
+    /// struct MyStruct {
+    ///   foo: String,
+    ///   bar: f64,
+    ///   baz: bool,
+    /// }
+    /// ```
+    pub struct_defs: Vec<String>,
+    /// The enum definition.
+    ///
+    /// ```rust,ignore
+    /// enum MyEnum {
+    ///   Foo,
+    ///   Bar,
+    ///   Baz,
+    /// }
+    /// ```
+    pub enum_defs: Vec<String>,
     /// The extern function declaration.
     ///
     /// **Example**
@@ -35,7 +46,7 @@ pub struct RsCxxBridge {
     /// #[cxx_name = "myFunc"]
     /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
     /// ```
-    pub extern_func: String,
+    pub func_extern_sigs: Vec<String>,
     /// The implementation function of the extern function.
     ///
     /// **Example**
@@ -45,13 +56,12 @@ pub struct RsCxxBridge {
     ///   MyModule::my_func(arg1, arg2)
     /// }
     /// ```
-    pub impl_func: String,
-    pub struct_def: String,
-    pub enum_def: String,
+    pub func_impls: Vec<String>,
 }
 
-impl ToRsType for TypeAnnotation {
-    fn to_rs_type(&self) -> Result<String, anyhow::Error> {
+impl TypeAnnotation {
+    /// Returns the Rust type for the given `TypeAnnotation`.
+    pub fn as_rs_type(&self) -> Result<RsType, anyhow::Error> {
         let rs_type = match self {
             // Boolean type
             TypeAnnotation::BooleanTypeAnnotation => "bool".to_string(),
@@ -70,7 +80,7 @@ impl ToRsType for TypeAnnotation {
 
             // Array type
             TypeAnnotation::ArrayTypeAnnotation { element_type } => {
-                format!("Vec<{}>", element_type.to_rs_type()?)
+                format!("Vec<{}>", element_type.as_rs_type()?.0)
             }
 
             // Type alias
@@ -81,7 +91,7 @@ impl ToRsType for TypeAnnotation {
 
             // Promise type
             TypeAnnotation::PromiseTypeAnnotation { element_type } => {
-                format!("Result<{}, anyhow::Error>", element_type.to_rs_type()?)
+                format!("Result<{}, anyhow::Error>", element_type.as_rs_type()?.0)
             }
 
             // Void type
@@ -92,27 +102,27 @@ impl ToRsType for TypeAnnotation {
             }
         };
 
-        Ok(rs_type)
+        Ok(RsType(rs_type))
     }
-}
 
-impl ToExternType for TypeAnnotation {
-    fn to_extern_type(&self) -> Result<String, anyhow::Error> {
+    /// Returns the Rust type for the given `TypeAnnotation` that is used in the cxx extern function.
+    pub fn as_rs_extern_type(&self) -> Result<RsExternType, anyhow::Error> {
         let extern_type = match self {
             TypeAnnotation::PromiseTypeAnnotation { element_type } => {
-                format!("Result<{}>", element_type.to_rs_type()?)
+                format!("Result<{}>", element_type.as_rs_type()?.0)
             }
-            _ => self.to_rs_type()?,
+            _ => self.as_rs_type()?.0,
         };
 
-        Ok(extern_type)
+        Ok(RsExternType(extern_type))
     }
 }
 
-impl ToRsCxxBridge for Schema {
-    fn to_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error> {
-        let mut extern_funcs = vec![];
-        let mut impl_funcs = vec![];
+impl Schema {
+    /// Returns the Rust cxx bridging function declaration and implementation for the `FunctionSpec`.
+    pub fn as_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error> {
+        let mut func_extern_sigs = vec![];
+        let mut func_impls = vec![];
         let mut struct_defs = vec![];
         let mut enum_defs = vec![];
 
@@ -126,8 +136,8 @@ impl ToRsCxxBridge for Schema {
                         return_type_annotation,
                         params,
                     } => {
-                        let ret_type = return_type_annotation.to_rs_type()?;
-                        let ret_extern_type = return_type_annotation.to_extern_type()?.to_string();
+                        let ret_type = return_type_annotation.as_rs_type()?.0;
+                        let ret_extern_type = return_type_annotation.as_rs_extern_type()?.0;
                         let params_sig = params
                             .iter()
                             .map(|param| param.as_sig())
@@ -177,8 +187,8 @@ impl ToRsCxxBridge for Schema {
                             fn_args = fn_args.join(", "),
                         };
 
-                        extern_funcs.push(extern_func);
-                        impl_funcs.push(impl_func);
+                        func_extern_sigs.push(extern_func);
+                        func_impls.push(impl_func);
 
                         Ok(())
                     }
@@ -235,10 +245,10 @@ impl ToRsCxxBridge for Schema {
             })?;
 
         Ok(RsCxxBridge {
-            struct_def: struct_defs.join("\n\n"),
-            enum_def: enum_defs.join("\n\n"),
-            extern_func: extern_funcs.join("\n\n"),
-            impl_func: impl_funcs.join("\n\n"),
+            struct_defs,
+            enum_defs,
+            func_extern_sigs,
+            func_impls,
         })
     }
 }
@@ -249,9 +259,9 @@ fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
         .map(|res| {
             let flat_name = flat_case(&res.module_name);
             let snake_name = snake_case(&res.module_name);
-            let cxx_extern = res.rs_cxx_bridge.extern_func.clone();
-            let struct_defs = res.rs_cxx_bridge.struct_def.clone();
-            let enum_defs = res.rs_cxx_bridge.enum_def.clone();
+            let cxx_extern = res.rs_cxx_bridge.func_extern_sigs.join("\n\n");
+            let struct_defs = res.rs_cxx_bridge.struct_defs.join("\n\n");
+            let enum_defs = res.rs_cxx_bridge.enum_defs.join("\n\n");
 
             formatdoc! {
                 r#"
@@ -285,8 +295,6 @@ pub mod template {
         types::{schema::Alias, types::CodegenResult},
         utils::indent_str,
     };
-
-    use super::ToExternType;
 
     /// Generate the `lib.rs` file for the given code generation results.
     ///
@@ -385,7 +393,7 @@ pub mod template {
     fn cxx_bridging_impl(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
         codegen_res
             .iter()
-            .map(|res| res.rs_cxx_bridge.impl_func.clone())
+            .map(|res| res.rs_cxx_bridge.func_impls.join("\n\n"))
             .collect::<Vec<_>>()
     }
 
@@ -410,7 +418,7 @@ pub mod template {
                 Ok(format!(
                     "{}: {},",
                     property.name,
-                    property.type_annotation.to_extern_type()?
+                    property.type_annotation.as_rs_extern_type()?.0
                 ))
             })
             .collect::<Result<Vec<_>, _>>()?;

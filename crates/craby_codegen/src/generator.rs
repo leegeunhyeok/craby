@@ -8,9 +8,9 @@ use crate::{
     platform::{
         cxx::{
             template::{cxx_enum_bridging_template, cxx_struct_bridging_template},
-            CxxMethod, ToCxxMethod,
+            CxxMethod,
         },
-        rust::{RsCxxBridge, ToRsCxxBridge},
+        rust::RsCxxBridge,
     },
     types::{schema::Schema, types::CodegenResult},
     utils::indent_str,
@@ -151,7 +151,7 @@ impl CodeGenerator {
 
     /// Returns the cxx function signature for the `FunctionSpec`.
     fn get_rs_cxx_bridges(&self, schema: &Schema) -> Result<RsCxxBridge, anyhow::Error> {
-        schema.to_rs_cxx_bridge()
+        schema.as_rs_cxx_bridge()
     }
 
     /// Returns the cxx function implementations for the `FunctionSpec`.
@@ -160,7 +160,7 @@ impl CodeGenerator {
             .spec
             .methods
             .iter()
-            .map(|spec| spec.to_cxx_method(&schema.module_name))
+            .map(|spec| spec.as_cxx_method(&schema.module_name))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)
@@ -225,8 +225,8 @@ mod tests {
         let generator = CodeGenerator::new();
         let result = generator.get_rs_cxx_bridges(&schema).unwrap();
 
-        assert_snapshot!(result.extern_func);
-        assert_snapshot!(result.impl_func);
+        assert_snapshot!(result.func_extern_sigs.join("\n\n"));
+        assert_snapshot!(result.func_impls.join("\n\n"));
     }
 
     #[test]
