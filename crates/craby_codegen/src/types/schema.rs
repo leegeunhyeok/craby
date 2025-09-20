@@ -164,7 +164,7 @@ pub struct Parameter {
 }
 
 impl Parameter {
-    pub fn as_sig(&self) -> Result<String, anyhow::Error> {
+    pub fn as_cxx_sig(&self) -> Result<String, anyhow::Error> {
         if let TypeAnnotation::ObjectTypeAnnotation { .. }
         | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
         {
@@ -221,37 +221,6 @@ impl FunctionSpec {
                 "Function type annotation should be a function: {}",
                 self.name
             ));
-        }
-    }
-
-    pub fn as_sig(&self) -> Result<String, anyhow::Error> {
-        match &*self.type_annotation {
-            TypeAnnotation::FunctionTypeAnnotation {
-                return_type_annotation,
-                params,
-            } => {
-                let return_type = return_type_annotation.as_rs_impl_type()?.0;
-                let params_sig = params
-                    .iter()
-                    .map(|param| param.as_sig())
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(|params| params.join(", "))?;
-
-                let fn_name = snake_case(&self.name);
-                let ret_annotation = if return_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", return_type)
-                };
-
-                Ok(format!(
-                    "fn {}({}){}",
-                    fn_name.to_string(),
-                    params_sig,
-                    ret_annotation
-                ))
-            }
-            _ => unimplemented!("Unsupported type annotation for function: {}", self.name),
         }
     }
 

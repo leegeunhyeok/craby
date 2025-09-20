@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::platform::{cxx::CxxMethod, rust::RsCxxBridge};
 
 pub struct CodegenResult {
@@ -11,6 +13,8 @@ pub struct CodegenResult {
     pub impl_code: String,
     /// cxx bridging function signatures
     pub rs_cxx_bridge: RsCxxBridge,
+    /// Rust type implementations
+    pub rs_type_impls: BTreeMap<String, String>,
     /// cxx implementations
     pub cxx_methods: Vec<CxxMethod>,
     /// cxx bridging templates

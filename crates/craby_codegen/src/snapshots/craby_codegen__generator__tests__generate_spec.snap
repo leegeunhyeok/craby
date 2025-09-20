@@ -3,11 +3,11 @@ source: crates/craby_codegen/src/generator.rs
 expression: result
 ---
 pub trait CrabyTestSpec {
-    fn numeric_method(arg: f64) -> f64;
-    fn boolean_method(arg: bool) -> bool;
+    fn numeric_method(arg: Number) -> Number;
+    fn boolean_method(arg: Boolean) -> Boolean;
     fn string_method(arg: String) -> String;
     fn object_method(arg: TestObject) -> TestObject;
-    fn array_method(arg: Vec<f64>) -> Vec<f64>;
+    fn array_method(arg: Array<Number>) -> Array<Number>;
     fn enum_method(arg: MyEnum) -> String;
-    fn promise_method(arg: f64) -> Result<f64, anyhow::Error>;
+    fn promise_method(arg: Number) -> Promise<Number>;
 }

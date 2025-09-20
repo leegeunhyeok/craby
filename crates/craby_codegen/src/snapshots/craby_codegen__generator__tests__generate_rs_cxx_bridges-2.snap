@@ -1,31 +1,38 @@
 ---
 source: crates/craby_codegen/src/generator.rs
-expression: result.impl_func
+expression: "result.func_impls.join(\"\\n\\n\")"
 ---
 fn craby_test_numeric_method(arg: f64) -> f64 {
-    CrabyTest::numeric_method(arg)
+    let ret = CrabyTest::numeric_method(arg);
+    ret
 }
 
 fn craby_test_boolean_method(arg: bool) -> bool {
-    CrabyTest::boolean_method(arg)
+    let ret = CrabyTest::boolean_method(arg);
+    ret
 }
 
 fn craby_test_string_method(arg: String) -> String {
-    CrabyTest::string_method(arg)
+    let ret = CrabyTest::string_method(arg);
+    ret
 }
 
 fn craby_test_object_method(arg: TestObject) -> TestObject {
-    CrabyTest::object_method(arg)
+    let ret = CrabyTest::object_method(arg);
+    ret
 }
 
 fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64> {
-    CrabyTest::array_method(arg)
+    let ret = CrabyTest::array_method(arg);
+    ret
 }
 
 fn craby_test_enum_method(arg: MyEnum) -> String {
-    CrabyTest::enum_method(arg)
+    let ret = CrabyTest::enum_method(arg);
+    ret
 }
 
 fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {
-    CrabyTest::promise_method(arg)
+    let ret = CrabyTest::promise_method(arg);
+    ret
 }

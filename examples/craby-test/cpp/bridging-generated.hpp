@@ -10,6 +10,18 @@ using namespace facebook;
 namespace facebook {
 namespace react {
 
+template <>
+struct Bridging<rust::String> {
+  static rust::String fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto str = value.asString(rt).utf8(rt);
+    return rust::String(str);
+  }
+
+  static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {
+    return react::bridging::toJs(rt, std::string(value));
+  }
+};
+
 template <typename T>
 struct Bridging<rust::Vec<T>> {
   static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
@@ -35,81 +47,6 @@ struct Bridging<rust::Vec<T>> {
     }
 
     return arr;
-  }
-};
-
-template <>
-struct Bridging<craby::crabytest::SubObject> {
-  static craby::crabytest::SubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    auto obj = value.asObject(rt);
-    auto obj$a = obj.getProperty(rt, "a");
-    auto obj$b = obj.getProperty(rt, "b");
-    auto obj$c = obj.getProperty(rt, "c");
-
-    auto _obj$a = react::bridging::fromJs<std::string>(rt, obj$a, callInvoker);
-    auto _obj$b = react::bridging::fromJs<double>(rt, obj$b, callInvoker);
-    auto _obj$c = react::bridging::fromJs<bool>(rt, obj$c, callInvoker);
-
-    craby::crabytest::SubObject ret = {
-      _obj$a,
-      _obj$b,
-      _obj$c
-    };
-
-    return ret;
-  }
-
-  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::SubObject value) {
-    jsi::Object obj = jsi::Object(rt);
-    auto _obj$a = react::bridging::toJs(rt, std::string(value.a));
-    auto _obj$b = react::bridging::toJs(rt, value.b);
-    auto _obj$c = react::bridging::toJs(rt, value.c);
-
-    obj.setProperty(rt, "a", _obj$a);
-    obj.setProperty(rt, "b", _obj$b);
-    obj.setProperty(rt, "c", _obj$c);
-
-    return jsi::Value(rt, obj);
-  }
-};
-
-template <>
-struct Bridging<craby::crabytest::TestObject> {
-  static craby::crabytest::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    auto obj = value.asObject(rt);
-    auto obj$foo = obj.getProperty(rt, "foo");
-    auto obj$bar = obj.getProperty(rt, "bar");
-    auto obj$baz = obj.getProperty(rt, "baz");
-    auto obj$sub = obj.getProperty(rt, "sub");
-
-    auto _obj$foo = react::bridging::fromJs<std::string>(rt, obj$foo, callInvoker);
-    auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
-    auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
-    auto _obj$sub = react::bridging::fromJs<craby::crabytest::SubObject>(rt, obj$sub, callInvoker);
-
-    craby::crabytest::TestObject ret = {
-      _obj$foo,
-      _obj$bar,
-      _obj$baz,
-      _obj$sub
-    };
-
-    return ret;
-  }
-
-  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::TestObject value) {
-    jsi::Object obj = jsi::Object(rt);
-    auto _obj$foo = react::bridging::toJs(rt, std::string(value.foo));
-    auto _obj$bar = react::bridging::toJs(rt, value.bar);
-    auto _obj$baz = react::bridging::toJs(rt, value.baz);
-    auto _obj$sub = react::bridging::toJs(rt, value.sub);
-
-    obj.setProperty(rt, "foo", _obj$foo);
-    obj.setProperty(rt, "bar", _obj$bar);
-    obj.setProperty(rt, "baz", _obj$baz);
-    obj.setProperty(rt, "sub", _obj$sub);
-
-    return jsi::Value(rt, obj);
   }
 };
 
@@ -143,6 +80,125 @@ struct Bridging<craby::crabytest::MyEnum> {
 };
 
 template <>
+struct Bridging<craby::crabytest::NullableString> {
+  static craby::crabytest::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::crabytest::NullableString{true, rust::String()};
+    }
+
+    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
+    auto ret = craby::crabytest::NullableString{false, val};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::NullableString value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::SubObject> {
+  static craby::crabytest::SubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$a = obj.getProperty(rt, "a");
+    auto obj$b = obj.getProperty(rt, "b");
+    auto obj$c = obj.getProperty(rt, "c");
+
+    auto _obj$a = react::bridging::fromJs<craby::crabytest::NullableString>(rt, obj$a, callInvoker);
+    auto _obj$b = react::bridging::fromJs<double>(rt, obj$b, callInvoker);
+    auto _obj$c = react::bridging::fromJs<bool>(rt, obj$c, callInvoker);
+
+    craby::crabytest::SubObject ret = {
+      _obj$a,
+      _obj$b,
+      _obj$c
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::SubObject value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$a = react::bridging::toJs(rt, value.a);
+    auto _obj$b = react::bridging::toJs(rt, value.b);
+    auto _obj$c = react::bridging::toJs(rt, value.c);
+
+    obj.setProperty(rt, "a", _obj$a);
+    obj.setProperty(rt, "b", _obj$b);
+    obj.setProperty(rt, "c", _obj$c);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::NullableSubObject> {
+  static craby::crabytest::NullableSubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::crabytest::NullableSubObject{true, craby::crabytest::SubObject{}};
+    }
+
+    auto val = react::bridging::fromJs<craby::crabytest::SubObject>(rt, value, callInvoker);
+    auto ret = craby::crabytest::NullableSubObject{false, val};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::NullableSubObject value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::TestObject> {
+  static craby::crabytest::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$foo = obj.getProperty(rt, "foo");
+    auto obj$bar = obj.getProperty(rt, "bar");
+    auto obj$baz = obj.getProperty(rt, "baz");
+    auto obj$sub = obj.getProperty(rt, "sub");
+
+    auto _obj$foo = react::bridging::fromJs<rust::String>(rt, obj$foo, callInvoker);
+    auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
+    auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
+    auto _obj$sub = react::bridging::fromJs<craby::crabytest::NullableSubObject>(rt, obj$sub, callInvoker);
+
+    craby::crabytest::TestObject ret = {
+      _obj$foo,
+      _obj$bar,
+      _obj$baz,
+      _obj$sub
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::TestObject value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$foo = react::bridging::toJs(rt, value.foo);
+    auto _obj$bar = react::bridging::toJs(rt, value.bar);
+    auto _obj$baz = react::bridging::toJs(rt, value.baz);
+    auto _obj$sub = react::bridging::toJs(rt, value.sub);
+
+    obj.setProperty(rt, "foo", _obj$foo);
+    obj.setProperty(rt, "bar", _obj$bar);
+    obj.setProperty(rt, "baz", _obj$baz);
+    obj.setProperty(rt, "sub", _obj$sub);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
 struct Bridging<craby::crabytest::NullableNumber> {
   static craby::crabytest::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     if (value.isNull()) {
@@ -156,11 +212,11 @@ struct Bridging<craby::crabytest::NullableNumber> {
   }
 
   static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::NullableNumber value) {
-    if (value._null) {
+    if (value.null) {
       return jsi::Value::null();
     }
 
-    return react::bridging::toJs(rt, value._val);
+    return react::bridging::toJs(rt, value.val);
   }
 };
 

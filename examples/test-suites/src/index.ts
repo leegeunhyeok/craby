@@ -40,6 +40,42 @@ const TEST_SUITES: TestSuite[] = [
     },
   },
   {
+    label: 'Object',
+    description: '(Nullable 1)',
+    action: () => {
+      try {
+        return Module.objectMethod({
+          foo: 'foo',
+          bar: 456,
+          baz: true,
+          sub: null,
+        });
+      } catch (error: any) {
+        return toErrorObject(error);
+      }
+    },
+  },
+  {
+    label: 'Object',
+    description: '(Nullable 2)',
+    action: () => {
+      try {
+        return Module.objectMethod({
+          foo: 'foo',
+          bar: 456,
+          baz: true,
+          sub: {
+            a: null,
+            b: 789,
+            c: false,
+          },
+        });
+      } catch (error: any) {
+        return toErrorObject(error);
+      }
+    },
+  },
+  {
     label: 'Array',
     action: () => Module.arrayMethod([1, 2, 3]),
   },

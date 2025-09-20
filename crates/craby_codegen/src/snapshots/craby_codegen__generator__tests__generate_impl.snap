@@ -7,11 +7,11 @@ use crate::{ffi::craby_test::*, generated::*};
 pub struct CrabyTest;
 
 impl CrabyTestSpec for CrabyTest {
-    fn numeric_method(arg: f64) -> f64 {
+    fn numeric_method(arg: Number) -> Number {
         unimplemented!();
     }
 
-    fn boolean_method(arg: bool) -> bool {
+    fn boolean_method(arg: Boolean) -> Boolean {
         unimplemented!();
     }
 
@@ -23,7 +23,7 @@ impl CrabyTestSpec for CrabyTest {
         unimplemented!();
     }
 
-    fn array_method(arg: Vec<f64>) -> Vec<f64> {
+    fn array_method(arg: Array<Number>) -> Array<Number> {
         unimplemented!();
     }
 
@@ -31,7 +31,7 @@ impl CrabyTestSpec for CrabyTest {
         unimplemented!();
     }
 
-    fn promise_method(arg: f64) -> Result<f64, anyhow::Error> {
+    fn promise_method(arg: Number) -> Promise<Number> {
         unimplemented!();
     }
 }

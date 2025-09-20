@@ -820,19 +820,41 @@ public:
 
 namespace craby {
   namespace crabytest {
+    struct NullableNumber;
+    struct NullableString;
     struct SubObject;
+    struct NullableSubObject;
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
-    struct NullableNumber;
   }
 }
 
 namespace craby {
 namespace crabytest {
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+struct NullableNumber final {
+  bool null CXX_DEFAULT_VALUE(false);
+  double val CXX_DEFAULT_VALUE(0);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
+#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
+struct NullableString final {
+  bool null CXX_DEFAULT_VALUE(false);
+  ::rust::String val;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
+
 #ifndef CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
 #define CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
 struct SubObject final {
-  ::rust::String a;
+  ::craby::crabytest::NullableString a;
   double b CXX_DEFAULT_VALUE(0);
   bool c CXX_DEFAULT_VALUE(false);
 
@@ -840,13 +862,23 @@ struct SubObject final {
 };
 #endif // CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
 
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
+struct NullableSubObject final {
+  bool null CXX_DEFAULT_VALUE(false);
+  ::craby::crabytest::SubObject val;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
+
 #ifndef CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 #define CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
-  ::craby::crabytest::SubObject sub;
+  ::craby::crabytest::NullableSubObject sub;
 
   using IsRelocatable = ::std::true_type;
 };
@@ -860,16 +892,6 @@ enum class MyEnum : ::std::uint8_t {
   BAZ = 2,
 };
 #endif // CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
-
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
-#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
-struct NullableNumber final {
-  bool _null CXX_DEFAULT_VALUE(false);
-  double _val CXX_DEFAULT_VALUE(0);
-
-  using IsRelocatable = ::std::true_type;
-};
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
 
 extern "C" {
 double craby$crabytest$cxxbridge1$craby_test_numeric_method(double arg) noexcept;

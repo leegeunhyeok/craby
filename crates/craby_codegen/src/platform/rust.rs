@@ -1,6 +1,8 @@
+use std::collections::BTreeMap;
+
 use craby_common::utils::string::{flat_case, pascal_case, snake_case};
 use indoc::formatdoc;
-use template::alias_struct_def;
+use template::{alias_default_impl, alias_struct_def, enum_default_impl};
 
 use crate::{
     types::{
@@ -143,14 +145,14 @@ impl TypeAnnotation {
                         }
                         _ => {
                             return Err(anyhow::anyhow!(
-                                "Unsupported type annotation for nullable array type: {:?}",
-                                element_type
-                            ))
+                        "[as_rs_type] Unsupported type annotation for nullable array type: {:?}",
+                        element_type
+                    ))
                         }
                     },
                     _ => {
                         return Err(anyhow::anyhow!(
-                            "Unsupported type annotation for nullable type: {:?}",
+                            "[as_rs_type] Unsupported type annotation for nullable type: {:?}",
                             type_annotation
                         ))
                     }
@@ -161,7 +163,10 @@ impl TypeAnnotation {
             TypeAnnotation::VoidTypeAnnotation => "()".to_string(),
 
             _ => {
-                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
+                return Err(anyhow::anyhow!(
+                    "[as_rs_type] Unsupported type annotation: {:?}",
+                    self
+                ));
             }
         };
 
@@ -229,7 +234,10 @@ impl TypeAnnotation {
             TypeAnnotation::VoidTypeAnnotation => "Void".to_string(),
 
             _ => {
-                return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self));
+                return Err(anyhow::anyhow!(
+                    "[as_rs_impl_type] Unsupported type annotation: {:?}",
+                    self
+                ));
             }
         };
         Ok(RsImplType(rs_type))
@@ -263,7 +271,18 @@ impl TypeAnnotation {
             // Type alias
             TypeAnnotation::TypeAliasTypeAnnotation { name } => format!("{}::default()", name),
 
-            _ => return Err(anyhow::anyhow!("Unsupported type annotation: {:?}", self)),
+            // Nullable type
+            TypeAnnotation::NullableTypeAnnotation { .. } => {
+                let nullable_type = self.as_rs_type()?.0;
+                format!("{}::default()", nullable_type)
+            }
+
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "[as_rs_default_val] Unsupported type annotation: {:?}",
+                    self
+                ))
+            }
         };
 
         Ok(default_val)
@@ -277,6 +296,7 @@ impl Schema {
         let mut func_impls = vec![];
         let mut struct_defs = vec![];
         let mut enum_defs = vec![];
+        let mut type_impls = vec![];
 
         // Collect extern function signatures and implementations
         self.spec
@@ -288,6 +308,7 @@ impl Schema {
                         return_type_annotation,
                         params,
                     } => {
+                        // Validate optional parameters and return type
                         if spec.optional {
                             return Err(anyhow::anyhow!(
                                 "Optional method is not supported: {}",
@@ -302,6 +323,53 @@ impl Schema {
                                     param.name
                                 ));
                             }
+
+                            // Collect nullable parameters
+                            if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } = &*param.type_annotation
+                            {
+                                let nullable_type = nullable_type.as_rs_bridge_type()?.0;
+                                let rs_type = type_annotation.as_rs_type()?.0;
+                                let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                                let default_val = type_annotation.as_rs_default_val()?;
+
+                                struct_defs.push(formatdoc! {
+                                    r#"
+                                    struct {nullable_type} {{
+                                        null: bool,
+                                        val: {rs_type},
+                                    }}"#,
+                                    nullable_type = nullable_type,
+                                    rs_type = rs_type,
+                                });
+
+                                let nullable_impl = formatdoc! {
+                                    r#"
+                                    impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
+                                        fn from(val: {nullable_type}) -> Self {{
+                                            Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                                        }}
+                                    }}
+
+                                    impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
+                                        fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                                            let val = val.into_value();
+                                            let null = val.is_none();
+                                            {nullable_type} {{
+                                                val: val.unwrap_or({default_val}),
+                                                null,
+                                            }}
+                                        }}
+                                    }}"#,
+                                    rs_impl_type = rs_impl_type,
+                                    nullable_type = nullable_type,
+                                    default_val = default_val,
+                                };
+
+                                type_impls.push(nullable_impl);
+                            }
+
                             Ok(())
                         })?;
 
@@ -310,14 +378,25 @@ impl Schema {
 
                         let params_sig = params
                             .iter()
-                            .map(|param| param.as_sig())
+                            .map(|param| param.as_cxx_sig())
                             .collect::<Result<Vec<_>, _>>()
                             .map(|params| params.join(", "))?;
 
                         let impl_name = pascal_case(&self.module_name);
                         let mod_name = snake_case(&self.module_name);
                         let fn_name = snake_case(&spec.name);
-                        let fn_args = params.iter().map(|p| p.name.clone()).collect::<Vec<_>>();
+                        let fn_args = params
+                            .iter()
+                            .map(|p| {
+                                if let TypeAnnotation::NullableTypeAnnotation { .. } =
+                                    &*p.type_annotation
+                                {
+                                    format!("{}.into()", p.name)
+                                } else {
+                                    p.name.clone()
+                                }
+                            })
+                            .collect::<Vec<_>>();
                         let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
 
                         // If the return type is `void`, return an empty tuple.
@@ -344,13 +423,22 @@ impl Schema {
                             ret = ret_extern_annotation,
                         };
 
+                        let ret = if let TypeAnnotation::NullableTypeAnnotation { .. } =
+                            &**return_type_annotation
+                        {
+                            "ret.into()"
+                        } else {
+                            "ret"
+                        };
+
                         let impl_func = formatdoc! {
                             r#"
-                            fn {prefixed_fn_name}({params_sig}){ret} {{
-                                {impl_name}::{fn_name}({fn_args})
+                            fn {prefixed_fn_name}({params_sig}){ret_type} {{
+                                let ret = {impl_name}::{fn_name}({fn_args});
+                                {ret}
                             }}"#,
                             params_sig = params_sig,
-                            ret = ret_annotation,
+                            ret_type = ret_annotation,
                             impl_name = impl_name,
                             prefixed_fn_name = prefixed_fn_name,
                             fn_name = fn_name.to_string(),
@@ -364,7 +452,7 @@ impl Schema {
                     }
                     _ => {
                         return Err(anyhow::anyhow!(
-                            "Unsupported type annotation for function: {}",
+                            "[as_rs_cxx_bridge] Unsupported type annotation for function: {}",
                             spec.name
                         ))
                     }
@@ -373,8 +461,9 @@ impl Schema {
 
         // Collect alias types (struct)
         self.alias_map.iter().try_for_each(
-            |(name, elias_schema)| -> Result<(), anyhow::Error> {
-                struct_defs.push(alias_struct_def(name, elias_schema)?);
+            |(name, alias_schema)| -> Result<(), anyhow::Error> {
+                struct_defs.push(alias_struct_def(name, alias_schema)?);
+                type_impls.push(alias_default_impl(name, alias_schema)?);
                 Ok(())
             },
         )?;
@@ -421,6 +510,172 @@ impl Schema {
             func_impls,
         })
     }
+
+    pub fn as_rs_type_impls(&self) -> Result<BTreeMap<String, String>, anyhow::Error> {
+        let mut type_impls = BTreeMap::new();
+
+        // Collect extern function signatures and implementations
+        self.spec
+            .methods
+            .iter()
+            .try_for_each(|spec| -> Result<(), anyhow::Error> {
+                match &*spec.type_annotation {
+                    TypeAnnotation::FunctionTypeAnnotation {
+                        return_type_annotation,
+                        params,
+                    } => {
+                        params.iter().try_for_each(|param| {
+                            if param.optional {
+                                return Err(anyhow::anyhow!(
+                                    "Optional parameter is not supported: {}",
+                                    param.name
+                                ));
+                            }
+
+                            // Collect nullable parameters
+                            if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } = &*param.type_annotation
+                            {
+                                let rs_type = type_annotation.as_rs_type()?.0;
+
+                                if !type_impls.contains_key(&rs_type) {
+                                    let nullable_type = nullable_type.as_rs_bridge_type()?.0;
+                                    let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                                    let default_val = type_annotation.as_rs_default_val()?;
+
+                                    let default_impl = formatdoc! {
+                                        r#"
+                                        impl Default for {nullable_type} {{
+                                            fn default() -> Self {{
+                                                {nullable_type} {{
+                                                    null: true,
+                                                    val: {default_val}
+                                                }}
+                                            }}
+                                        }}"#,
+                                        nullable_type = nullable_type,
+                                        default_val = default_val,
+                                    };
+
+                                    let nullable_impl = formatdoc! {
+                                        r#"
+                                        impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
+                                            fn from(val: {nullable_type}) -> Self {{
+                                                Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                                            }}
+                                        }}
+    
+                                        impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
+                                            fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                                                let val = val.into_value();
+                                                let null = val.is_none();
+                                                {nullable_type} {{
+                                                    val: val.unwrap_or({default_val}),
+                                                    null,
+                                                }}
+                                            }}
+                                        }}"#,
+                                        rs_impl_type = rs_impl_type,
+                                        nullable_type = nullable_type,
+                                        default_val = default_val,
+                                    };
+
+                                    type_impls.insert(
+                                        rs_type,
+                                        [default_impl, nullable_impl].join("\n\n"),
+                                    );
+                                }
+                            }
+
+                            Ok(())
+                        })?;
+
+                        if let TypeAnnotation::NullableTypeAnnotation { type_annotation } =
+                            &**return_type_annotation
+                        {
+                            let rs_type = type_annotation.as_rs_type()?.0;
+
+                            if !type_impls.contains_key(&rs_type) {
+                                let nullable_type = type_annotation.as_rs_bridge_type()?.0;
+                                let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                                let default_val = type_annotation.as_rs_default_val()?;
+
+                                let default_impl = formatdoc! {
+                                    r#"
+                                    impl Default for {nullable_type} {{
+                                        fn default() -> Self {{
+                                            {nullable_type} {{
+                                                null: true,
+                                                val: {default_val}
+                                            }}
+                                        }}
+                                    }}"#,
+                                    nullable_type = nullable_type,
+                                    default_val = default_val,
+                                };
+
+                                let nullable_impl = formatdoc! {
+                                    r#"
+                                    impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
+                                        fn from(val: {nullable_type}) -> Self {{
+                                            Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                                        }}
+                                    }}
+
+                                    impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
+                                        fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                                            let val = val.into_value();
+                                            let null = val.is_none();
+                                            {nullable_type} {{
+                                                val: val.unwrap_or({default_val}),
+                                                null,
+                                            }}
+                                        }}
+                                    }}"#,
+                                    rs_impl_type = rs_impl_type,
+                                    nullable_type = nullable_type,
+                                    default_val = default_val,
+                                };
+
+                                type_impls
+                                    .insert(rs_type, [default_impl, nullable_impl].join("\n\n"));
+                            }
+                        }
+
+                        Ok(())
+                    }
+                    _ => {
+                        return Err(anyhow::anyhow!(
+                            "[as_rs_type_impls] Unsupported type annotation: {}",
+                            spec.name
+                        ))
+                    }
+                }
+            })?;
+
+        // impl Default trait for the alias type
+        self.alias_map.iter().try_for_each(
+            |(name, alias_schema)| -> Result<(), anyhow::Error> {
+                if !type_impls.contains_key(name) {
+                    type_impls.insert(name.clone(), alias_default_impl(name, alias_schema)?);
+                }
+                Ok(())
+            },
+        )?;
+
+        // Collect enum types
+        self.enum_map
+            .iter()
+            .try_for_each(|(name, enum_schema)| -> Result<(), anyhow::Error> {
+                if !type_impls.contains_key(name) {
+                    type_impls.insert(name.clone(), enum_default_impl(name, enum_schema)?);
+                }
+                Ok(())
+            })?;
+
+        Ok(type_impls)
+    }
 }
 
 fn cxx_bridging_extern(codegen_res: &Vec<CodegenResult>) -> Vec<String> {
@@ -460,7 +715,10 @@ pub mod template {
 
     use crate::{
         platform::rust::cxx_bridging_extern,
-        types::{schema::Alias, types::CodegenResult},
+        types::{
+            schema::{Alias, Enum, TypeAnnotation},
+            types::CodegenResult,
+        },
         utils::indent_str,
     };
 
@@ -479,6 +737,7 @@ pub mod template {
 
         formatdoc! {
             r#"
+            #[rustfmt::skip]
             pub(crate) mod ffi;
             pub(crate) mod generated;
             pub(crate) mod types;
@@ -518,6 +777,7 @@ pub mod template {
 
         formatdoc! {
             r#"
+            #[rustfmt::skip]
             {impl_mods}
             use crate::generated::*;
 
@@ -535,6 +795,7 @@ pub mod template {
     pub fn types_rs() -> String {
         formatdoc! {
             r#"
+            #[rustfmt::skip]
             pub type Boolean = bool;
             pub type Number = f64;
             pub type String = std::string::String;
@@ -604,12 +865,22 @@ pub mod template {
             .map(|res| res.spec_code.clone())
             .collect::<Vec<_>>();
 
+        let type_impls = codegen_res
+            .iter()
+            .map(|res| res.rs_type_impls.iter().map(|(_, v)| v.clone()))
+            .flatten()
+            .collect::<Vec<_>>();
+
         formatdoc! {
             r#"
+            #[rustfmt::skip]
             use crate::ffi::bridging::*;
             use crate::types::*;
 
-            {spec_codes}"#,
+            {spec_codes}
+
+            {type_impls}"#,
+            type_impls = type_impls.join("\n\n"),
             spec_codes = spec_codes.join("\n\n"),
         }
     }
@@ -629,6 +900,8 @@ pub mod template {
             ));
         }
 
+        let mut struct_defs = vec![];
+
         // Example:
         // ```
         // foo: String,
@@ -647,15 +920,155 @@ pub mod template {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
+        alias
+            .properties
+            .iter()
+            .try_for_each(|property| -> Result<(), anyhow::Error> {
+                if let TypeAnnotation::NullableTypeAnnotation { type_annotation } =
+                    &*property.type_annotation
+                {
+                    let name = property.type_annotation.as_rs_bridge_type()?.0;
+                    let rs_type = type_annotation.as_rs_bridge_type()?.0;
+                    let struct_def = formatdoc! {
+                        r#"
+                        struct {name} {{
+                            null: bool,
+                            val: {rs_type}
+                        }}"#,
+                        name = name,
+                        rs_type = rs_type,
+                    };
+
+                    struct_defs.push(struct_def);
+                }
+
+                Ok(())
+            })?;
+
         let struct_def = formatdoc! {
             r#"
-                struct {name} {{
-                {props}
-                }}"#,
+            struct {name} {{
+            {props}
+            }}"#,
             name = name,
             props = indent_str(props.join("\n"), 4),
         };
 
-        Ok(struct_def)
+        struct_defs.push(struct_def);
+
+        Ok(struct_defs.join("\n\n"))
+    }
+
+    pub fn alias_default_impl(
+        name: &String,
+        alias_schema: &Alias,
+    ) -> Result<String, anyhow::Error> {
+        let mut default_impls = vec![];
+
+        let props_with_default_val = alias_schema
+            .properties
+            .iter()
+            .map(|prop| -> Result<String, anyhow::Error> {
+                Ok(format!(
+                    "{}: {}",
+                    prop.name,
+                    prop.type_annotation.as_rs_default_val()?
+                ))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let default_impl = formatdoc! {
+            r#"
+            impl Default for {name} {{
+                fn default() -> Self {{
+                    {name} {{
+            {props}
+                    }}
+                }}
+            }}"#,
+            name = name,
+            props = indent_str(props_with_default_val.join(",\n"), 12),
+        };
+
+        alias_schema
+            .properties
+            .iter()
+            .try_for_each(|property| -> Result<(), anyhow::Error> {
+                if let TypeAnnotation::NullableTypeAnnotation { type_annotation } =
+                    &*property.type_annotation
+                {
+                    let nullable_type = property.type_annotation.as_rs_bridge_type()?.0;
+                    let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                    let default_val = type_annotation.as_rs_default_val()?;
+
+                    let default_impl = formatdoc! {
+                        r#"
+                        impl Default for {nullable_type} {{
+                            fn default() -> Self {{
+                                {nullable_type} {{
+                                    null: true,
+                                    val: {default_val}
+                                }}
+                            }}
+                        }}"#,
+                        nullable_type = nullable_type,
+                        default_val = default_val,
+                    };
+
+                    let nullable_impl = formatdoc! {
+                        r#"
+                        impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
+                            fn from(val: {nullable_type}) -> Self {{
+                                Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                            }}
+                        }}
+
+                        impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
+                            fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                                let val = val.into_value();
+                                let null = val.is_none();
+                                {nullable_type} {{
+                                    val: val.unwrap_or({default_val}),
+                                    null,
+                                }}
+                            }}
+                        }}"#,
+                        rs_impl_type = rs_impl_type,
+                        nullable_type = nullable_type,
+                        default_val = default_val,
+                    };
+
+                    default_impls.push(default_impl);
+                    default_impls.push(nullable_impl);
+                }
+
+                Ok(())
+            })?;
+
+        default_impls.push(default_impl);
+
+        Ok(default_impls.join("\n\n"))
+    }
+
+    pub fn enum_default_impl(name: &String, enum_schema: &Enum) -> Result<String, anyhow::Error> {
+        let first_member = enum_schema
+            .members
+            .as_ref()
+            .expect("Enum members are required")
+            .get(0)
+            .expect("Enum members are required")
+            .name
+            .clone();
+
+        Ok(formatdoc! {
+            r#"
+            impl Default for {name} {{
+                fn default() -> Self {{
+                    {name}::{first_member}
+                }}
+            }}"#,
+            name = name,
+            first_member = first_member
+        })
     }
 }

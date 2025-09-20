@@ -5,11 +5,11 @@ export interface TestObject {
   foo: string;
   bar: number;
   baz: boolean;
-  sub: SubObject;
+  sub: SubObject | null;
 }
 
 export interface SubObject {
-  a?: string;
+  a: string | null;
   b: number;
   c: boolean;
 }

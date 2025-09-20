@@ -1,0 +1,28 @@
+---
+source: crates/craby_codegen/src/generator.rs
+expression: "result.into_values().collect::<Vec<_>>().join(\"\\n\")"
+---
+impl Default for MyEnum {
+    fn default() -> Self {
+        MyEnum::FOO
+    }
+}
+impl Default for SubObject {
+    fn default() -> Self {
+        SubObject {
+            a: String::default(),
+            b: 0.0,
+            c: false
+        }
+    }
+}
+impl Default for TestObject {
+    fn default() -> Self {
+        TestObject {
+            foo: String::default(),
+            bar: 0.0,
+            baz: false,
+            sub: SubObject::default()
+        }
+    }
+}

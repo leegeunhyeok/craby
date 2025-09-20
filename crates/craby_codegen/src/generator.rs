@@ -1,19 +1,27 @@
+use std::collections::BTreeMap;
+
 use craby_common::{
     constants::impl_mod_name,
-    utils::string::{pascal_case, snake_case},
+    utils::string::{flat_case, pascal_case, snake_case},
 };
 use indoc::formatdoc;
 
 use crate::{
     platform::{
         cxx::{
-            template::{cxx_enum_bridging_template, cxx_struct_bridging_template},
+            template::{
+                cxx_enum_bridging_template, cxx_nullable_bridging_template,
+                cxx_struct_bridging_template,
+            },
             CxxMethod,
         },
         rust::RsCxxBridge,
     },
-    types::{schema::Schema, types::CodegenResult},
-    utils::indent_str,
+    types::{
+        schema::{Schema, TypeAnnotation},
+        types::CodegenResult,
+    },
+    utils::{calc_deps_order, indent_str},
 };
 
 pub struct CodeGenerator;
@@ -27,6 +35,7 @@ impl CodeGenerator {
         let spec_code = self.generate_spec(schema)?;
         let impl_code = self.generate_impl(schema)?;
         let rs_cxx_bridge = self.get_rs_cxx_bridges(schema)?;
+        let rs_type_impls = self.get_rs_type_impls(schema)?;
         let cxx_methods = self.get_cxx_methods(schema)?;
         let cxx_bridging_templates = self.get_cxx_bridging_templates(schema)?;
 
@@ -36,6 +45,7 @@ impl CodeGenerator {
             spec_code,
             impl_code,
             rs_cxx_bridge,
+            rs_type_impls,
             cxx_methods,
             cxx_bridging_templates,
         })
@@ -103,7 +113,7 @@ impl CodeGenerator {
                 let func_sig = spec.as_impl_sig()?;
 
                 // ```rust,ignore
-                // fn multiply(a: f64, b: f64) -> f64 {
+                // fn multiply(a: Number, b: Number) -> Number {
                 //     unimplemented!();
                 // }
                 // ```
@@ -153,6 +163,13 @@ impl CodeGenerator {
         schema.as_rs_cxx_bridge()
     }
 
+    fn get_rs_type_impls(
+        &self,
+        schema: &Schema,
+    ) -> Result<BTreeMap<String, String>, anyhow::Error> {
+        schema.as_rs_type_impls()
+    }
+
     /// Returns the cxx function implementations for the `FunctionSpec`.
     fn get_cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
         let res = schema
@@ -167,13 +184,101 @@ impl CodeGenerator {
 
     /// Returns the cxx JSI bridging templates for the `Schema`.
     fn get_cxx_bridging_templates(&self, schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
-        let mut bridging_templates = vec![];
+        let mut bridging_templates = BTreeMap::new();
+        let mut enum_bridging_templates = BTreeMap::new();
+        let mut nullable_bridging_templates = BTreeMap::new();
+
+        schema
+            .spec
+            .methods
+            .iter()
+            .try_for_each(|spec| -> Result<(), anyhow::Error> {
+                if let TypeAnnotation::FunctionTypeAnnotation {
+                    params,
+                    return_type_annotation,
+                } = &*spec.type_annotation
+                {
+                    params
+                        .iter()
+                        .try_for_each(|param| -> Result<(), anyhow::Error> {
+                            if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } = &*param.type_annotation
+                            {
+                                let key = nullable_type.as_cxx_type(&schema.module_name)?;
+
+                                if nullable_bridging_templates.contains_key(&key) {
+                                    return Ok(());
+                                }
+
+                                let bridging_template = cxx_nullable_bridging_template(
+                                    &schema.module_name,
+                                    &nullable_type.as_cxx_type(&schema.module_name)?,
+                                    type_annotation,
+                                )?;
+
+                                nullable_bridging_templates.insert(key, bridging_template);
+                            }
+
+                            Ok(())
+                        })?;
+
+                    if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                        type_annotation,
+                    } = &**return_type_annotation
+                    {
+                        let key = nullable_type.as_cxx_type(&schema.module_name)?;
+
+                        if nullable_bridging_templates.contains_key(&key) {
+                            return Ok(());
+                        }
+
+                        let bridging_template = cxx_nullable_bridging_template(
+                            &schema.module_name,
+                            &nullable_type.as_cxx_type(&schema.module_name)?,
+                            type_annotation,
+                        )?;
+
+                        nullable_bridging_templates.insert(key, bridging_template);
+                    }
+                }
+
+                Ok(())
+            })?;
 
         schema.alias_map.iter().try_for_each(
             |(name, alias_spec)| -> Result<(), anyhow::Error> {
-                let struct_template =
-                    cxx_struct_bridging_template(&schema.module_name, name, alias_spec)?;
-                bridging_templates.push(struct_template);
+                let template = cxx_struct_bridging_template(&schema.module_name, name, alias_spec)?;
+
+                bridging_templates.insert(name.clone(), template);
+
+                alias_spec
+                    .properties
+                    .iter()
+                    .try_for_each(|prop| -> Result<(), anyhow::Error> {
+                        match &*prop.type_annotation {
+                            nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } => {
+                                let key = nullable_type.as_cxx_type(&schema.module_name)?;
+
+                                if nullable_bridging_templates.contains_key(&key) {
+                                    return Ok(());
+                                }
+
+                                let bridging_template = cxx_nullable_bridging_template(
+                                    &schema.module_name,
+                                    &nullable_type.as_cxx_type(&schema.module_name)?,
+                                    type_annotation,
+                                )?;
+
+                                nullable_bridging_templates.insert(key, bridging_template);
+
+                                Ok(())
+                            }
+                            _ => Ok(()),
+                        }
+                    })?;
                 Ok(())
             },
         )?;
@@ -182,13 +287,38 @@ impl CodeGenerator {
             .enum_map
             .iter()
             .try_for_each(|(name, enum_spec)| -> Result<(), anyhow::Error> {
-                let enum_template =
-                    cxx_enum_bridging_template(&schema.module_name, name, enum_spec)?;
-                bridging_templates.push(enum_template);
+                enum_bridging_templates.insert(
+                    enum_spec.name.clone(),
+                    cxx_enum_bridging_template(&schema.module_name, name, enum_spec)?,
+                );
                 Ok(())
             })?;
 
-        Ok(bridging_templates)
+        // C++ Templates are should be sorted in the order of their dependencies
+        let mut ordered_templates = vec![];
+        let ord = calc_deps_order(schema)?;
+        println!("dependencies order: {:?}", ord);
+
+        ordered_templates.extend(enum_bridging_templates.into_values());
+
+        ord.iter().for_each(|name| {
+            if let Some(template) = bridging_templates.remove(name) {
+                ordered_templates.push(template);
+            }
+
+            if let Some(template) = nullable_bridging_templates.remove(&format!(
+                "craby::{}::{}",
+                flat_case(&schema.module_name),
+                name
+            )) {
+                ordered_templates.push(template);
+            }
+        });
+
+        ordered_templates.extend(bridging_templates.into_values());
+        ordered_templates.extend(nullable_bridging_templates.into_values());
+
+        Ok(ordered_templates)
     }
 }
 
@@ -226,6 +356,15 @@ mod tests {
 
         assert_snapshot!(result.func_extern_sigs.join("\n\n"));
         assert_snapshot!(result.func_impls.join("\n\n"));
+    }
+
+    #[test]
+    fn test_get_rs_type_impls() {
+        let schema = load_schema_json::<Schema>();
+        let generator = CodeGenerator::new();
+        let result = generator.get_rs_type_impls(&schema).unwrap();
+
+        assert_snapshot!(result.into_values().collect::<Vec<_>>().join("\n"));
     }
 
     #[test]

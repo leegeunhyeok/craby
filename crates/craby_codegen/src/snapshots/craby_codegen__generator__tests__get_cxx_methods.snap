@@ -1,6 +1,6 @@
 ---
 source: crates/craby_codegen/src/generator.rs
-expression: "methods.join(\"\\n\")"
+expression: "result.into_iter().map(|method|\nvec![method.name, method.impl_func,\nmethod.metadata]).flatten().collect::<Vec<_>>().join(\"\\n\")"
 ---
 numericMethod
 jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
@@ -63,10 +63,10 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    auto arg0 = react::bridging::fromJs<std::string>(rt, args[0], callInvoker);
+    auto arg0 = react::bridging::fromJs<rust::String>(rt, args[0], callInvoker);
     auto ret = craby::crabytest::stringMethod(arg0);
 
-    return react::bridging::toJs(rt, std::string(ret));
+    return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -138,7 +138,7 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<craby::crabytest::MyEnum>(rt, args[0], callInvoker);
     auto ret = craby::crabytest::enumMethod(arg0);
 
-    return react::bridging::toJs(rt, std::string(ret));
+    return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
