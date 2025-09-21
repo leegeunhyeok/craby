@@ -80,7 +80,7 @@ export function App() {
 
       <View>
         <Text style={styles.testCountText}>
-          {testResults.length} tests run
+          Test suite passed: {testResults.filter(testResult => !testResult.error).length} of {testResults.length}
         </Text>
       </View>
 
