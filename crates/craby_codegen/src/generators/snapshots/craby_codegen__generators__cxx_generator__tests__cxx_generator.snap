@@ -318,27 +318,27 @@ struct Bridging<rust::Vec<T>> {
 };
 
 template <>
-struct Bridging<craby::crabytest::MyEnum> {
-  static craby::crabytest::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::bridging::MyEnum> {
+  static craby::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto raw = value.asString(rt).utf8(rt);
     if (raw == "FOO") {
-      return craby::crabytest::MyEnum::FOO;
+      return craby::bridging::MyEnum::FOO;
     } else if (raw == "BAR") {
-      return craby::crabytest::MyEnum::BAR;
+      return craby::bridging::MyEnum::BAR;
     } else if (raw == "BAZ") {
-      return craby::crabytest::MyEnum::BAZ;
+      return craby::bridging::MyEnum::BAZ;
     } else {
       throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::MyEnum value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyEnum value) {
     switch (value) {
-      case craby::crabytest::MyEnum::FOO:
+      case craby::bridging::MyEnum::FOO:
         return react::bridging::toJs(rt, "FOO");
-      case craby::crabytest::MyEnum::BAR:
+      case craby::bridging::MyEnum::BAR:
         return react::bridging::toJs(rt, "BAR");
-      case craby::crabytest::MyEnum::BAZ:
+      case craby::bridging::MyEnum::BAZ:
         return react::bridging::toJs(rt, "BAZ");
       default:
         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");

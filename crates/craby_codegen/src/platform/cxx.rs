@@ -472,7 +472,7 @@ impl Schema {
             .try_for_each(|(name, enum_spec)| -> Result<(), anyhow::Error> {
                 enum_bridging_templates.insert(
                     enum_spec.name.clone(),
-                    cxx_enum_bridging_template(&self.module_name, name, enum_spec)?,
+                    cxx_enum_bridging_template(name, enum_spec)?,
                 );
                 Ok(())
             })?;
@@ -605,7 +605,6 @@ impl Schema {
 }
 
 pub mod template {
-    use craby_common::utils::string::flat_case;
     use indoc::formatdoc;
 
     use crate::{
@@ -710,7 +709,6 @@ pub mod template {
 
     /// Returns the cxx JSI bridging template for the `Enum`.
     pub fn cxx_enum_bridging_template(
-        mod_name: &String,
         name: &String,
         enum_spec: &Enum,
     ) -> Result<String, anyhow::Error> {
