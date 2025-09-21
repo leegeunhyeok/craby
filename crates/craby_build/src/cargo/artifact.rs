@@ -77,15 +77,6 @@ impl Artifacts {
                 dest.join(file_name)
             };
 
-            match artifact_type {
-                // Skip copying cxx bridge source and header files to the destination
-                // because generated cxx bridge sources are independent of the target platform
-                ArtifactType::Src | ArtifactType::Header if fs::exists(&dest)? => {
-                    return Ok(());
-                }
-                _ => (),
-            }
-
             fs::copy(src, dest)?;
             Ok(())
         })

@@ -17,7 +17,7 @@ pub fn build_setup(project_root: &PathBuf) {
     // TODO
     // See: https://github.com/dtolnay/cxx/tree/master/demo
     cxx_build::bridge("src/ffi.rs")
-        .std("c++17")
+        .std("c++20")
         .compile("cxxbridge");
 
     println!("cargo:rerun-if-changed=src/ffi.rs");

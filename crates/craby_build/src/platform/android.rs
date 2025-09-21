@@ -19,11 +19,11 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
     let jni_base_path = jni_base_path(&config.project_root);
 
     for target in ANDROID_TARGETS {
+        debug!("Copying artifacts to JNI base path: {:?}", jni_base_path);
+
         if let Target::Android(abi) = &target {
             let artifacts = Artifacts::get_artifacts(config, &target)?;
             let abi = abi.to_str();
-
-            debug!("Copying artifacts to JNI base path: {:?}", jni_base_path);
 
             // android/src/main/jni/src
             artifacts.copy_to(ArtifactType::Src, &jni_base_path.join("src"))?;

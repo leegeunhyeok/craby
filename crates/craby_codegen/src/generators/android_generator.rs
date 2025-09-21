@@ -96,7 +96,6 @@ impl AndroidTemplate {
             set (CMAKE_CXX_STANDARD 20)
 
             find_package(ReactAndroid REQUIRED CONFIG)
-            find_package(hermes-engine REQUIRED CONFIG)
 
             # Import the pre-built Craby library
             add_library({kebab_name}-lib STATIC IMPORTED)
@@ -121,9 +120,22 @@ impl AndroidTemplate {
               # android
               ReactAndroid::reactnative
               ReactAndroid::jsi
-              hermes-engine::libhermes
               # {kebab_name}-lib
               {kebab_name}-lib
+            )
+
+            # From ReactAndroid/cmake-utils/folly-flags.cmake
+            target_compile_definitions(cxx-craby-test PRIVATE
+              -DFOLLY_NO_CONFIG=1
+              -DFOLLY_HAVE_CLOCK_GETTIME=1
+              -DFOLLY_USE_LIBCPP=1
+              -DFOLLY_CFG_NO_COROUTINES=1
+              -DFOLLY_MOBILE=1
+              -DFOLLY_HAVE_RECVMMSG=1
+              -DFOLLY_HAVE_PTHREAD=1
+              # Once we target android-23 above, we can comment
+              # the following line. NDK uses GNU style stderror_r() after API 23.
+              -DFOLLY_HAVE_XSI_STRERROR_R=1
             )"#,
             kebab_name = kebab_name,
             lib_name = lib_name,
