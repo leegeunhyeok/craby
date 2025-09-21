@@ -4,7 +4,7 @@ use craby_codegen::{
     constants::GENERATED_COMMENT,
     generators::{
         android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
-        rs_generator::RsGenerator, types::GeneratorInvoker,
+        ios_generator::IosGenerator, rs_generator::RsGenerator, types::GeneratorInvoker,
     },
     types::schema::Schema,
 };
@@ -29,6 +29,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     let total_mods = opts.schemas.len();
     let generators: Vec<Box<dyn GeneratorInvoker>> = vec![
         Box::new(AndroidGenerator::new()),
+        Box::new(IosGenerator::new()),
         Box::new(RsGenerator::new()),
         Box::new(CxxGenerator::new()),
     ];
@@ -65,6 +66,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             Ok(())
         })?;
 
+    let mut wrote_cnt = 0;
     generate_res
         .iter()
         .try_for_each(|res| -> Result<(), anyhow::Error> {
@@ -72,14 +74,16 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             let write = write_file(&res.path, &content, res.overwrite)?;
 
             if write {
-                info!("File generated: {:#?}", res.path);
+                wrote_cnt += 1;
+                debug!("File generated: {}", res.path.display());
             } else {
-                debug!("Skipped writing to {:#?}", res.path);
+                debug!("Skipped writing to {}", res.path.display());
             }
 
             Ok(())
         })?;
 
+    info!("{} files generated", wrote_cnt);
     info!("Codegen completed successfully 🎉");
 
     Ok(())

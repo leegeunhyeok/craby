@@ -433,3 +433,27 @@ impl GeneratorInvoker for RsGenerator {
         self.generate(project_root, schemas)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use crate::tests::load_schema_json;
+
+    use super::*;
+
+    #[test]
+    fn test_rs_generator() {
+        let schema = load_schema_json::<Schema>();
+        let generator = RsGenerator::new();
+        let results = generator
+            .generate(&PathBuf::from("."), &vec![schema])
+            .unwrap();
+
+        assert_snapshot!(results
+            .iter()
+            .map(|res| format!("{}\n{}", res.path.display(), res.content))
+            .collect::<Vec<_>>()
+            .join("\n\n"));
+    }
+}

@@ -1,7 +1,0 @@
----
-source: crates/craby_codegen/src/generator.rs
-expression: result
----
-pub trait MyModuleSpec {
-    fn multiply(a: f64, b: f64) -> f64;
-}

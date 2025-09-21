@@ -1,6 +1,0 @@
----
-source: crates/craby_codegen/src/generator.rs
-expression: result.extern_func
----
-#[cxx_name = "multiply"]
-fn my_module_multiply(a: f64, b: String) -> f64;

@@ -1,7 +1,0 @@
----
-source: crates/craby_codegen/src/generator.rs
-expression: result.impl_func
----
-fn my_module_multiply(a: f64, b: String) -> f64 {
-    MyModule::multiply(a, b)
-}

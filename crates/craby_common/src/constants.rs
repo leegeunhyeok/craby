@@ -82,3 +82,7 @@ pub fn jni_base_path(project_root: &PathBuf) -> PathBuf {
         .join("main")
         .join("jni")
 }
+
+pub fn ios_base_path(project_root: &PathBuf) -> PathBuf {
+    project_root.join("ios")
+}

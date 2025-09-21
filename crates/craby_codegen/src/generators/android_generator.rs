@@ -65,9 +65,10 @@ impl AndroidTemplate {
 
         let content = formatdoc! {
           r#"
+          {cxx_includes}
+
           #include <jni.h>
           #include <ReactCommon/CxxTurboModuleUtils.h>
-          {cxx_includes}
 
           jint JNI_OnLoad(JavaVM *vm, void *reserved) {{
           {cxx_registers}
@@ -207,5 +208,29 @@ impl GeneratorInvoker for AndroidGenerator {
         schemas: &Vec<Schema>,
     ) -> Result<Vec<GenerateResult>, anyhow::Error> {
         self.generate(project_root, schemas)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+
+    use crate::tests::load_schema_json;
+
+    use super::*;
+
+    #[test]
+    fn test_android_generator() {
+        let schema = load_schema_json::<Schema>();
+        let generator = AndroidGenerator::new();
+        let results = generator
+            .generate(&PathBuf::from("."), &vec![schema])
+            .unwrap();
+
+        assert_snapshot!(results
+            .iter()
+            .map(|res| format!("{}\n{}", res.path.display(), res.content))
+            .collect::<Vec<_>>()
+            .join("\n\n"));
     }
 }
