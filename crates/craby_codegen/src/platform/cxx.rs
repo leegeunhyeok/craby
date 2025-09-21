@@ -1,11 +1,16 @@
-use craby_common::utils::string::flat_case;
+use std::collections::BTreeMap;
+
 use indoc::formatdoc;
-use template::{cxx_arg_ref, cxx_arg_var};
+use log::debug;
+use template::{
+    cxx_arg_ref, cxx_arg_var, cxx_enum_bridging_template, cxx_nullable_bridging_template,
+    cxx_struct_bridging_template,
+};
 
 use crate::{
     constants::cxx_mod_cls_name,
-    types::schema::{FunctionSpec, TypeAnnotation},
-    utils::indent_str,
+    types::schema::{FunctionSpec, Schema, TypeAnnotation},
+    utils::{calc_deps_order, indent_str},
 };
 
 #[derive(Debug)]
@@ -66,12 +71,12 @@ impl TypeAnnotation {
 
             // Enum
             TypeAnnotation::EnumDeclaration { name, .. } => {
-                format!("craby::{}::{}", flat_case(mod_name), name)
+                format!("craby::bridging::{}", name)
             }
 
             // Type alias
             TypeAnnotation::TypeAliasTypeAnnotation { name } => {
-                format!("craby::{}::{}", flat_case(mod_name), name)
+                format!("craby::bridging::{}", name)
             }
 
             // Nullable type
@@ -127,7 +132,7 @@ impl TypeAnnotation {
                     }
                 };
 
-                format!("craby::{}::{}", flat_case(mod_name), cxx_struct)
+                format!("craby::bridging::{}", cxx_struct)
             }
 
             // Unsupported types with message
@@ -353,7 +358,7 @@ impl FunctionSpec {
 
                         std::thread([{bind_args}]() mutable {{
                           try {{
-                            auto ret = craby::{flat_name}::{fn_name}({fn_args});
+                            auto ret = craby::bridging::{fn_name}({fn_args});
                             promise.resolve(ret);
                           }} catch (const jsi::JSError &err) {{
                             promise.reject(err.getMessage());
@@ -366,7 +371,6 @@ impl FunctionSpec {
                         bind_args = bind_args.join(", "),
                         fn_name = self.name,
                         fn_args = fn_args,
-                        flat_name = flat_case(mod_name),
                         ret_type = element_type.as_cxx_type(mod_name)?,
                         ret = return_type_annotation.as_cxx_to_js(&"promise".to_string())?.expr,
                     }
@@ -375,15 +379,14 @@ impl FunctionSpec {
                     // Invoke the FFI function synchronously and return the result
                     //
                     // ```cpp
-                    // auto ret = craby::mymodule::myFunc(arg0, arg1, arg2);
+                    // auto ret = craby::bridging::myFunc(arg0, arg1, arg2);
                     // return ret;
                     // ```
                     formatdoc! {
                         r#"
-                        auto ret = craby::{flat_name}::{fn_name}({fn_args});
+                        auto ret = craby::bridging::{fn_name}({fn_args});
 
                         return {ret};"#,
-                        flat_name = flat_case(mod_name),
                         fn_name = self.name,
                         fn_args = args.join(", "),
                         ret = return_type_annotation.as_cxx_to_js(&"ret".to_string())?.expr,
@@ -448,262 +451,167 @@ impl FunctionSpec {
     }
 }
 
+impl Schema {
+    pub fn as_cxx_bridging_templates(&self) -> Result<Vec<String>, anyhow::Error> {
+        let mut bridging_templates = BTreeMap::new();
+        let mut enum_bridging_templates = BTreeMap::new();
+        let mut nullable_bridging_templates = self.collect_nullable_types()?;
+
+        self.alias_map
+            .iter()
+            .try_for_each(|(name, alias_spec)| -> Result<(), anyhow::Error> {
+                bridging_templates.insert(
+                    name.clone(),
+                    cxx_struct_bridging_template(&self.module_name, name, alias_spec)?,
+                );
+                Ok(())
+            })?;
+
+        self.enum_map
+            .iter()
+            .try_for_each(|(name, enum_spec)| -> Result<(), anyhow::Error> {
+                enum_bridging_templates.insert(
+                    enum_spec.name.clone(),
+                    cxx_enum_bridging_template(&self.module_name, name, enum_spec)?,
+                );
+                Ok(())
+            })?;
+
+        // C++ Templates are should be sorted in the order of their dependencies
+        let ord = calc_deps_order(self)?;
+        let mut ordered_templates = vec![];
+        debug!("CXX Bridging templates dependencies order: {:?}", ord);
+
+        ordered_templates.extend(enum_bridging_templates.into_values());
+
+        ord.iter().for_each(|name| {
+            if let Some(template) = bridging_templates.remove(name) {
+                ordered_templates.push(template);
+            }
+
+            if let Some(template) =
+                nullable_bridging_templates.remove(&format!("craby::bridging::{}", name))
+            {
+                ordered_templates.push(template);
+            }
+        });
+
+        ordered_templates.extend(bridging_templates.into_values());
+        ordered_templates.extend(nullable_bridging_templates.into_values());
+
+        Ok(ordered_templates)
+    }
+
+    pub fn collect_nullable_types(&self) -> Result<BTreeMap<String, String>, anyhow::Error> {
+        // {
+        //   "craby::bridging::NullableFoo": "(code)",
+        //   "craby::bridging::NullableBar": "(code)",
+        //   "craby::bridging::NullableBaz": "(code)",
+        // }
+        let mut nullable_bridging_templates = BTreeMap::new();
+
+        self.spec
+            .methods
+            .iter()
+            .try_for_each(|spec| -> Result<(), anyhow::Error> {
+                if let TypeAnnotation::FunctionTypeAnnotation {
+                    params,
+                    return_type_annotation,
+                } = &*spec.type_annotation
+                {
+                    params
+                        .iter()
+                        .try_for_each(|param| -> Result<(), anyhow::Error> {
+                            if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } = &*param.type_annotation
+                            {
+                                let key = nullable_type.as_cxx_type(&self.module_name)?;
+
+                                if nullable_bridging_templates.contains_key(&key) {
+                                    return Ok(());
+                                }
+
+                                let bridging_template = cxx_nullable_bridging_template(
+                                    &self.module_name,
+                                    &nullable_type.as_cxx_type(&self.module_name)?,
+                                    type_annotation,
+                                )?;
+
+                                nullable_bridging_templates.insert(key, bridging_template);
+                            }
+
+                            Ok(())
+                        })?;
+
+                    if let nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                        type_annotation,
+                    } = &**return_type_annotation
+                    {
+                        let key = nullable_type.as_cxx_type(&self.module_name)?;
+
+                        if nullable_bridging_templates.contains_key(&key) {
+                            return Ok(());
+                        }
+
+                        let bridging_template = cxx_nullable_bridging_template(
+                            &self.module_name,
+                            &nullable_type.as_cxx_type(&self.module_name)?,
+                            type_annotation,
+                        )?;
+
+                        nullable_bridging_templates.insert(key, bridging_template);
+                    }
+                }
+
+                Ok(())
+            })?;
+
+        self.alias_map
+            .iter()
+            .try_for_each(|(_, alias_spec)| -> Result<(), anyhow::Error> {
+                alias_spec
+                    .properties
+                    .iter()
+                    .try_for_each(|prop| -> Result<(), anyhow::Error> {
+                        match &*prop.type_annotation {
+                            nullable_type @ TypeAnnotation::NullableTypeAnnotation {
+                                type_annotation,
+                            } => {
+                                let key = nullable_type.as_cxx_type(&self.module_name)?;
+
+                                if nullable_bridging_templates.contains_key(&key) {
+                                    return Ok(());
+                                }
+
+                                let bridging_template = cxx_nullable_bridging_template(
+                                    &self.module_name,
+                                    &nullable_type.as_cxx_type(&self.module_name)?,
+                                    type_annotation,
+                                )?;
+
+                                nullable_bridging_templates.insert(key, bridging_template);
+
+                                Ok(())
+                            }
+                            _ => Ok(()),
+                        }
+                    })?;
+                Ok(())
+            })?;
+
+        Ok(nullable_bridging_templates)
+    }
+}
+
 pub mod template {
     use craby_common::utils::string::flat_case;
     use indoc::formatdoc;
 
     use crate::{
-        constants::cxx_mod_cls_name,
-        types::{
-            schema::{Alias, Enum, TypeAnnotation},
-            types::CodegenResult,
-        },
+        types::schema::{Alias, Enum, TypeAnnotation},
         utils::indent_str,
     };
-
-    /// Returns the complete cxx TurboModule implementation source file.
-    pub fn mod_cxx(codegen_res: &Vec<CodegenResult>) -> String {
-        let mut headers = vec![];
-        let mod_namespaces = codegen_res
-            .iter()
-            .map(|res| {
-                let flat_name = flat_case(&res.module_name);
-                let cxx_mod = cxx_mod_cls_name(&res.module_name);
-
-                // Assign method metadata with function pointer to the TurboModule's method map
-                //
-                // ```cpp
-                // methodMap_["multiply"] = MethodMetadata{1, &CxxMyTestModule::multiply};
-                // ```
-                let method_maps = res
-                    .cxx_methods
-                    .iter()
-                    .map(|method| format!("methodMap_[\"{}\"] = {};", method.name, method.metadata))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-
-                // Functions implementations
-                //
-                // ```cpp
-                // jsi::Value CxxMyTestModule::multiply(jsi::Runtime &rt,
-                //                                    react::TurboModule &turboModule,
-                //                                    const jsi::Value args[],
-                //                                    size_t count) {
-                //     // ...
-                // }
-                // ```
-                let method_impls = res
-                    .cxx_methods
-                    .iter()
-                    .map(|method| method.impl_func.clone())
-                    .collect::<Vec<_>>()
-                    .join("\n\n");
-
-                headers.push(format!("#include \"{}.hpp\"", cxx_mod));
-
-                // ```cpp
-                // namespace mymodule {
-                //
-                // CxxMyTestModule::CxxMyTestModule(
-                //     std::shared_ptr<react::CallInvoker> jsInvoker)
-                //     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
-                //   callInvoker_ = std::move(jsInvoker);
-                //
-                //   // Method maps
-                // }
-                //
-                // // Method implementations
-                //
-                // } // namespace mymodule
-                // ```
-                formatdoc! {
-                    r#"
-                    namespace {flat_name} {{
-
-                    {cxx_mod}::{cxx_mod}(
-                        std::shared_ptr<react::CallInvoker> jsInvoker)
-                        : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
-                      callInvoker_ = std::move(jsInvoker);
-                    
-                    {method_maps}
-                    }}
-                    
-                    {method_impls}
-                    
-                    }} // namespace {flat_name}"#,
-                    flat_name = flat_name,
-                    cxx_mod = cxx_mod,
-                    method_maps = indent_str(method_maps, 2),
-                    method_impls = method_impls,
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        // ```cpp
-        // #include "my_module.hpp"
-        //
-        // #include <thread>
-        // #include <react/bridging/Bridging.h>
-        //
-        // #include "cxx.h"
-        // #include "ffi.rs.h"
-        // #include "bridging-generated.hpp"
-        // #include "utils.hpp"
-        //
-        // using namespace facebook;
-        //
-        // namespace craby {
-        // // TurboModule implementations
-        // } // namespace craby
-        // ```
-        formatdoc! {
-            r#"
-            {headers}
-
-            #include <thread>
-            #include <react/bridging/Bridging.h>
-
-            #include "cxx.h"
-            #include "ffi.rs.h"
-            #include "bridging-generated.hpp"
-            #include "utils.hpp"
-
-            using namespace facebook;
-
-            namespace craby {{
-            {mod_namespaces}
-            }} // namespace craby"#,
-            headers = headers.join("\n"),
-            mod_namespaces = mod_namespaces,
-        }
-    }
-
-    /// Returns the complete cxx TurboModule definition header file.
-    pub fn mod_cxx_h(codegen_res: &Vec<CodegenResult>) -> String {
-        let mod_namespaces = codegen_res
-            .iter()
-            .map(|res| {
-                let flat_name = flat_case(&res.module_name);
-                let cxx_mod = cxx_mod_cls_name(&res.module_name);
-                let method_defs = res
-                    .cxx_methods
-                    .iter()
-                    .map(|method| cxx_method_def(&method.name))
-                    .collect::<Vec<_>>()
-                    .join("\n\n");
-
-                formatdoc! {
-                    r#"
-                    namespace {flat_name} {{
-
-                    class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
-                    public:
-                      static constexpr const char *kModuleName = "{turbo_module_name}";
-
-                      {cxx_mod}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
-
-                    {method_defs}
-
-                    protected:
-                      std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-                    }};
-
-                    }} // namespace {flat_name}"#,
-                    flat_name = flat_name,
-                    cxx_mod = cxx_mod,
-                    turbo_module_name = res.module_name,
-                    method_defs = indent_str(method_defs, 2),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-
-        formatdoc! {
-            r#"
-            #pragma once
-
-            #include <memory>
-            #include <ReactCommon/TurboModule.h>
-            #include <jsi/jsi.h>
-
-            namespace craby {{
-            {mod_namespaces}
-            }} // namespace craby"#,
-            mod_namespaces = mod_namespaces,
-        }
-    }
-
-    /// Returns the complete cxx JSI bridging header file.
-    pub fn cxx_bridging_h(codegen_res: &Vec<CodegenResult>) -> String {
-        let mut has_template = false;
-        let mut bridging_templates = vec![];
-
-        codegen_res.iter().for_each(|res| {
-            has_template = has_template || !res.cxx_bridging_templates.is_empty();
-            res.cxx_bridging_templates.iter().for_each(|template| {
-                bridging_templates.push(template.clone());
-            });
-        });
-
-        formatdoc! {
-            r#"
-            #pragma once
-
-            #include <react/bridging/Bridging.h>
-            #include "cxx.h"
-            #include "ffi.rs.h"
-
-            using namespace facebook;
-
-            namespace facebook {{
-            namespace react {{
-
-            template <>
-            struct Bridging<rust::String> {{
-              static rust::String fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
-                auto str = value.asString(rt).utf8(rt);
-                return rust::String(str);
-              }}
-
-              static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {{
-                return react::bridging::toJs(rt, std::string(value));
-              }}
-            }};
-
-            template <typename T>
-            struct Bridging<rust::Vec<T>> {{
-              static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
-                auto arr = value.asObject(rt).asArray(rt);
-                size_t len = arr.length(rt);
-                rust::Vec<T> vec;
-                vec.reserve(len);
-
-                for (size_t i = 0; i < len; i++) {{
-                  auto element = arr.getValueAtIndex(rt, i);
-                  vec.push_back(react::bridging::fromJs<T>(rt, element, callInvoker));
-                }}
-
-                return vec;
-              }}
-
-              static jsi::Array toJs(jsi::Runtime& rt, const rust::Vec<T>& vec) {{
-                auto arr = jsi::Array(rt, vec.size());
-
-                for (size_t i = 0; i < vec.size(); i++) {{
-                  auto jsElement = react::bridging::toJs(rt, vec[i]);
-                  arr.setValueAtIndex(rt, i, jsElement);
-                }}
-
-                return arr;
-              }}
-            }};
-            {bridging_templates}
-            }} // namespace react
-            }} // namespace facebook"#,
-            bridging_templates = if has_template { format!("\n{}\n", bridging_templates.join("\n\n")) } else { "".to_string() },
-        }
-    }
 
     /// Returns the cxx JSI bridging template for the `Alias`.
     pub fn cxx_struct_bridging_template(
@@ -715,9 +623,7 @@ pub mod template {
             return Err(anyhow::anyhow!("Alias type should be ObjectTypeAnnotation"));
         }
 
-        let flat_name = flat_case(mod_name);
-        let struct_namespace = format!("craby::{}::{}", flat_name, name);
-
+        let struct_namespace = format!("craby::bridging::{}", name);
         let mut get_props = vec![];
         let mut set_props = vec![];
         let mut from_js_stmts = vec![];
@@ -1032,63 +938,11 @@ pub mod template {
         }
     }
 
-    /// Returns the cxx JSI method definition.
-    ///
-    /// ```cpp
-    /// static facebook::jsi::Value
-    /// myFunc(facebook::jsi::Runtime &rt,
-    ///        facebook::react::TurboModule &turboModule,
-    ///        const facebook::jsi::Value args[], size_t count);
-    /// ```
-    pub fn cxx_method_def(name: &String) -> String {
-        formatdoc! {
-            r#"
-            static facebook::jsi::Value
-            {name}(facebook::jsi::Runtime &rt,
-                facebook::react::TurboModule &turboModule,
-                const facebook::jsi::Value args[], size_t count);"#,
-            name = name,
-        }
-    }
-
     pub fn cxx_arg_ref(idx: usize) -> String {
         format!("args[{}]", idx)
     }
 
     pub fn cxx_arg_var(idx: usize) -> String {
         format!("arg{}", idx)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use insta::assert_snapshot;
-
-    use crate::tests::load_schema_as_codegen_res;
-
-    use super::*;
-
-    #[test]
-    fn test_mod_cxx() {
-        let codegen_res = load_schema_as_codegen_res();
-        let result = template::mod_cxx(&vec![codegen_res]);
-
-        assert_snapshot!(result);
-    }
-
-    #[test]
-    fn test_mod_cxx_h() {
-        let codegen_res = load_schema_as_codegen_res();
-        let result = template::mod_cxx_h(&vec![codegen_res]);
-
-        assert_snapshot!(result);
-    }
-
-    #[test]
-    fn test_cxx_bridging_h() {
-        let codegen_res = load_schema_as_codegen_res();
-        let result = template::cxx_bridging_h(&vec![codegen_res]);
-
-        assert_snapshot!(result);
     }
 }

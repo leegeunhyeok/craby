@@ -8,10 +8,10 @@ use indoc::formatdoc;
 
 use crate::{platform::rust::RsCxxBridge, types::schema::Schema, utils::indent_str};
 
-use super::types::{GenerateResult, Generator, Template};
+use super::types::{AnyGenerator, GenerateResult, Generator, Template};
 
 pub struct RsTemplate;
-pub struct RustGenerator;
+pub struct RsGenerator;
 
 pub enum RsFileType {
     /// lib.rs
@@ -25,6 +25,15 @@ pub enum RsFileType {
 }
 
 impl RsTemplate {
+    fn file_path(&self, file_type: &RsFileType) -> PathBuf {
+        match file_type {
+            RsFileType::CrateEntry => PathBuf::from("lib.rs"),
+            RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
+            RsFileType::Generated => PathBuf::from("generated.rs"),
+            RsFileType::Types => PathBuf::from("types.rs"),
+        }
+    }
+
     fn impl_mods(&self, schemas: &Vec<Schema>) -> Vec<String> {
         schemas
             .iter()
@@ -350,37 +359,26 @@ impl Template for RsTemplate {
         &self,
         schemas: &Vec<Schema>,
         file_type: &Self::FileType,
-    ) -> Result<(PathBuf, String), anyhow::Error> {
+    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
         let content = match file_type {
             RsFileType::CrateEntry => self.lib_rs(schemas),
             RsFileType::FFIEntry => self.ffi_rs(schemas),
             RsFileType::Generated => self.generated_rs(schemas),
             RsFileType::Types => Ok(self.types_rs()),
-            _ => unimplemented!("TODO"),
         }?;
 
-        Ok((path, content))
-    }
-
-    fn file_path(&self, file_type: &Self::FileType) -> PathBuf {
-        match file_type {
-            RsFileType::CrateEntry => PathBuf::from("lib.rs"),
-            RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
-            RsFileType::Generated => PathBuf::from("generated.rs"),
-            RsFileType::Types => PathBuf::from("types.rs"),
-            _ => unimplemented!("TODO"),
-        }
+        Ok(vec![(path, content)])
     }
 }
 
-impl RustGenerator {
+impl RsGenerator {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl Generator<RsTemplate> for RustGenerator {
+impl Generator<RsTemplate> for RsGenerator {
     fn generate(
         &self,
         project_root: &PathBuf,
@@ -395,6 +393,7 @@ impl Generator<RsTemplate> for RustGenerator {
             template.render(schemas, &RsFileType::Types)?,
         ]
         .into_iter()
+        .flatten()
         .map(|(path, content)| GenerateResult {
             path: base_path.join(path),
             content,
@@ -422,5 +421,15 @@ impl Generator<RsTemplate> for RustGenerator {
 
     fn template_ref(&self) -> &RsTemplate {
         &RsTemplate
+    }
+}
+
+impl AnyGenerator for RsGenerator {
+    fn invoke_generate(
+        &self,
+        project_root: &PathBuf,
+        schemas: &Vec<Schema>,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(project_root, schemas)
     }
 }

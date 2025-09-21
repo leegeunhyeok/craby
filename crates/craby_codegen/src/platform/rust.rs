@@ -1,14 +1,11 @@
 use std::collections::BTreeMap;
 
-use craby_common::utils::string::{flat_case, pascal_case, snake_case};
+use craby_common::utils::string::{pascal_case, snake_case};
 use indoc::formatdoc;
 use template::{alias_default_impl, alias_struct_def, enum_default_impl};
 
 use crate::{
-    types::{
-        schema::{Schema, TypeAnnotation},
-        types::CodegenResult,
-    },
+    types::schema::{Schema, TypeAnnotation},
     utils::indent_str,
 };
 

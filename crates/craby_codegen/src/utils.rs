@@ -1,6 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::types::schema::{Schema, TypeAnnotation};
+use crate::{
+    platform::cxx::template::cxx_nullable_bridging_template,
+    types::schema::{FunctionSpec, Schema, TypeAnnotation},
+};
 
 pub fn indent_str(str: String, indent_size: usize) -> String {
     let indent_str = " ".repeat(indent_size);
@@ -14,6 +17,61 @@ pub fn indent_str(str: String, indent_size: usize) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+pub fn collect_nullable_types_from_func(
+    module_name: &String,
+    spec: &FunctionSpec,
+) -> Result<BTreeMap<String, String>, anyhow::Error> {
+    let mut nullable_bridging_templates = BTreeMap::new();
+
+    if let TypeAnnotation::FunctionTypeAnnotation {
+        params,
+        return_type_annotation,
+    } = &*spec.type_annotation
+    {
+        params
+            .iter()
+            .try_for_each(|param| -> Result<(), anyhow::Error> {
+                if let nullable_type @ TypeAnnotation::NullableTypeAnnotation { type_annotation } =
+                    &*param.type_annotation
+                {
+                    let key = nullable_type.as_cxx_type(module_name)?;
+
+                    if !nullable_bridging_templates.contains_key(&key) {
+                        return Ok(());
+                    }
+
+                    let bridging_template = cxx_nullable_bridging_template(
+                        module_name,
+                        &nullable_type.as_cxx_type(module_name)?,
+                        type_annotation,
+                    )?;
+
+                    nullable_bridging_templates.insert(key, bridging_template);
+                }
+
+                Ok(())
+            })?;
+
+        if let nullable_type @ TypeAnnotation::NullableTypeAnnotation { type_annotation } =
+            &**return_type_annotation
+        {
+            let key = nullable_type.as_cxx_type(module_name)?;
+
+            if !nullable_bridging_templates.contains_key(&key) {
+                let bridging_template = cxx_nullable_bridging_template(
+                    module_name,
+                    &nullable_type.as_cxx_type(module_name)?,
+                    type_annotation,
+                )?;
+
+                nullable_bridging_templates.insert(key, bridging_template);
+            }
+        }
+    }
+
+    Ok(nullable_bridging_templates)
 }
 
 pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {

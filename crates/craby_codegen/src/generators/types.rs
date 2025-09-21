@@ -9,8 +9,7 @@ pub trait Template {
         &self,
         schemas: &Vec<Schema>,
         file_type: &Self::FileType,
-    ) -> Result<(PathBuf, String), anyhow::Error>;
-    fn file_path(&self, file_type: &Self::FileType) -> PathBuf;
+    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error>;
 }
 
 pub trait Generator<T>
@@ -23,6 +22,14 @@ where
         schemas: &Vec<Schema>,
     ) -> Result<Vec<GenerateResult>, anyhow::Error>;
     fn template_ref(&self) -> &T;
+}
+
+pub trait AnyGenerator {
+    fn invoke_generate(
+        &self,
+        project_root: &PathBuf,
+        schemas: &Vec<Schema>,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error>;
 }
 
 #[derive(Debug)]

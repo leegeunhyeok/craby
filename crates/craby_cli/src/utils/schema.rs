@@ -5,6 +5,7 @@ use owo_colors::OwoColorize;
 use crate::utils::terminal::CodeHighlighter;
 
 pub fn print_schema(schema: &Schema) -> Result<(), anyhow::Error> {
+    println!("{}", schema.module_name.blue());
     println!("├─ Methods ({})", schema.spec.methods.len());
 
     let highlighter = CodeHighlighter::new();
