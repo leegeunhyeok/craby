@@ -749,7 +749,7 @@ std::size_t align_of() {
 #endif
 
 namespace craby {
-  namespace crabytest {
+  namespace bridging {
     struct NullableNumber;
     struct NullableString;
     struct SubObject;
@@ -760,68 +760,68 @@ namespace craby {
 }
 
 namespace craby {
-namespace crabytest {
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
-#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+namespace bridging {
+#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
+#define CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
 struct NullableNumber final {
   bool null CXX_DEFAULT_VALUE(false);
   double val CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableNumber
+#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
 
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
-#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
+#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableString
+#define CXXBRIDGE1_STRUCT_craby$bridging$NullableString
 struct NullableString final {
   bool null CXX_DEFAULT_VALUE(false);
   ::rust::String val;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableString
+#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableString
 
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
-#define CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
+#ifndef CXXBRIDGE1_STRUCT_craby$bridging$SubObject
+#define CXXBRIDGE1_STRUCT_craby$bridging$SubObject
 struct SubObject final {
-  ::craby::crabytest::NullableString a;
+  ::craby::bridging::NullableString a;
   double b CXX_DEFAULT_VALUE(0);
   bool c CXX_DEFAULT_VALUE(false);
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$SubObject
+#endif // CXXBRIDGE1_STRUCT_craby$bridging$SubObject
 
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
-#define CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
+#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
+#define CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
 struct NullableSubObject final {
   bool null CXX_DEFAULT_VALUE(false);
-  ::craby::crabytest::SubObject val;
+  ::craby::bridging::SubObject val;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$NullableSubObject
+#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
 
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
-#define CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
+#ifndef CXXBRIDGE1_STRUCT_craby$bridging$TestObject
+#define CXXBRIDGE1_STRUCT_craby$bridging$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
-  ::craby::crabytest::NullableSubObject sub;
+  ::craby::bridging::NullableSubObject sub;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$bridging$TestObject
 
-#ifndef CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
-#define CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
+#ifndef CXXBRIDGE1_ENUM_craby$bridging$MyEnum
+#define CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 enum class MyEnum : ::std::uint8_t {
   FOO = 0,
   BAR = 1,
   BAZ = 2,
 };
-#endif // CXXBRIDGE1_ENUM_craby$crabytest$MyEnum
+#endif // CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 
 double numericMethod(double arg) noexcept;
 
@@ -829,16 +829,16 @@ bool booleanMethod(bool arg) noexcept;
 
 ::rust::String stringMethod(::rust::String arg) noexcept;
 
-::craby::crabytest::TestObject objectMethod(::craby::crabytest::TestObject arg) noexcept;
+::craby::bridging::TestObject objectMethod(::craby::bridging::TestObject arg) noexcept;
 
 ::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept;
 
-::rust::String enumMethod(::craby::crabytest::MyEnum arg) noexcept;
+::rust::String enumMethod(::craby::bridging::MyEnum arg) noexcept;
 
-::craby::crabytest::NullableNumber nullableMethod(::craby::crabytest::NullableNumber arg) noexcept;
+::craby::bridging::NullableNumber nullableMethod(::craby::bridging::NullableNumber arg) noexcept;
 
 double promiseMethod(double arg);
-} // namespace crabytest
+} // namespace bridging
 } // namespace craby
 
 #ifdef __clang__

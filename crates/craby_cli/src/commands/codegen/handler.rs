@@ -51,13 +51,6 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         })
         .collect::<Result<Vec<Schema>, anyhow::Error>>()?;
 
-    schemas
-        .iter()
-        .try_for_each(|schema| -> Result<(), anyhow::Error> {
-            print_schema(schema)?;
-            Ok(())
-        })?;
-
     info!("Generating files...");
     generators
         .iter()

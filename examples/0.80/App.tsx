@@ -78,6 +78,12 @@ export function App() {
         </TouchableOpacity>
       </View>
 
+      <View>
+        <Text style={styles.testCountText}>
+          {testResults.length} tests run
+        </Text>
+      </View>
+
       {/* Test Results */}
       {testResults.map((testResult, index) => (
         <TestResultCard
@@ -189,7 +195,7 @@ const styles = StyleSheet.create({
   buttonCard: {
     width: '100%',
     marginTop: 30,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   runButton: {
     width: '100%',
@@ -260,5 +266,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#495057',
     lineHeight: 16,
+  },
+  testCountText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 8,
   },
 });

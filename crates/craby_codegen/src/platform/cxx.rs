@@ -733,8 +733,7 @@ pub mod template {
             return Err(anyhow::anyhow!("Enum members are required: {}", name));
         }
 
-        let flat_name = flat_case(mod_name);
-        let enum_namespace = format!("craby::{}::{}", flat_name, name);
+        let enum_namespace = format!("craby::bridging::{}", name);
         let as_raw = match enum_spec.member_type.as_str() {
             "StringTypeAnnotation" => "value.asString(rt).utf8(rt)",
             "NumberTypeAnnotation" => "value.asNumber()",

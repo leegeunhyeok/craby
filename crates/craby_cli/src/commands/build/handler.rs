@@ -49,10 +49,10 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     })?;
     info!("Cargo project build completed successfully");
 
-    info!("Creating Android source files...");
+    info!("Creating Android artifacts...");
     android_build::crate_libs(&config)?;
 
-    info!("Creating iOS source files...");
+    info!("Creating iOS XCFramework...");
     ios_build::crate_libs(&config)?;
 
     info!("Build completed successfully 🎉");

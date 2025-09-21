@@ -11,7 +11,6 @@ use craby_common::{
     utils::string::SanitizedString,
 };
 use indoc::formatdoc;
-use log::debug;
 
 const IOS_TARGETS: [Target; 2] = [
     Target::Ios(Identifier::Arm64),
@@ -20,12 +19,6 @@ const IOS_TARGETS: [Target; 2] = [
 
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
     let ios_base_path = ios_base_path(&config.project_root);
-
-    if ios_base_path.exists() {
-        fs::remove_dir_all(&ios_base_path)?;
-        debug!("Cleaned up existing iOS base directory");
-    }
-
     let xcframework_path = create_xcframework(&config)?;
 
     for target in IOS_TARGETS {
@@ -56,11 +49,6 @@ fn create_xcframework(config: &CompleteCrabyConfig) -> Result<PathBuf, anyhow::E
     let framework_path = ios_base_path(&config.project_root).join("framework");
     let xcframework_path =
         framework_path.join(format!("lib{}.xcframework", lib_base_name.to_string()));
-
-    if xcframework_path.exists() {
-        fs::remove_dir_all(&xcframework_path)?;
-        debug!("Cleaned up existing iOS xcframework");
-    }
 
     fs::create_dir_all(&xcframework_path)?;
 
