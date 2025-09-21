@@ -5,6 +5,7 @@ use craby_common::{
     utils::string::{flat_case, pascal_case, snake_case},
 };
 use indoc::formatdoc;
+use log::debug;
 
 use crate::{
     platform::{
@@ -295,9 +296,9 @@ impl CodeGenerator {
             })?;
 
         // C++ Templates are should be sorted in the order of their dependencies
-        let mut ordered_templates = vec![];
         let ord = calc_deps_order(schema)?;
-        println!("dependencies order: {:?}", ord);
+        let mut ordered_templates = vec![];
+        debug!("CXX Bridging templates dependencies order: {:?}", ord);
 
         ordered_templates.extend(enum_bridging_templates.into_values());
 

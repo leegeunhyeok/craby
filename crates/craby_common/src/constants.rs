@@ -43,7 +43,7 @@ pub fn dest_lib_name(name: &SanitizedString) -> String {
     format!("lib{}-craby.a", flat_case(name.0.as_ref()))
 }
 
-/// Example: `some_library_impl`
+/// Example: `some_module_impl`
 pub fn impl_mod_name(name: &String) -> String {
     format!("{}_impl", snake_case(name.as_str()))
 }

@@ -49,4 +49,3 @@ impl<T> Nullable<T> {
         self.val
     }
 }
-

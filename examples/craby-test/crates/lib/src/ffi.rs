@@ -5,7 +5,7 @@ use crate::generated::*;
 
 use bridging::*;
 
-#[cxx::bridge(namespace = "craby::crabytest")]
+#[cxx::bridge(namespace = "craby::bridging")]
 pub mod bridging {
     // Type definitions
     struct NullableNumber {
