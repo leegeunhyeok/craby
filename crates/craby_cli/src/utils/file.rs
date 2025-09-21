@@ -1,10 +1,16 @@
 use std::{fs, path::PathBuf};
 
-pub fn write_file(path: &PathBuf, content: &String, overwrite: bool) -> anyhow::Result<bool> {
-    if overwrite == false && fs::exists(&path)? {
+pub fn write_file(file_path: &PathBuf, content: &String, overwrite: bool) -> anyhow::Result<bool> {
+    if overwrite == false && fs::exists(&file_path)? {
         return Ok(false);
     }
 
-    fs::write(path, content)?;
+    if let Some(parent) = file_path.parent() {
+        if !fs::exists(parent)? {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    fs::write(file_path, content)?;
     Ok(true)
 }

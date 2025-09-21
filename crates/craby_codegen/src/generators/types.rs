@@ -24,7 +24,7 @@ where
     fn template_ref(&self) -> &T;
 }
 
-pub trait AnyGenerator {
+pub trait GeneratorInvoker {
     fn invoke_generate(
         &self,
         project_root: &PathBuf,

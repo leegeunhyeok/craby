@@ -1,6 +1,6 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
-use craby_common::config::CompleteCrabyConfig;
+use craby_common::{config::CompleteCrabyConfig, constants::jni_base_path};
 use log::debug;
 
 use crate::{
@@ -16,13 +16,7 @@ const ANDROID_TARGETS: [Target; 4] = [
 ];
 
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
-    let android_path = android_path(&config.project_root);
     let jni_base_path = jni_base_path(&config.project_root);
-
-    if jni_base_path.exists() {
-        fs::remove_dir_all(&jni_base_path)?;
-        debug!("Cleaned up existing JNI base directory");
-    }
 
     for target in ANDROID_TARGETS {
         if let Target::Android(abi) = &target {
@@ -44,30 +38,7 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
         }
     }
 
-    // android/CMakeLists.txt
-    fs::write(
-        android_path.join("CMakeLists.txt"),
-        craby_codegen::platform::android::template::cmakelists(&config.project.name),
-    )?;
-
-    // android/src/main/jni/OnLoad.cpp
-    fs::write(
-        jni_base_path.join("OnLoad.cpp"),
-        craby_codegen::platform::android::template::cxx_on_load(&config.project.name),
-    )?;
-
     Ok(())
-}
-
-fn android_path(project_root: &PathBuf) -> PathBuf {
-    project_root.join("android")
-}
-
-fn jni_base_path(project_root: &PathBuf) -> PathBuf {
-    android_path(project_root)
-        .join("src")
-        .join("main")
-        .join("jni")
 }
 
 pub fn get_ndk_bin_path() -> Result<PathBuf, anyhow::Error> {

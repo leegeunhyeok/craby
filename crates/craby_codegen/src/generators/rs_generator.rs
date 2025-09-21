@@ -8,7 +8,7 @@ use indoc::formatdoc;
 
 use crate::{platform::rust::RsCxxBridge, types::schema::Schema, utils::indent_str};
 
-use super::types::{AnyGenerator, GenerateResult, Generator, Template};
+use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
 pub struct RsTemplate;
 pub struct RsGenerator;
@@ -424,7 +424,7 @@ impl Generator<RsTemplate> for RsGenerator {
     }
 }
 
-impl AnyGenerator for RsGenerator {
+impl GeneratorInvoker for RsGenerator {
     fn invoke_generate(
         &self,
         project_root: &PathBuf,

@@ -7,7 +7,7 @@ use crate::{
     constants::cxx_mod_cls_name, platform::cxx::CxxMethod, types::schema::Schema, utils::indent_str,
 };
 
-use super::types::{AnyGenerator, GenerateResult, Generator, Template};
+use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
 pub struct CxxTemplate;
 pub struct CxxGenerator;
@@ -340,7 +340,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
     }
 }
 
-impl AnyGenerator for CxxGenerator {
+impl GeneratorInvoker for CxxGenerator {
     fn invoke_generate(
         &self,
         project_root: &PathBuf,

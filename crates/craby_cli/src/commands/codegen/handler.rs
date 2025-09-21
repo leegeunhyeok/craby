@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use craby_codegen::{
     constants::GENERATED_COMMENT,
-    generators::{cxx_generator::CxxGenerator, rs_generator::RsGenerator, types::AnyGenerator},
+    generators::{
+        android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
+        rs_generator::RsGenerator, types::GeneratorInvoker,
+    },
     types::schema::Schema,
 };
 use craby_common::env::is_initialized;
@@ -24,8 +27,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     let mut generate_res = vec![];
     let total_mods = opts.schemas.len();
-    let generators: Vec<Box<dyn AnyGenerator>> =
-        vec![Box::new(RsGenerator::new()), Box::new(CxxGenerator::new())];
+    let generators: Vec<Box<dyn GeneratorInvoker>> = vec![
+        Box::new(AndroidGenerator::new()),
+        Box::new(RsGenerator::new()),
+        Box::new(CxxGenerator::new()),
+    ];
 
     let schemas = opts
         .schemas
@@ -51,6 +57,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             Ok(())
         })?;
 
+    info!("Generating files...");
     generators
         .iter()
         .try_for_each(|generator| -> Result<(), anyhow::Error> {
@@ -61,7 +68,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     generate_res
         .iter()
         .try_for_each(|res| -> Result<(), anyhow::Error> {
-            let content = with_generated_comment(&res.content);
+            let content = with_generated_comment(&res.path, &res.content);
             let write = write_file(&res.path, &content, res.overwrite)?;
 
             if write {
@@ -78,6 +85,15 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn with_generated_comment(code: &String) -> String {
-    format!("// {}\n{}\n", GENERATED_COMMENT, code)
+fn with_generated_comment(path: &PathBuf, code: &String) -> String {
+    match path.extension() {
+        Some(ext) => match ext.to_str().unwrap() {
+            // Source files
+            "rs" | "cpp" | "hpp" | "mm" => format!("// {}\n{}\n", GENERATED_COMMENT, code),
+            // CMakeLists.txt
+            "txt" => format!("# {}\n{}\n", GENERATED_COMMENT, code),
+            _ => format!("{}\n", code),
+        },
+        None => format!("{}\n", code),
+    }
 }

@@ -71,3 +71,14 @@ pub fn cxx_bridge_dir(project_root: &PathBuf, target: &str) -> PathBuf {
 pub fn cxx_dir(project_root: &PathBuf) -> PathBuf {
     project_root.join("cpp")
 }
+
+pub fn android_path(project_root: &PathBuf) -> PathBuf {
+    project_root.join("android")
+}
+
+pub fn jni_base_path(project_root: &PathBuf) -> PathBuf {
+    android_path(project_root)
+        .join("src")
+        .join("main")
+        .join("jni")
+}
