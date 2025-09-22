@@ -52,7 +52,7 @@ pub struct EnumMember {
 pub enum EnumMemberValue {
     #[serde(rename = "StringLiteralTypeAnnotation")]
     EnumStringMember { value: String },
-    #[serde(rename = "NumberLiteralTypeAnnotation")] 
+    #[serde(rename = "NumberLiteralTypeAnnotation")]
     EnumNumberMember { value: f64 },
 }
 
