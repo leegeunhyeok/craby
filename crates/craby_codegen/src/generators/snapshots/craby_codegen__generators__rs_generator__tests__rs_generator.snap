@@ -193,7 +193,9 @@ impl<T> Nullable<T> {
 }
 
 ./crates/lib/src/craby_test_impl.rs
-use crate::{ffi::craby_test::*, generated::*};
+use crate::ffi::bridging::*;
+use crate::generated::*;
+use crate::types::*;
 
 pub struct CrabyTest;
 

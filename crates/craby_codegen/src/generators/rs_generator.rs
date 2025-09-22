@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 use craby_common::{
     constants::{crate_dir, impl_mod_name},
-    utils::string::{pascal_case, snake_case},
+    utils::string::{pascal_case},
 };
 use indoc::formatdoc;
 

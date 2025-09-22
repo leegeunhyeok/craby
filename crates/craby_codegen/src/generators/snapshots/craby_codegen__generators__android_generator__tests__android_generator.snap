@@ -20,7 +20,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 ./android/CMakeLists.txt
 cmake_minimum_required(VERSION 3.13)
 
-project(craby-craby-test)
+project(craby-test-module)
 
 set (CMAKE_VERBOSE_MAKEFILE ON)
 set (CMAKE_CXX_STANDARD 20)
@@ -28,30 +28,30 @@ set (CMAKE_CXX_STANDARD 20)
 find_package(ReactAndroid REQUIRED CONFIG)
 
 # Import the pre-built Craby library
-add_library(craby-test-lib STATIC IMPORTED)
-set_target_properties(craby-test-lib PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/main/jni/libs/${ANDROID_ABI}/libcrabytest-craby.a"
+add_library(test-module-lib STATIC IMPORTED)
+set_target_properties(test-module-lib PROPERTIES
+  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/main/jni/libs/${ANDROID_ABI}/libtestmodule-craby.a"
 )
-target_include_directories(craby-test-lib INTERFACE
+target_include_directories(test-module-lib INTERFACE
   "${CMAKE_SOURCE_DIR}/src/main/jni/include"
 )
 
 # Generated C++ source files by Craby
-add_library(cxx-craby-test SHARED
+add_library(cxx-test-module SHARED
   src/main/jni/OnLoad.cpp
   src/main/jni/src/ffi.rs.cc
   ../cpp/CxxCrabyTestModule.cpp
 )
-target_include_directories(cxx-craby-test PRIVATE
+target_include_directories(cxx-test-module PRIVATE
   ../cpp
 )
 
-target_link_libraries(cxx-craby-test
+target_link_libraries(cxx-test-module
   # android
   ReactAndroid::reactnative
   ReactAndroid::jsi
-  # craby-test-lib
-  craby-test-lib
+  # test-module-lib
+  test-module-lib
 )
 
 # From ReactAndroid/cmake-utils/folly-flags.cmake

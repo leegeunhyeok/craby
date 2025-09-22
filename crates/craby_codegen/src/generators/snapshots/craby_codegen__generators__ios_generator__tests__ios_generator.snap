@@ -2,15 +2,15 @@
 source: crates/craby_codegen/src/generators/ios_generator.rs
 expression: "results.iter().map(|res|\nformat!(\"{}\\n{}\", res.path.display(),\nres.content)).collect::<Vec<_>>().join(\"\\n\\n\")"
 ---
-./ios/CrabyTestModuleProvider.mm
+./ios/TestModuleModuleProvider.mm
 #import "CxxCrabyTestModule.hpp"
 
 #import <ReactCommon/CxxTurboModuleUtils.h>
 
-@interface CrabyTestModuleProvider : NSObject
+@interface TestModuleModuleProvider : NSObject
 @end
 
-@implementation CrabyTestModuleProvider
+@implementation TestModuleModuleProvider
 + (void)load {
   facebook::react::registerCxxModuleToGlobalModuleMap(
       craby::crabytest::CxxCrabyTestModule::kModuleName,
