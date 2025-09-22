@@ -4,7 +4,10 @@ use craby_common::{constants::cxx_dir, utils::string::flat_case};
 use indoc::formatdoc;
 
 use crate::{
-    constants::cxx_mod_cls_name, platform::cxx::CxxMethod, types::schema::Schema, utils::indent_str,
+    constants::cxx_mod_cls_name,
+    platform::cxx::CxxMethod,
+    types::{schema::Schema, types::Project},
+    utils::indent_str,
 };
 
 use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
@@ -278,11 +281,12 @@ impl Template for CxxTemplate {
 
     fn render(
         &self,
-        schemas: &Vec<Schema>,
+        project: &Project,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let res = match file_type {
-            CxxFileType::Mod => schemas
+            CxxFileType::Mod => project
+                .schemas
                 .iter()
                 .flat_map(|schema| -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
                     let (cpp, hpp) = self.cxx_mod(schema)?;
@@ -297,7 +301,7 @@ impl Template for CxxTemplate {
                 .collect::<Vec<_>>(),
             CxxFileType::BridgingHpp => vec![(
                 PathBuf::from("bridging-generated.hpp"),
-                self.cxx_bridging(schemas)?,
+                self.cxx_bridging(&project.schemas)?,
             )],
         };
 
@@ -312,16 +316,12 @@ impl CxxGenerator {
 }
 
 impl Generator<CxxTemplate> for CxxGenerator {
-    fn generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let base_path = cxx_dir(project_root);
+    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let base_path = cxx_dir(&project.root);
         let template = self.template_ref();
         let res = [
-            template.render(schemas, &CxxFileType::Mod)?,
-            template.render(schemas, &CxxFileType::BridgingHpp)?,
+            template.render(project, &CxxFileType::Mod)?,
+            template.render(project, &CxxFileType::BridgingHpp)?,
         ]
         .into_iter()
         .flatten()
@@ -341,12 +341,8 @@ impl Generator<CxxTemplate> for CxxGenerator {
 }
 
 impl GeneratorInvoker for CxxGenerator {
-    fn invoke_generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project_root, schemas)
+    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(project)
     }
 }
 
@@ -362,9 +358,12 @@ mod tests {
     fn test_cxx_generator() {
         let schema = load_schema_json::<Schema>();
         let generator = CxxGenerator::new();
-        let results = generator
-            .generate(&PathBuf::from("."), &vec![schema])
-            .unwrap();
+        let project = Project {
+            name: "test_module".to_string(),
+            root: PathBuf::from("."),
+            schemas: vec![schema],
+        };
+        let results = generator.generate(&project).unwrap();
 
         assert_snapshot!(results
             .iter()

@@ -41,7 +41,7 @@ pub fn print_schema(schema: &Schema) -> Result<(), anyhow::Error> {
         println!("{}", name.blue());
     });
     if schema.alias_map.is_empty() {
-        println!("   {}", "(None)".dimmed());
+        println!("│  {}", "(None)".dimmed());
     }
 
     // Enums

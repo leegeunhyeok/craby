@@ -903,6 +903,14 @@ enum class SwitchState : ::std::uint8_t {
 #endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
 extern "C" {
+double craby$bridging$cxxbridge1$calculator_add(double a, double b) noexcept;
+
+double craby$bridging$cxxbridge1$calculator_subtract(double a, double b) noexcept;
+
+double craby$bridging$cxxbridge1$calculator_multiply(double a, double b) noexcept;
+
+double craby$bridging$cxxbridge1$calculator_divide(double a, double b) noexcept;
+
 double craby$bridging$cxxbridge1$craby_test_numeric_method(double arg) noexcept;
 
 bool craby$bridging$cxxbridge1$craby_test_boolean_method(bool arg) noexcept;
@@ -919,6 +927,22 @@ void craby$bridging$cxxbridge1$craby_test_nullable_method(::craby::bridging::Nul
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_promise_method(double arg, double *return$) noexcept;
 } // extern "C"
+
+double add(double a, double b) noexcept {
+  return craby$bridging$cxxbridge1$calculator_add(a, b);
+}
+
+double subtract(double a, double b) noexcept {
+  return craby$bridging$cxxbridge1$calculator_subtract(a, b);
+}
+
+double multiply(double a, double b) noexcept {
+  return craby$bridging$cxxbridge1$calculator_multiply(a, b);
+}
+
+double divide(double a, double b) noexcept {
+  return craby$bridging$cxxbridge1$calculator_divide(a, b);
+}
 
 double numericMethod(double arg) noexcept {
   return craby$bridging$cxxbridge1$craby_test_numeric_method(arg);

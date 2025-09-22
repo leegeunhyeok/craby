@@ -6,9 +6,9 @@ use craby_codegen::{
         android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
         ios_generator::IosGenerator, rs_generator::RsGenerator, types::GeneratorInvoker,
     },
-    types::schema::Schema,
+    types::{schema::Schema, types::Project},
 };
-use craby_common::env::is_initialized;
+use craby_common::{config::load_config, env::is_initialized};
 use log::{debug, info};
 
 use crate::utils::{file::write_file, schema::print_schema};
@@ -25,15 +25,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     info!("{} module schema(s) found", opts.schemas.len());
 
-    let mut generate_res = vec![];
-    let total_mods = opts.schemas.len();
-    let generators: Vec<Box<dyn GeneratorInvoker>> = vec![
-        Box::new(AndroidGenerator::new()),
-        Box::new(IosGenerator::new()),
-        Box::new(RsGenerator::new()),
-        Box::new(CxxGenerator::new()),
-    ];
-
+    let config = load_config(&opts.project_root)?;
     let schemas = opts
         .schemas
         .iter()
@@ -44,18 +36,32 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
                 "Preparing for {} module... ({}/{})",
                 schema.module_name,
                 i + 1,
-                total_mods
+                opts.schemas.len()
             );
             print_schema(&schema)?;
             Ok(schema)
         })
         .collect::<Result<Vec<Schema>, anyhow::Error>>()?;
 
+    let project = Project {
+        name: config.project.name,
+        root: opts.project_root,
+        schemas,
+    };
+
+    let mut generate_res = vec![];
+    let generators: Vec<Box<dyn GeneratorInvoker>> = vec![
+        Box::new(AndroidGenerator::new()),
+        Box::new(IosGenerator::new()),
+        Box::new(RsGenerator::new()),
+        Box::new(CxxGenerator::new()),
+    ];
+
     info!("Generating files...");
     generators
         .iter()
         .try_for_each(|generator| -> Result<(), anyhow::Error> {
-            generate_res.extend(generator.invoke_generate(&opts.project_root, &schemas)?);
+            generate_res.extend(generator.invoke_generate(&project)?);
             Ok(())
         })?;
 
@@ -63,7 +69,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     generate_res
         .iter()
         .try_for_each(|res| -> Result<(), anyhow::Error> {
-            let content = with_generated_comment(&res.path, &res.content);
+            let content = if res.overwrite {
+                with_generated_comment(&res.path, &res.content)
+            } else {
+                without_generated_comment(&res.content)
+            };
             let write = write_file(&res.path, &content, res.overwrite)?;
 
             if write {
@@ -89,8 +99,12 @@ fn with_generated_comment(path: &PathBuf, code: &String) -> String {
             "rs" | "cpp" | "hpp" | "mm" => format!("// {}\n{}\n", GENERATED_COMMENT, code),
             // CMakeLists.txt
             "txt" => format!("# {}\n{}\n", GENERATED_COMMENT, code),
-            _ => format!("{}\n", code),
+            _ => without_generated_comment(code),
         },
-        None => format!("{}\n", code),
+        None => without_generated_comment(code),
     }
+}
+
+fn without_generated_comment(code: &String) -> String {
+    format!("{}\n", code)
 }

@@ -508,9 +508,10 @@ impl Schema {
         })
     }
 
-    pub fn as_rs_type_impls(&self) -> Result<BTreeMap<String, String>, anyhow::Error> {
-        let mut type_impls = BTreeMap::new();
-
+    pub fn as_rs_type_impls(
+        &self,
+        type_impls: &mut BTreeMap<String, String>,
+    ) -> Result<(), anyhow::Error> {
         // Collect extern function signatures and implementations
         self.spec
             .methods
@@ -654,9 +655,10 @@ impl Schema {
         // impl Default trait for the alias type
         self.alias_map.iter().try_for_each(
             |(name, alias_schema)| -> Result<(), anyhow::Error> {
-                if !type_impls.contains_key(name) {
-                    type_impls.insert(name.clone(), alias_default_impl(name, alias_schema)?);
+                if type_impls.contains_key(name) {
+                    return Err(anyhow::anyhow!("Duplicate alias type: {}", name));
                 }
+                type_impls.insert(name.clone(), alias_default_impl(name, alias_schema)?);
                 Ok(())
             },
         )?;
@@ -665,13 +667,14 @@ impl Schema {
         self.enum_map
             .iter()
             .try_for_each(|(name, enum_schema)| -> Result<(), anyhow::Error> {
-                if !type_impls.contains_key(name) {
-                    type_impls.insert(name.clone(), enum_default_impl(name, enum_schema)?);
+                if type_impls.contains_key(name) {
+                    return Err(anyhow::anyhow!("Duplicate enum type: {}", name));
                 }
+                type_impls.insert(name.clone(), enum_default_impl(name, enum_schema)?);
                 Ok(())
             })?;
 
-        Ok(type_impls)
+        Ok(())
     }
 }
 

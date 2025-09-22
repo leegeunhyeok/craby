@@ -6,7 +6,11 @@ use craby_common::{
 };
 use indoc::formatdoc;
 
-use crate::{constants::cxx_mod_cls_name, types::schema::Schema, utils::indent_str};
+use crate::{
+    constants::cxx_mod_cls_name,
+    types::{schema::Schema, types::Project},
+    utils::indent_str,
+};
 
 use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
@@ -54,8 +58,7 @@ impl AndroidTemplate {
                   {cxx_namespace}::kModuleName,
                   [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
                     return std::make_shared<{cxx_namespace}>(jsInvoker);
-                  }});
-              "#,
+                  }});"#,
               cxx_namespace = cxx_namespace
             };
 
@@ -81,10 +84,14 @@ impl AndroidTemplate {
         Ok(content)
     }
 
-    fn cmakelists(&self, project_name: &String) -> String {
-        let kebab_name = kebab_case(project_name);
-        let lib_name = dest_lib_name(&SanitizedString::from(project_name));
-        let cxx_mod_cls_name = cxx_mod_cls_name(project_name);
+    fn cmakelists(&self, project: &Project) -> String {
+        let kebab_name = kebab_case(&project.name);
+        let lib_name = dest_lib_name(&SanitizedString::from(&project.name));
+        let cxx_mod_cpp_files = project
+            .schemas
+            .iter()
+            .map(|schema| format!("../cpp/{}.cpp", cxx_mod_cls_name(&schema.module_name)))
+            .collect::<Vec<_>>();
 
         formatdoc! {
             r#"
@@ -110,7 +117,7 @@ impl AndroidTemplate {
             add_library(cxx-{kebab_name} SHARED
               src/main/jni/OnLoad.cpp
               src/main/jni/src/ffi.rs.cc
-              ../cpp/{cxx_mod_cls_name}.cpp
+            {cxx_mod_cpp_files}
             )
             target_include_directories(cxx-{kebab_name} PRIVATE
               ../cpp
@@ -139,7 +146,7 @@ impl AndroidTemplate {
             )"#,
             kebab_name = kebab_name,
             lib_name = lib_name,
-            cxx_mod_cls_name = cxx_mod_cls_name,
+            cxx_mod_cpp_files = indent_str(cxx_mod_cpp_files.join("\n"), 2),
         }
     }
 }
@@ -149,16 +156,13 @@ impl Template for AndroidTemplate {
 
     fn render(
         &self,
-        schemas: &Vec<Schema>,
+        project: &Project,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
         let content = match file_type {
-            AndroidFileType::JNIEntry => self.jni_entry(schemas),
-            AndroidFileType::CmakeLists => {
-                // TODO: Support multiple schemas
-                Ok(self.cmakelists(&schemas.get(0).unwrap().module_name))
-            }
+            AndroidFileType::JNIEntry => self.jni_entry(&project.schemas),
+            AndroidFileType::CmakeLists => Ok(self.cmakelists(&project)),
         }?;
 
         Ok(vec![(path, content)])
@@ -172,18 +176,14 @@ impl AndroidGenerator {
 }
 
 impl Generator<AndroidTemplate> for AndroidGenerator {
-    fn generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let android_base_path = android_path(project_root);
-        let jni_base_path = jni_base_path(project_root);
+    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let android_base_path = android_path(&project.root);
+        let jni_base_path = jni_base_path(&project.root);
         let template = self.template_ref();
         let mut files = vec![];
 
         let jni_res = template
-            .render(schemas, &AndroidFileType::JNIEntry)?
+            .render(project, &AndroidFileType::JNIEntry)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: jni_base_path.join(path),
@@ -193,7 +193,7 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
             .collect::<Vec<_>>();
 
         let cmake_res = template
-            .render(schemas, &AndroidFileType::CmakeLists)?
+            .render(project, &AndroidFileType::CmakeLists)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: android_base_path.join(path),
@@ -214,12 +214,8 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
 }
 
 impl GeneratorInvoker for AndroidGenerator {
-    fn invoke_generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project_root, schemas)
+    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(project)
     }
 }
 
@@ -235,9 +231,12 @@ mod tests {
     fn test_android_generator() {
         let schema = load_schema_json::<Schema>();
         let generator = AndroidGenerator::new();
-        let results = generator
-            .generate(&PathBuf::from("."), &vec![schema])
-            .unwrap();
+        let project = Project {
+            name: "test_module".to_string(),
+            root: PathBuf::from("."),
+            schemas: vec![schema],
+        };
+        let results = generator.generate(&project).unwrap();
 
         assert_snapshot!(results
             .iter()

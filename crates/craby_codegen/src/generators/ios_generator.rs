@@ -5,7 +5,7 @@ use indoc::formatdoc;
 
 use crate::{
     constants::{cxx_mod_cls_name, objc_mod_provider_name},
-    types::schema::Schema,
+    types::types::Project,
     utils::indent_str,
 };
 
@@ -19,18 +19,14 @@ pub enum IosFileType {
 }
 
 impl IosTemplate {
-    fn module_provider(
-        &self,
-        project_name: &String,
-        schemas: &Vec<Schema>,
-    ) -> Result<String, anyhow::Error> {
+    fn module_provider(&self, project: &Project) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
         let mut cxx_registers = vec![];
 
         // TODO: support multiple schemas
-        let objc_mod_provider_name = objc_mod_provider_name(project_name);
+        let objc_mod_provider_name = objc_mod_provider_name(&project.name);
 
-        schemas.iter().for_each(|schema| {
+        project.schemas.iter().for_each(|schema| {
             let flat_name = flat_case(&schema.module_name);
             let cxx_mod = cxx_mod_cls_name(&schema.module_name);
             let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
@@ -77,16 +73,15 @@ impl Template for IosTemplate {
 
     fn render(
         &self,
-        schemas: &Vec<Schema>,
+        project: &Project,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         // TODO: support multiple schemas
-        let project_name = schemas.get(0).unwrap().module_name.clone();
         let res = match file_type {
             IosFileType::ModuleProvider => {
                 vec![(
-                    PathBuf::from(format!("{}.mm", objc_mod_provider_name(&project_name))),
-                    self.module_provider(&project_name, schemas)?,
+                    PathBuf::from(format!("{}.mm", objc_mod_provider_name(&project.name))),
+                    self.module_provider(project)?,
                 )]
             }
         };
@@ -102,17 +97,13 @@ impl IosGenerator {
 }
 
 impl Generator<IosTemplate> for IosGenerator {
-    fn generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let ios_base_path = ios_base_path(project_root);
+    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let ios_base_path = ios_base_path(&project.root);
         let template = self.template_ref();
         let mut files = vec![];
 
         let provider_res = template
-            .render(schemas, &IosFileType::ModuleProvider)?
+            .render(project, &IosFileType::ModuleProvider)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: ios_base_path.join(path),
@@ -132,12 +123,8 @@ impl Generator<IosTemplate> for IosGenerator {
 }
 
 impl GeneratorInvoker for IosGenerator {
-    fn invoke_generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project_root, schemas)
+    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(project)
     }
 }
 
@@ -145,7 +132,7 @@ impl GeneratorInvoker for IosGenerator {
 mod tests {
     use insta::assert_snapshot;
 
-    use crate::tests::load_schema_json;
+    use crate::{tests::load_schema_json, types::schema::Schema};
 
     use super::*;
 
@@ -153,9 +140,12 @@ mod tests {
     fn test_ios_generator() {
         let schema = load_schema_json::<Schema>();
         let generator = IosGenerator::new();
-        let results = generator
-            .generate(&PathBuf::from("."), &vec![schema])
-            .unwrap();
+        let project = Project {
+            name: "test_module".to_string(),
+            root: PathBuf::from("."),
+            schemas: vec![schema],
+        };
+        let results = generator.generate(&project).unwrap();
 
         assert_snapshot!(results
             .iter()

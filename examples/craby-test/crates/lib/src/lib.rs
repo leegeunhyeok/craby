@@ -4,4 +4,5 @@ pub(crate) mod ffi;
 pub(crate) mod generated;
 pub(crate) mod types;
 
+pub(crate) mod calculator_impl;
 pub(crate) mod craby_test_impl;

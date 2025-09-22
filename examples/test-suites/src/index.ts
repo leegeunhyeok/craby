@@ -129,6 +129,21 @@ const TEST_SUITES: TestSuite[] = [
     description: '(Rejected promise)',
     action: () => Module.promiseMethod(-123).catch((error) => toErrorObject(error)),
   },
+  {
+    label: 'Multiple TurboModules',
+    description: 'Calculator',
+    action: () => {
+      const a = 5;
+      const b = 10;
+
+      return {
+        add: Module.add(a, b),
+        subtract: Module.subtract(a, b),
+        multiply: Module.multiply(a, b),
+        divide: Module.divide(a, b),
+      };
+    },
+  }
 ];
 
 export { TEST_SUITES };

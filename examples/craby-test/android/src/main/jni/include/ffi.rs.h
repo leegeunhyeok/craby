@@ -832,6 +832,14 @@ enum class SwitchState : ::std::uint8_t {
 };
 #endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
+double add(double a, double b) noexcept;
+
+double subtract(double a, double b) noexcept;
+
+double multiply(double a, double b) noexcept;
+
+double divide(double a, double b) noexcept;
+
 double numericMethod(double arg) noexcept;
 
 bool booleanMethod(bool arg) noexcept;

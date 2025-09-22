@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
-use crate::types::schema::Schema;
+use crate::types::types::Project;
 
 pub trait Template {
     type FileType;
 
     fn render(
         &self,
-        schemas: &Vec<Schema>,
+        project: &Project,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error>;
 }
@@ -16,20 +16,12 @@ pub trait Generator<T>
 where
     T: Template,
 {
-    fn generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error>;
+    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error>;
     fn template_ref(&self) -> &T;
 }
 
 pub trait GeneratorInvoker {
-    fn invoke_generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error>;
+    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error>;
 }
 
 #[derive(Debug)]

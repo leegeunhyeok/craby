@@ -3,6 +3,13 @@
 use crate::ffi::bridging::*;
 use crate::types::*;
 
+pub trait CalculatorSpec {
+    fn add(a: Number, b: Number) -> Number;
+    fn subtract(a: Number, b: Number) -> Number;
+    fn multiply(a: Number, b: Number) -> Number;
+    fn divide(a: Number, b: Number) -> Number;
+}
+
 pub trait CrabyTestSpec {
     fn numeric_method(arg: Number) -> Number;
     fn boolean_method(arg: Boolean) -> Boolean;

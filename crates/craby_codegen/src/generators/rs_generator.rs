@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::BTreeMap, path::PathBuf};
 
 use craby_common::{
     constants::{crate_dir, impl_mod_name},
@@ -6,7 +6,11 @@ use craby_common::{
 };
 use indoc::formatdoc;
 
-use crate::{platform::rust::RsCxxBridge, types::schema::Schema, utils::indent_str};
+use crate::{
+    platform::rust::RsCxxBridge,
+    types::{schema::Schema, types::Project},
+    utils::indent_str,
+};
 
 use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
@@ -50,33 +54,34 @@ impl RsTemplate {
         Ok(res)
     }
 
-    fn rs_cxx_extern(&self, rs_cxx_bridges: &Vec<RsCxxBridge>) -> Vec<String> {
-        rs_cxx_bridges
-            .iter()
-            .map(|bridge| {
-                let cxx_extern = bridge.func_extern_sigs.join("\n\n");
-                let struct_defs = bridge.struct_defs.join("\n\n");
-                let enum_defs = bridge.enum_defs.join("\n\n");
+    fn rs_cxx_extern(&self, rs_cxx_bridges: &Vec<RsCxxBridge>) -> String {
+        let mut cxx_extern = vec![];
+        let mut struct_defs = vec![];
+        let mut enum_defs = vec![];
 
-                formatdoc! {
-                    r#"
-                    #[cxx::bridge(namespace = "craby::bridging")]
-                    pub mod bridging {{
-                        // Type definitions
-                    {struct_defs}
+        rs_cxx_bridges.iter().for_each(|bridge| {
+            cxx_extern.extend(bridge.func_extern_sigs.clone());
+            struct_defs.extend(bridge.struct_defs.clone());
+            enum_defs.extend(bridge.enum_defs.clone());
+        });
 
-                    {enum_defs}
+        formatdoc! {
+            r#"
+            #[cxx::bridge(namespace = "craby::bridging")]
+            pub mod bridging {{
+                // Type definitions
+            {struct_defs}
 
-                        extern "Rust" {{
-                    {cxx_extern}
-                        }}
-                    }}"#,
-                    struct_defs = indent_str(struct_defs, 4),
-                    enum_defs = indent_str(enum_defs, 4),
-                    cxx_extern = indent_str(cxx_extern, 8),
-                }
-            })
-            .collect::<Vec<_>>()
+            {enum_defs}
+
+                extern "Rust" {{
+            {cxx_extern}
+                }}
+            }}"#,
+            struct_defs = indent_str(struct_defs.join("\n\n"), 4),
+            enum_defs = indent_str(enum_defs.join("\n\n"), 4),
+            cxx_extern = indent_str(cxx_extern.join("\n\n"), 8),
+        }
     }
 
     fn rs_cxx_impl(&self, rs_cxx_bridges: &Vec<RsCxxBridge>) -> Vec<String> {
@@ -119,7 +124,6 @@ impl RsTemplate {
 
     fn rs_impl(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let mod_name = pascal_case(schema.module_name.as_str());
-        let snake_name = snake_case(schema.module_name.as_str());
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
 
         let methods = schema
@@ -147,7 +151,9 @@ impl RsTemplate {
             .collect::<Result<Vec<_>, _>>()?;
 
         // ```rust,ignore
-        // use crate::{ffi::my_module::*, generated::*};
+        // use crate::ffi::bridging::*;
+        // use crate::generated::*;
+        // use crate::types::*;
         //
         // pub struct MyModule;
         //
@@ -159,14 +165,15 @@ impl RsTemplate {
         // ```
         let content = formatdoc! {
             r#"
-            use crate::{{ffi::{snake_name}::*, generated::*}};
+            use crate::ffi::bridging::*;
+            use crate::generated::*;
+            use crate::types::*;
 
             pub struct {mod_name};
 
             impl {trait_name} for {mod_name} {{
             {methods}
             }}"#,
-            snake_name = snake_name,
             trait_name = trait_name,
             mod_name= mod_name,
             methods = indent_str(methods.join("\n\n"), 4),
@@ -241,11 +248,11 @@ impl RsTemplate {
 
             use bridging::*;
 
-            {cxx_extern}
+            {cxx_externs}
 
             {cxx_impl}"#,
             impl_mods = impl_mods.join("\n"),
-            cxx_extern = cxx_externs.join("\n\n"),
+            cxx_externs = cxx_externs,
             cxx_impl = cxx_impls.join("\n\n"),
         };
 
@@ -321,20 +328,22 @@ impl RsTemplate {
     /// ```
     pub fn generated_rs(&self, schemas: &Vec<Schema>) -> Result<String, anyhow::Error> {
         let mut spec_codes = vec![];
-        let mut type_impls = vec![];
+        let mut type_aliases = BTreeMap::new();
 
         schemas
             .iter()
             .try_for_each(|schema| -> Result<(), anyhow::Error> {
                 let spec = self.rs_spec(schema)?;
-                let impls = schema.as_rs_type_impls()?.into_values();
+
+                // Collect the type implementations
+                schema.as_rs_type_impls(&mut type_aliases)?;
 
                 spec_codes.push(spec);
-                type_impls.extend(impls);
 
                 Ok(())
             })?;
 
+        let type_impls = type_aliases.into_values().collect::<Vec<_>>();
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
@@ -357,14 +366,14 @@ impl Template for RsTemplate {
 
     fn render(
         &self,
-        schemas: &Vec<Schema>,
+        project: &Project,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
         let content = match file_type {
-            RsFileType::CrateEntry => self.lib_rs(schemas),
-            RsFileType::FFIEntry => self.ffi_rs(schemas),
-            RsFileType::Generated => self.generated_rs(schemas),
+            RsFileType::CrateEntry => self.lib_rs(&project.schemas),
+            RsFileType::FFIEntry => self.ffi_rs(&project.schemas),
+            RsFileType::Generated => self.generated_rs(&project.schemas),
             RsFileType::Types => Ok(self.types_rs()),
         }?;
 
@@ -379,18 +388,14 @@ impl RsGenerator {
 }
 
 impl Generator<RsTemplate> for RsGenerator {
-    fn generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let base_path = crate_dir(project_root).join("src");
+    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let base_path = crate_dir(&project.root).join("src");
         let template = self.template_ref();
         let mut res = [
-            template.render(schemas, &RsFileType::CrateEntry)?,
-            template.render(schemas, &RsFileType::FFIEntry)?,
-            template.render(schemas, &RsFileType::Generated)?,
-            template.render(schemas, &RsFileType::Types)?,
+            template.render(project, &RsFileType::CrateEntry)?,
+            template.render(project, &RsFileType::FFIEntry)?,
+            template.render(project, &RsFileType::Generated)?,
+            template.render(project, &RsFileType::Types)?,
         ]
         .into_iter()
         .flatten()
@@ -402,7 +407,8 @@ impl Generator<RsTemplate> for RsGenerator {
         .collect::<Vec<_>>();
 
         res.extend(
-            schemas
+            project
+                .schemas
                 .iter()
                 .map(|schema| -> Result<GenerateResult, anyhow::Error> {
                     let impl_code = template.rs_impl(schema)?;
@@ -425,12 +431,8 @@ impl Generator<RsTemplate> for RsGenerator {
 }
 
 impl GeneratorInvoker for RsGenerator {
-    fn invoke_generate(
-        &self,
-        project_root: &PathBuf,
-        schemas: &Vec<Schema>,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project_root, schemas)
+    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(project)
     }
 }
 
@@ -446,9 +448,12 @@ mod tests {
     fn test_rs_generator() {
         let schema = load_schema_json::<Schema>();
         let generator = RsGenerator::new();
-        let results = generator
-            .generate(&PathBuf::from("."), &vec![schema])
-            .unwrap();
+        let project = Project {
+            name: "test_module".to_string(),
+            root: PathBuf::from("."),
+            schemas: vec![schema],
+        };
+        let results = generator.generate(&project).unwrap();
 
         assert_snapshot!(results
             .iter()

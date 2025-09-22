@@ -4,7 +4,9 @@ import CrabyTestModule, {
   type TestObject,
   type SubObject,
 } from './NativeCrabyTest';
+import CalculatorModule from './NativeCalculator';
 
+// CrabyTest
 export function numericMethod(arg: number) {
   return CrabyTestModule.numericMethod(arg);
 }
@@ -35,6 +37,23 @@ export function nullableMethod(arg: number | null) {
 
 export function promiseMethod(arg: number) {
   return CrabyTestModule.promiseMethod(arg);
+}
+
+// Calculator
+export function add(a: number, b: number) {
+  return CalculatorModule.add(a, b);
+}
+
+export function subtract(a: number, b: number) {
+  return CalculatorModule.subtract(a, b);
+}
+
+export function multiply(a: number, b: number) {
+  return CalculatorModule.multiply(a, b);
+}
+
+export function divide(a: number, b: number) {
+  return CalculatorModule.divide(a, b);
 }
 
 export type { TestObject, SubObject };
