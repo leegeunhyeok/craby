@@ -5,7 +5,6 @@ import { withVerbose } from '../utils/with-verbose';
 const command = withVerbose(
   new Command().name('doctor').action(() => {
     const projectRoot = process.cwd();
-
     getBindings().doctor({ projectRoot });
   })
 );

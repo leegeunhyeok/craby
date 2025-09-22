@@ -3,11 +3,11 @@ use std::{fs, path::PathBuf};
 use craby_common::{
     config::CompleteCrabyConfig,
     constants::{crate_target_dir, cxx_bridge_dir, lib_base_name},
-    utils::string::SanitizedString,
+    utils::{fs::collect_files, string::SanitizedString},
 };
 use log::debug;
 
-use crate::{constants::toolchain::Target, utils::collect_files};
+use crate::constants::toolchain::Target;
 
 pub struct Artifacts {
     pub srcs: Vec<PathBuf>,
@@ -22,14 +22,30 @@ pub enum ArtifactType {
     Lib,
 }
 
+const CXX_SRC_EXTS: &[&str] = &["c", "cc"];
+const CXX_HEADER_EXTS: &[&str] = &["h", "hh"];
+
 impl Artifacts {
     pub fn get_artifacts(
         config: &CompleteCrabyConfig,
         target: &Target,
     ) -> Result<Artifacts, anyhow::Error> {
         let cxx_bridge_dir = cxx_bridge_dir(&config.project_root, target.to_str());
-        let cxx_srcs = collect_files(&cxx_bridge_dir, &["c", "cc"])?;
-        let cxx_headers = collect_files(&cxx_bridge_dir, &["h", "hh"])?;
+
+        let cxx_src_filter = |path: &PathBuf| {
+            let ext = path.extension().unwrap_or_default();
+            let is_target = CXX_SRC_EXTS.contains(&ext.to_str().unwrap_or_default());
+            is_target
+        };
+
+        let cxx_header_filter = |path: &PathBuf| {
+            let ext = path.extension().unwrap_or_default();
+            let is_target = CXX_HEADER_EXTS.contains(&ext.to_str().unwrap_or_default());
+            is_target
+        };
+
+        let cxx_srcs = collect_files(&cxx_bridge_dir, &cxx_src_filter)?;
+        let cxx_headers = collect_files(&cxx_bridge_dir, &cxx_header_filter)?;
 
         let lib_name = SanitizedString::from(&config.project.name);
         let lib = crate_target_dir(&config.project_root, target.to_str())

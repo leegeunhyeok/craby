@@ -16,7 +16,6 @@ export declare function codegen(opts: CodegenOptions): void
 
 export interface CodegenOptions {
   projectRoot: string
-  schemas: Array<string>
 }
 
 export declare function debug(message: string): void
@@ -37,7 +36,6 @@ export interface InitOptions {
   projectRoot: string
   templateBasePath: string
   packageName: string
-  schemas: Array<string>
 }
 
 export declare function setup(levelFilter?: string | undefined | null): void
@@ -46,8 +44,6 @@ export declare function show(opts: ShowOptions): void
 
 export interface ShowOptions {
   projectRoot: string
-  packageName: string
-  schemas: Array<string>
 }
 
 export declare function trace(message: string): void

@@ -1,6 +1,3 @@
 [project]
 name = "craby_test"
-
-[codegen]
-include = [".*"]
-exclude = []
+source_dir = "src"

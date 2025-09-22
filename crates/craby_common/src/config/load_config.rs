@@ -12,10 +12,12 @@ pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow
 
     let config = fs::read_to_string(config_path)?;
     let config = toml::from_str::<CrabyConfig>(&config)?;
+    let source_dir = project_root.join(PathBuf::from(&config.project.source_dir));
 
     Ok(CompleteCrabyConfig {
         project_root: project_root.clone(),
         project: config.project,
+        source_dir,
     })
 }
 
@@ -50,6 +52,10 @@ fn validate_config(
             "Invalid library name in Cargo.toml: {} (Expected: {})",
             manifest.lib.name, expected_lib_name,
         )));
+    }
+
+    if config.project.source_dir.is_empty() {
+        return Err(anyhow::anyhow!("Source directory is not set"));
     }
 
     Ok(config)

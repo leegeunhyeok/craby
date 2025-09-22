@@ -25,7 +25,6 @@ pub struct InitOptions {
     pub project_root: String,
     pub template_base_path: String,
     pub package_name: String,
-    pub schemas: Vec<String>,
 }
 
 #[napi]
@@ -34,7 +33,6 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
         project_root: opts.project_root.into(),
         template_base_path: opts.template_base_path.into(),
         package_name: opts.package_name,
-        schemas: opts.schemas,
     };
 
     match craby_cli::commands::init::perform(opts) {
@@ -51,14 +49,12 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct CodegenOptions {
     pub project_root: String,
-    pub schemas: Vec<String>,
 }
 
 #[napi]
 pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::codegen::CodegenOptions {
         project_root: opts.project_root.into(),
-        schemas: opts.schemas,
     };
 
     match craby_cli::commands::codegen::perform(opts) {
@@ -97,16 +93,12 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct ShowOptions {
     pub project_root: String,
-    pub package_name: String,
-    pub schemas: Vec<String>,
 }
 
 #[napi]
 pub fn show(opts: ShowOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::show::ShowOptions {
         project_root: opts.project_root.into(),
-        package_name: opts.package_name,
-        schemas: opts.schemas,
     };
 
     match craby_cli::commands::show::perform(opts) {

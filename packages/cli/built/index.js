@@ -1,31 +1,107 @@
 import $$__Module from 'node:module';
 typeof require !== 'function' && (globalThis.require = $$__Module.createRequire(import.meta.url));
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
 
 // src/cli.ts
 import { program } from "@commander-js/extra-typings";
 
 // src/commands/init.ts
-import path3 from "path";
+import path2 from "path";
 import { Command } from "@commander-js/extra-typings";
-
-// src/codegen/get-schema-info.ts
-import { assert } from "es-toolkit";
-
-// src/codegen/generate-schema-infos.ts
-import fs from "fs";
-import path from "path";
-import { glob } from "glob";
 
 // src/napi.ts
 import * as mod from "../napi/index.js";
 function getBindings() {
   return mod;
+}
+
+// src/utils/with-verbose.ts
+import { Option } from "commander";
+var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
+function withVerbose(command7) {
+  return command7.addOption(VERBOSE_OPTION);
+}
+
+// src/utils/package-json.ts
+import fs from "fs";
+import path from "path";
+function getPackageJsonPath(projectRoot) {
+  return path.join(projectRoot, "package.json");
+}
+function getPackageJson(projectRoot) {
+  return JSON.parse(fs.readFileSync(getPackageJsonPath(projectRoot), "utf8"));
+}
+
+// src/commands/init.ts
+var command = withVerbose(
+  new Command().name("init").action(async () => {
+    const projectRoot = process.cwd();
+    const packageJson = getPackageJson(projectRoot);
+    getBindings().init({
+      projectRoot,
+      templateBasePath: path2.resolve(import.meta.dirname, "..", "templates"),
+      packageName: packageJson.name
+    });
+  })
+);
+
+// src/commands/codegen.ts
+import { Command as Command2 } from "@commander-js/extra-typings";
+var command2 = withVerbose(
+  new Command2().name("codegen").action(async () => {
+    const projectRoot = process.cwd();
+    getBindings().codegen({ projectRoot });
+  })
+);
+
+// src/commands/build.ts
+import { Command as Command3 } from "@commander-js/extra-typings";
+var command3 = withVerbose(
+  new Command3().name("build").action(() => {
+    const projectRoot = process.cwd();
+    getBindings().build({ projectRoot });
+  })
+);
+
+// src/commands/show.ts
+import { Command as Command4 } from "@commander-js/extra-typings";
+var command4 = withVerbose(
+  new Command4().name("show").action(async () => {
+    const projectRoot = process.cwd();
+    getBindings().show({ projectRoot });
+  })
+);
+
+// src/commands/doctor.ts
+import { Command as Command5 } from "@commander-js/extra-typings";
+var command5 = withVerbose(
+  new Command5().name("doctor").action(() => {
+    const projectRoot = process.cwd();
+    getBindings().doctor({ projectRoot });
+  })
+);
+
+// src/commands/clean.ts
+import { Command as Command6 } from "@commander-js/extra-typings";
+var command6 = withVerbose(
+  new Command6().name("clean").action(() => {
+    const projectRoot = process.cwd();
+    getBindings().clean({ projectRoot });
+  })
+);
+
+// package.json
+var version = "0.1.0-alpha.3";
+
+// src/cli.ts
+function run() {
+  const cli = program.name("craby").version(version);
+  cli.addCommand(command);
+  cli.addCommand(command2);
+  cli.addCommand(command3);
+  cli.addCommand(command4);
+  cli.addCommand(command5);
+  cli.addCommand(command6);
+  cli.parse();
 }
 
 // src/logger.ts
@@ -48,256 +124,6 @@ var loggerProxy = new Proxy({}, {
     return (message) => getLogger()[prop](message);
   }
 });
-
-// src/utils/get-require.ts
-import Module from "module";
-var ref = typeof __require === "function" ? __require : Module.createRequire(import.meta.url);
-function getRequire() {
-  return ref;
-}
-
-// src/codegen/codegen-utils.ts
-function getCombineJSToSchema() {
-  let combineJSToSchema;
-  const require2 = getRequire();
-  try {
-    combineJSToSchema = require2("../../packages/react-native-codegen/lib/cli/combine/combine-js-to-schema.js");
-  } catch {
-    combineJSToSchema = require2("@react-native/codegen/lib/cli/combine/combine-js-to-schema.js");
-  }
-  if (!combineJSToSchema) {
-    throw "combine-js-to-schema not found.";
-  }
-  return combineJSToSchema;
-}
-
-// src/codegen/generate-schema-infos.ts
-function generateSchemaInfos(libraries) {
-  return libraries.map((library) => generateSchemaInfo(library));
-}
-function generateSchemaInfo(library, platform) {
-  const pathToJavaScriptSources = path.join(
-    library.libraryPath,
-    library.config.jsSrcsDir
-  );
-  loggerProxy.debug(`[Codegen] Processing ${library.config.name}`);
-  const supportedApplePlatforms = extractSupportedApplePlatforms(
-    library.config.name,
-    library.libraryPath
-  );
-  return {
-    library,
-    supportedApplePlatforms,
-    schema: getCombineJSToSchema().combineSchemasInFileList(
-      [pathToJavaScriptSources],
-      platform,
-      /NativeSampleTurboModule/
-    )
-  };
-}
-var APPLE_PLATFORMS = ["ios", "macos", "tvos", "visionos"];
-function extractSupportedApplePlatforms(dependency, dependencyPath) {
-  loggerProxy.debug("[Codegen] Searching for podspec in the project dependencies.");
-  const podspecs = glob.sync("*.podspec", { cwd: dependencyPath });
-  if (podspecs.length === 0) {
-    return;
-  }
-  const podspec = fs.readFileSync(
-    path.join(dependencyPath, podspecs[0]),
-    "utf8"
-  );
-  const supportedPlatforms = podspec.split("\n").filter(
-    (line) => line.includes("platform") || line.includes("deployment_target")
-  ).join("");
-  const supportedPlatformsMap = APPLE_PLATFORMS.reduce(
-    (acc, platform) => ({
-      ...acc,
-      [platform]: supportedPlatforms.includes(
-        getCocoaPodsPlatformKey(platform)
-      )
-    }),
-    {}
-  );
-  const supportedPlatformsList = Object.keys(supportedPlatformsMap).filter(
-    (key) => supportedPlatformsMap[key]
-  );
-  if (supportedPlatformsList.length > 0) {
-    loggerProxy.debug(
-      `[Codegen] Supported Apple platforms: ${supportedPlatformsList.join(
-        ", "
-      )} for ${dependency}`
-    );
-  }
-  return supportedPlatformsMap;
-}
-function getCocoaPodsPlatformKey(platformName) {
-  if (platformName === "macos") {
-    return "osx";
-  }
-  return platformName;
-}
-
-// src/utils/package-json.ts
-import fs2 from "fs";
-import path2 from "path";
-function getPackageJsonPath(projectRoot) {
-  return path2.join(projectRoot, "package.json");
-}
-function getPackageJson(projectRoot) {
-  return JSON.parse(fs2.readFileSync(getPackageJsonPath(projectRoot), "utf8"));
-}
-
-// src/codegen/get-schema-info.ts
-async function getSchemaInfo(projectRoot) {
-  const packageJson = getPackageJson(projectRoot);
-  const schemaInfos = generateSchemaInfos([{
-    name: packageJson.name,
-    config: {
-      name: packageJson.name,
-      type: "modules",
-      jsSrcsDir: "src"
-    },
-    libraryPath: projectRoot
-  }]);
-  assert(schemaInfos.length === 1, "Invalid schema info");
-  return schemaInfos[0];
-}
-
-// src/utils/with-verbose.ts
-import { Option } from "commander";
-var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
-function withVerbose(command7) {
-  return command7.addOption(VERBOSE_OPTION);
-}
-
-// src/commands/init.ts
-var command = withVerbose(
-  new Command().name("init").action(async () => {
-    const projectRoot = process.cwd();
-    const schemaInfo = await getSchemaInfo(projectRoot);
-    const modules = schemaInfo.schema?.modules ?? {};
-    const moduleNames = Object.keys(modules);
-    if (moduleNames.length === 0) {
-      loggerProxy.error("TurboModule schema is not found");
-      return;
-    }
-    getBindings().init({
-      projectRoot,
-      templateBasePath: path3.resolve(import.meta.dirname, "..", "templates"),
-      packageName: schemaInfo.library.name,
-      schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
-    });
-  })
-);
-
-// src/commands/codegen.ts
-import { Command as Command2 } from "@commander-js/extra-typings";
-import { assert as assert2 } from "es-toolkit";
-
-// src/utils/is-valid-project.ts
-import fs3 from "fs";
-import path4 from "path";
-function isValidProject(projectRoot) {
-  try {
-    return isValidProjectImpl(projectRoot);
-  } catch {
-    return false;
-  }
-}
-function isValidProjectImpl(projectRoot) {
-  return Boolean(fs3.existsSync(path4.join(projectRoot, "craby.toml")));
-}
-
-// src/commands/codegen.ts
-var command2 = withVerbose(
-  new Command2().name("codegen").action(async () => {
-    const projectRoot = process.cwd();
-    assert2(isValidProject(projectRoot), "Invalid TurboModule project");
-    const schemaInfo = await getSchemaInfo(projectRoot);
-    loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
-    const modules = schemaInfo.schema?.modules ?? {};
-    const moduleNames = Object.keys(modules);
-    if (moduleNames.length === 0) {
-      loggerProxy.error("TurboModule schema is not found");
-      return;
-    }
-    const schemas = moduleNames.map((name) => JSON.stringify(modules[name]));
-    loggerProxy.debug(`Schemas: ${schemas.join("\n")}`);
-    getBindings().codegen({
-      projectRoot,
-      schemas
-    });
-  })
-);
-
-// src/commands/build.ts
-import { Command as Command3 } from "@commander-js/extra-typings";
-import { assert as assert3 } from "es-toolkit";
-var command3 = withVerbose(
-  new Command3().name("build").action(() => {
-    const projectRoot = process.cwd();
-    assert3(isValidProject(projectRoot), "Invalid Craby project");
-    getBindings().build({ projectRoot });
-  })
-);
-
-// src/commands/show.ts
-import { Command as Command4 } from "@commander-js/extra-typings";
-import { assert as assert4 } from "es-toolkit";
-var command4 = withVerbose(
-  new Command4().name("show").action(async () => {
-    const projectRoot = process.cwd();
-    assert4(isValidProject(projectRoot), "Invalid TurboModule project");
-    const schemaInfo = await getSchemaInfo(projectRoot);
-    loggerProxy.debug(`Schema: ${JSON.stringify(schemaInfo, null, 2)}`);
-    const modules = schemaInfo.schema?.modules ?? {};
-    const moduleNames = Object.keys(modules);
-    if (moduleNames.length === 0) {
-      loggerProxy.info("Nothing to show");
-      return;
-    }
-    getBindings().show({
-      projectRoot,
-      packageName: schemaInfo.library.name,
-      schemas: moduleNames.map((name) => JSON.stringify(modules[name]))
-    });
-  })
-);
-
-// src/commands/doctor.ts
-import { Command as Command5 } from "@commander-js/extra-typings";
-var command5 = withVerbose(
-  new Command5().name("doctor").action(() => {
-    const projectRoot = process.cwd();
-    getBindings().doctor({ projectRoot });
-  })
-);
-
-// src/commands/clean.ts
-import { Command as Command6 } from "@commander-js/extra-typings";
-import { assert as assert5 } from "es-toolkit";
-var command6 = withVerbose(
-  new Command6().name("clean").action(() => {
-    const projectRoot = process.cwd();
-    assert5(isValidProject(projectRoot), "Invalid TurboModule project");
-    getBindings().clean({ projectRoot });
-  })
-);
-
-// package.json
-var version = "0.1.0-alpha.3";
-
-// src/cli.ts
-function run() {
-  const cli = program.name("craby").version(version);
-  cli.addCommand(command);
-  cli.addCommand(command2);
-  cli.addCommand(command3);
-  cli.addCommand(command4);
-  cli.addCommand(command5);
-  cli.addCommand(command6);
-  cli.parse();
-}
 
 // src/index.ts
 async function run2() {

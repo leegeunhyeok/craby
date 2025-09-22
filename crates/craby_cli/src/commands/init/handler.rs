@@ -21,7 +21,6 @@ pub struct InitOptions {
     pub project_root: PathBuf,
     pub template_base_path: PathBuf,
     pub package_name: String,
-    pub schemas: Vec<String>,
 }
 
 pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
@@ -63,17 +62,19 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     render_template(&android_template, &opts.project_root.join("android"), &data)?;
     render_template(&ios_template, &opts.project_root.join("ios"), &data)?;
 
+    let schemas: Vec<String> = vec![]; // TODO
+
     // Generate C++ code for each TurboModule schema
-    opts.schemas.into_iter().try_for_each(|schema| {
-        let schema = serde_json::from_str::<Schema>(&schema)?;
-        let turbo_module_name = schema.module_name.clone();
-        let mut cxx_template_data = data.clone();
-        cxx_template_data.insert("turbo_module_name", turbo_module_name.as_str());
-        render_template(
-            &cxx_template,
-            &opts.project_root.join("cpp"),
-            &cxx_template_data,
-        )?;
+    schemas.into_iter().try_for_each(|schema| {
+        // let schema = serde_json::from_str::<Schema>(&schema)?;
+        // let turbo_module_name = schema.module_name.clone();
+        // let mut cxx_template_data = data.clone();
+        // cxx_template_data.insert("turbo_module_name", turbo_module_name.as_str());
+        // render_template(
+        //     &cxx_template,
+        //     &opts.project_root.join("cpp"),
+        //     &cxx_template_data,
+        // )?;
         Ok::<(), anyhow::Error>(())
     })?;
 

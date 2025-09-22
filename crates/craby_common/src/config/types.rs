@@ -26,10 +26,12 @@ pub struct CrabyConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ProjectConfig {
     pub name: String,
+    pub source_dir: String,
 }
 
 #[derive(Debug)]
 pub struct CompleteCrabyConfig {
-    pub project_root: PathBuf,
     pub project: ProjectConfig,
+    pub project_root: PathBuf,
+    pub source_dir: PathBuf,
 }
