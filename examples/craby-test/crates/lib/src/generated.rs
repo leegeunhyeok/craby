@@ -9,14 +9,14 @@ pub trait CrabyTestSpec {
     fn string_method(arg: String) -> String;
     fn object_method(arg: TestObject) -> TestObject;
     fn array_method(arg: Array<Number>) -> Array<Number>;
-    fn enum_method(arg: MyEnum) -> String;
+    fn enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
     fn nullable_method(arg: Nullable<Number>) -> Nullable<Number>;
     fn promise_method(arg: Number) -> Promise<Number>;
 }
 
 impl Default for MyEnum {
     fn default() -> Self {
-        MyEnum::FOO
+        MyEnum::Foo
     }
 }
 
@@ -53,6 +53,12 @@ impl Default for SubObject {
             b: 0.0,
             c: false
         }
+    }
+}
+
+impl Default for SwitchState {
+    fn default() -> Self {
+        SwitchState::Off
     }
 }
 

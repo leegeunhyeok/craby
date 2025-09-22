@@ -756,6 +756,7 @@ namespace craby {
     struct NullableSubObject;
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
+    enum class SwitchState : ::std::uint8_t;
   }
 }
 
@@ -817,11 +818,19 @@ struct TestObject final {
 #ifndef CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 #define CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 enum class MyEnum : ::std::uint8_t {
-  FOO = 0,
-  BAR = 1,
-  BAZ = 2,
+  Foo = 0,
+  Bar = 1,
+  Baz = 2,
 };
 #endif // CXXBRIDGE1_ENUM_craby$bridging$MyEnum
+
+#ifndef CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+#define CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+enum class SwitchState : ::std::uint8_t {
+  Off = 0,
+  On = 1,
+};
+#endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
 double numericMethod(double arg) noexcept;
 
@@ -833,7 +842,7 @@ bool booleanMethod(bool arg) noexcept;
 
 ::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept;
 
-::rust::String enumMethod(::craby::bridging::MyEnum arg) noexcept;
+::rust::String enumMethod(::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) noexcept;
 
 ::craby::bridging::NullableNumber nullableMethod(::craby::bridging::NullableNumber arg) noexcept;
 

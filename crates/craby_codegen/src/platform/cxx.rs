@@ -608,7 +608,7 @@ pub mod template {
     use indoc::formatdoc;
 
     use crate::{
-        types::schema::{Alias, Enum, TypeAnnotation},
+        types::schema::{Alias, Enum, EnumMemberValue, TypeAnnotation},
         utils::indent_str,
     };
 
@@ -759,7 +759,12 @@ pub mod template {
             .enumerate()
             .try_for_each(|(idx, member)| -> Result<(), anyhow::Error> {
                 let enum_namespace = format!("{}::{}", enum_namespace, member.name);
-                let raw_member = raw_member(&member.value.value);
+                let raw_member = match &member.value {
+                    EnumMemberValue::EnumStringMember { value, .. } => raw_member(value),
+                    EnumMemberValue::EnumNumberMember { value, .. } => {
+                        raw_member(&value.to_string())
+                    }
+                };
 
                 let from_js_cond = if idx == 0 {
                     // ```cpp

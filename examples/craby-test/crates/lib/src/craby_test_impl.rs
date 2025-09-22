@@ -30,13 +30,21 @@ impl CrabyTestSpec for CrabyTest {
         arg
     }
 
-    fn enum_method(arg: MyEnum) -> String {
-        match arg {
-            MyEnum::FOO => "FOO!".to_string(),
-            MyEnum::BAR => "BAR!".to_string(),
-            MyEnum::BAZ => "BAZ!".to_string(),
+    fn enum_method(arg0: MyEnum, arg1: SwitchState) -> String {
+        let arg0 = match arg0 {
+            MyEnum::Foo => "Enum Foo!",
+            MyEnum::Bar => "Enum Bar!",
+            MyEnum::Baz => "Enum Baz!",
             _ => unreachable!(),
-        }
+        };
+
+        let arg1 = match arg1 {
+            SwitchState::Off => "Off",
+            SwitchState::On => "On",
+            _ => unreachable!(),
+        };
+
+        format!("Enum {} / {}", arg0, arg1)
     }
 
     fn nullable_method(arg: Nullable<Number>) -> Nullable<Number> {

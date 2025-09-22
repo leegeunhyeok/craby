@@ -48,9 +48,12 @@ pub struct EnumMember {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct EnumMemberValue {
-    pub r#type: String,
-    pub value: String,
+#[serde(tag = "type")]
+pub enum EnumMemberValue {
+    #[serde(rename = "StringLiteralTypeAnnotation")]
+    EnumStringMember { value: String },
+    #[serde(rename = "NumberLiteralTypeAnnotation")] 
+    EnumNumberMember { value: f64 },
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -187,14 +190,15 @@ impl Parameter {
         if let TypeAnnotation::ObjectTypeAnnotation { .. }
         | TypeAnnotation::GenericObjectTypeAnnotation { .. } = *self.type_annotation
         {
-            error!("Object type is not supported for parameters");
-            error!("Use defined type alias instead");
-            unimplemented!();
+            return Err(anyhow::anyhow!(
+                "Object type is not supported for parameters. Use defined type alias instead",
+            ));
         }
 
         if let TypeAnnotation::FunctionTypeAnnotation { .. } = *self.type_annotation {
-            error!("Function type is not supported for parameters");
-            unimplemented!();
+            return Err(anyhow::anyhow!(
+                "Function type is not supported for parameters. Use promise type instead",
+            ));
         }
 
         let param_type = self.type_annotation.as_rs_impl_type()?.0;

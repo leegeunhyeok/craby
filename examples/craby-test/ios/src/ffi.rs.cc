@@ -826,6 +826,7 @@ namespace craby {
     struct NullableSubObject;
     struct TestObject;
     enum class MyEnum : ::std::uint8_t;
+    enum class SwitchState : ::std::uint8_t;
   }
 }
 
@@ -887,11 +888,19 @@ struct TestObject final {
 #ifndef CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 #define CXXBRIDGE1_ENUM_craby$bridging$MyEnum
 enum class MyEnum : ::std::uint8_t {
-  FOO = 0,
-  BAR = 1,
-  BAZ = 2,
+  Foo = 0,
+  Bar = 1,
+  Baz = 2,
 };
 #endif // CXXBRIDGE1_ENUM_craby$bridging$MyEnum
+
+#ifndef CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+#define CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+enum class SwitchState : ::std::uint8_t {
+  Off = 0,
+  On = 1,
+};
+#endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
 extern "C" {
 double craby$bridging$cxxbridge1$craby_test_numeric_method(double arg) noexcept;
@@ -904,7 +913,7 @@ void craby$bridging$cxxbridge1$craby_test_object_method(::craby::bridging::TestO
 
 void craby$bridging$cxxbridge1$craby_test_array_method(::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
-void craby$bridging$cxxbridge1$craby_test_enum_method(::craby::bridging::MyEnum arg, ::rust::String *return$) noexcept;
+void craby$bridging$cxxbridge1$craby_test_enum_method(::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1, ::rust::String *return$) noexcept;
 
 void craby$bridging$cxxbridge1$craby_test_nullable_method(::craby::bridging::NullableNumber *arg, ::craby::bridging::NullableNumber *return$) noexcept;
 
@@ -939,9 +948,9 @@ bool booleanMethod(bool arg) noexcept {
   return ::std::move(return$.value);
 }
 
-::rust::String enumMethod(::craby::bridging::MyEnum arg) noexcept {
+::rust::String enumMethod(::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) noexcept {
   ::rust::MaybeUninit<::rust::String> return$;
-  craby$bridging$cxxbridge1$craby_test_enum_method(arg, &return$.value);
+  craby$bridging$cxxbridge1$craby_test_enum_method(arg0, arg1, &return$.value);
   return ::std::move(return$.value);
 }
 

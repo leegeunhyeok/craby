@@ -54,12 +54,12 @@ template <>
 struct Bridging<craby::bridging::MyEnum> {
   static craby::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto raw = value.asString(rt).utf8(rt);
-    if (raw == "FOO") {
-      return craby::bridging::MyEnum::FOO;
-    } else if (raw == "BAR") {
-      return craby::bridging::MyEnum::BAR;
-    } else if (raw == "BAZ") {
-      return craby::bridging::MyEnum::BAZ;
+    if (raw == "foo") {
+      return craby::bridging::MyEnum::Foo;
+    } else if (raw == "bar") {
+      return craby::bridging::MyEnum::Bar;
+    } else if (raw == "baz") {
+      return craby::bridging::MyEnum::Baz;
     } else {
       throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
     }
@@ -67,14 +67,39 @@ struct Bridging<craby::bridging::MyEnum> {
 
   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyEnum value) {
     switch (value) {
-      case craby::bridging::MyEnum::FOO:
-        return react::bridging::toJs(rt, "FOO");
-      case craby::bridging::MyEnum::BAR:
-        return react::bridging::toJs(rt, "BAR");
-      case craby::bridging::MyEnum::BAZ:
-        return react::bridging::toJs(rt, "BAZ");
+      case craby::bridging::MyEnum::Foo:
+        return react::bridging::toJs(rt, "foo");
+      case craby::bridging::MyEnum::Bar:
+        return react::bridging::toJs(rt, "bar");
+      case craby::bridging::MyEnum::Baz:
+        return react::bridging::toJs(rt, "baz");
       default:
         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+    }
+  }
+};
+
+template <>
+struct Bridging<craby::bridging::SwitchState> {
+  static craby::bridging::SwitchState fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto raw = value.asNumber();
+    if (raw == 0) {
+      return craby::bridging::SwitchState::Off;
+    } else if (raw == 1) {
+      return craby::bridging::SwitchState::On;
+    } else {
+      throw jsi::JSError(rt, "Invalid enum value (SwitchState)");
+    }
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::SwitchState value) {
+    switch (value) {
+      case craby::bridging::SwitchState::Off:
+        return react::bridging::toJs(rt, 0);
+      case craby::bridging::SwitchState::On:
+        return react::bridging::toJs(rt, 1);
+      default:
+        throw jsi::JSError(rt, "Invalid enum value (SwitchState)");
     }
   }
 };

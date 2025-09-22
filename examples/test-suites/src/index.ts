@@ -81,14 +81,25 @@ const TEST_SUITES: TestSuite[] = [
   },
   {
     label: 'Enum',
-    action: () => Module.enumMethod(Module.MyEnum.FOO),
+    action: () => Module.enumMethod(Module.MyEnum.Foo, Module.SwitchState.Off),
   },
   {
     label: 'Enum',
-    description: '(Invalid enum value)',
+    description: '(Invalid string enum value)',
     action: () => {
       try {
-        return Module.enumMethod('UNKNOWN' as any)
+        return Module.enumMethod('UNKNOWN' as any, Module.SwitchState.Off);
+      } catch (error: any) {
+        return toErrorObject(error);
+      }
+    },
+  },
+  {
+    label: 'Enum',
+    description: '(Invalid numeric enum value)',
+    action: () => {
+      try {
+        return Module.enumMethod(Module.MyEnum.Baz, -999 as any);
       } catch (error: any) {
         return toErrorObject(error);
       }

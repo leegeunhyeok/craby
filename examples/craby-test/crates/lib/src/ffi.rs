@@ -37,9 +37,14 @@ pub mod bridging {
     }
 
     enum MyEnum {
-        FOO,
-        BAR,
-        BAZ,
+        Foo,
+        Bar,
+        Baz,
+    }
+
+    enum SwitchState {
+        Off,
+        On,
     }
 
     extern "Rust" {
@@ -59,7 +64,7 @@ pub mod bridging {
         fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(arg: MyEnum) -> String;
+        fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
 
         #[cxx_name = "nullableMethod"]
         fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber;
@@ -94,8 +99,8 @@ fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64> {
     ret
 }
 
-fn craby_test_enum_method(arg: MyEnum) -> String {
-    let ret = CrabyTest::enum_method(arg);
+fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String {
+    let ret = CrabyTest::enum_method(arg0, arg1);
     ret
 }
 

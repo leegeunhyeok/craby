@@ -24,7 +24,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["stringMethod"] = MethodMetadata{1, &CxxCrabyTestModule::stringMethod};
   methodMap_["objectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
-  methodMap_["enumMethod"] = MethodMetadata{1, &CxxCrabyTestModule::enumMethod};
+  methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
   methodMap_["nullableMethod"] = MethodMetadata{1, &CxxCrabyTestModule::nullableMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
 }
@@ -152,12 +152,13 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
   auto callInvoker = thisModule.callInvoker_;
 
   try {
-    if (1 != count) {
-      throw jsi::JSError(rt, "Expected 1 argument");
+    if (2 != count) {
+      throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
     auto arg0 = react::bridging::fromJs<craby::bridging::MyEnum>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::enumMethod(arg0);
+    auto arg1 = react::bridging::fromJs<craby::bridging::SwitchState>(rt, args[1], callInvoker);
+    auto ret = craby::bridging::enumMethod(arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {

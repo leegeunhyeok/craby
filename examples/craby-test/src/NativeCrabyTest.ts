@@ -15,9 +15,14 @@ export interface SubObject {
 }
 
 export enum MyEnum {
-  FOO = 'FOO',
-  BAR = 'BAR',
-  BAZ = 'BAZ',
+  Foo = 'foo',
+  Bar = 'bar',
+  Baz = 'baz',
+}
+
+export enum SwitchState {
+  Off = 0,
+  On = 1,
 }
 
 export interface Spec extends TurboModule {
@@ -26,7 +31,7 @@ export interface Spec extends TurboModule {
   stringMethod(arg: string): string;
   objectMethod(arg: TestObject): TestObject;
   arrayMethod(arg: number[]): number[];
-  enumMethod(arg: MyEnum): string;
+  enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): number | null;
   promiseMethod(arg: number): Promise<number>;
 }

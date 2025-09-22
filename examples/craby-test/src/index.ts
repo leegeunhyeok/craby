@@ -1,5 +1,6 @@
 import CrabyTestModule, {
   MyEnum,
+  SwitchState,
   type TestObject,
   type SubObject,
 } from './NativeCrabyTest';
@@ -24,8 +25,8 @@ export function arrayMethod(arg: number[]) {
   return CrabyTestModule.arrayMethod(arg);
 }
 
-export function enumMethod(arg: MyEnum) {
-  return CrabyTestModule.enumMethod(arg);
+export function enumMethod(arg0: MyEnum, arg1: SwitchState) {
+  return CrabyTestModule.enumMethod(arg0, arg1);
 }
 
 export function nullableMethod(arg: number | null) {
@@ -37,4 +38,4 @@ export function promiseMethod(arg: number) {
 }
 
 export type { TestObject, SubObject };
-export { MyEnum };
+export { MyEnum, SwitchState };
