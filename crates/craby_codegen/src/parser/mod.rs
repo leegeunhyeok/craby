@@ -1,1 +1,1 @@
-pub mod schema_parser;
+pub mod turbo_module_analyzer;

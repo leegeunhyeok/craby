@@ -6,7 +6,7 @@ use craby_codegen::{
         android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
         ios_generator::IosGenerator, rs_generator::RsGenerator, types::GeneratorInvoker,
     },
-    parser::schema_parser::parse_schema,
+    parser::turbo_module_analyzer::parse_schema,
     types::{schema::Schema, types::Project},
 };
 use craby_common::{config::load_config, env::is_initialized, utils::fs::collect_files};
