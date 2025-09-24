@@ -17,6 +17,7 @@ serde        = { workspace = true, features = ["derive"] }
 serde_json   = { workspace = true }
 serde_derive = { workspace = true }
 indoc        = "2.0.6"
+thiserror    = "2.0.16"
 
 [dev-dependencies]
 insta = "1.43.2"

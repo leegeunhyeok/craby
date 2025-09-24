@@ -8,11 +8,13 @@ export interface TestObject {
   sub: SubObject | null;
 }
 
-export interface SubObject {
+export type SubObject = {
   a: string | null;
   b: number;
   c: boolean;
-}
+};
+
+type NullableNumber = number | null;
 
 export enum MyEnum {
   Foo = 'foo',
@@ -32,7 +34,7 @@ export interface Spec extends TurboModule {
   objectMethod(arg: TestObject): TestObject;
   arrayMethod(arg: number[]): number[];
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
-  nullableMethod(arg: number | null): number | null;
+  nullableMethod(arg: number | null): NullableNumber;
   promiseMethod(arg: number): Promise<number>;
 }
 

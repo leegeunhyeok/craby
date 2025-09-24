@@ -4,6 +4,16 @@ use craby_common::utils::string::snake_case;
 use log::error;
 use serde::{Deserialize, Serialize};
 
+use crate::parser;
+
+#[derive(Debug)]
+pub struct Schema2 {
+    pub module_name: String,
+    pub alias_map: Vec<parser::types::ObjectTypeAnnotation>,
+    pub enum_map: Vec<parser::types::EnumTypeAnnotation>,
+    pub methods: Vec<parser::types::Method>,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Schema {
     #[serde(rename = "moduleName")]

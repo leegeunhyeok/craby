@@ -6,7 +6,11 @@ use craby_codegen::{
         android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
         ios_generator::IosGenerator, rs_generator::RsGenerator, types::GeneratorInvoker,
     },
-    parser::turbo_module_analyzer::parse_schema,
+    parser::{
+        turbo_module_analyzer::parse_schema,
+        types::ParseError,
+        utils::{render_report, RenderReportOptions},
+    },
     types::{schema::Schema, types::Project},
 };
 use craby_common::{config::load_config, env::is_initialized, utils::fs::collect_files};
@@ -47,7 +51,27 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         .try_for_each(|path| -> Result<(), anyhow::Error> {
             let src = fs::read_to_string(path)?;
             let src = src.as_str();
-            parse_schema(&opts.project_root, path, src)?;
+
+            match parse_schema(src) {
+                Ok(schemas) => {
+                    info!("{} module schema(s) found", schemas.len());
+                }
+                Err(ParseError::Oxc { diagnostics }) => {
+                    render_report(
+                        diagnostics,
+                        RenderReportOptions {
+                            project_root: &opts.project_root,
+                            path,
+                            src,
+                        },
+                    );
+                    anyhow::bail!("Failed to parse schema");
+                }
+                Err(ParseError::General(e)) => {
+                    anyhow::bail!(e);
+                }
+            }
+
             Ok(())
         })?;
 
