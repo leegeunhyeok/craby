@@ -1,0 +1,84 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: schemas
+---
+[
+    Schema {
+        module_name: "FooModule",
+        alias_map: [
+            Object(
+                ObjectTypeAnnotation {
+                    name: "Common",
+                    props: [
+                        Prop {
+                            name: "value",
+                            type_annotation: Number,
+                        },
+                    ],
+                },
+            ),
+        ],
+        enum_map: [],
+        methods: [
+            Method {
+                name: "foo",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Object(
+                            ObjectTypeAnnotation {
+                                name: "Common",
+                                props: [
+                                    Prop {
+                                        name: "value",
+                                        type_annotation: Number,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+                ret_type: Void,
+            },
+        ],
+    },
+    Schema {
+        module_name: "BarModule",
+        alias_map: [
+            Object(
+                ObjectTypeAnnotation {
+                    name: "Common",
+                    props: [
+                        Prop {
+                            name: "value",
+                            type_annotation: Number,
+                        },
+                    ],
+                },
+            ),
+        ],
+        enum_map: [],
+        methods: [
+            Method {
+                name: "bar",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Object(
+                            ObjectTypeAnnotation {
+                                name: "Common",
+                                props: [
+                                    Prop {
+                                        name: "value",
+                                        type_annotation: Number,
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+                ret_type: Void,
+            },
+        ],
+    },
+]

@@ -4,22 +4,11 @@ typeof require !== 'function' && (globalThis.require = $$__Module.createRequire(
 // src/cli.ts
 import { program } from "@commander-js/extra-typings";
 
-// src/commands/init.ts
+// src/utils/command.ts
+import { Command, Option } from "@commander-js/extra-typings";
+
+// src/utils/common-options.ts
 import path2 from "path";
-import { Command } from "@commander-js/extra-typings";
-
-// src/napi.ts
-import * as mod from "../napi/index.js";
-function getBindings() {
-  return mod;
-}
-
-// src/utils/with-verbose.ts
-import { Option } from "commander";
-var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
-function withVerbose(command7) {
-  return command7.addOption(VERBOSE_OPTION);
-}
 
 // src/utils/package-json.ts
 import fs from "fs";
@@ -31,63 +20,53 @@ function getPackageJson(projectRoot) {
   return JSON.parse(fs.readFileSync(getPackageJsonPath(projectRoot), "utf8"));
 }
 
+// src/utils/common-options.ts
+function getCommonOptions() {
+  const projectRoot = process.cwd();
+  const packageJson = getPackageJson(projectRoot);
+  return {
+    projectRoot,
+    templateBasePath: path2.resolve(import.meta.dirname, "..", "templates"),
+    packageName: packageJson.name
+  };
+}
+
+// src/napi.ts
+import * as mod from "../napi/index.js";
+function getBindings() {
+  return mod;
+}
+
+// src/utils/command.ts
+var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
+function withVerbose(command7) {
+  return command7.addOption(VERBOSE_OPTION);
+}
+function createBindingCommand(commandName) {
+  const command7 = new Command().name(commandName).action(async () => {
+    const execute = getBindings()[commandName];
+    execute(getCommonOptions());
+  });
+  return withVerbose(command7);
+}
+
 // src/commands/init.ts
-var command = withVerbose(
-  new Command().name("init").action(async () => {
-    const projectRoot = process.cwd();
-    const packageJson = getPackageJson(projectRoot);
-    getBindings().init({
-      projectRoot,
-      templateBasePath: path2.resolve(import.meta.dirname, "..", "templates"),
-      packageName: packageJson.name
-    });
-  })
-);
+var command = createBindingCommand("init");
 
 // src/commands/codegen.ts
-import { Command as Command2 } from "@commander-js/extra-typings";
-var command2 = withVerbose(
-  new Command2().name("codegen").action(async () => {
-    const projectRoot = process.cwd();
-    getBindings().codegen({ projectRoot });
-  })
-);
+var command2 = createBindingCommand("codegen");
 
 // src/commands/build.ts
-import { Command as Command3 } from "@commander-js/extra-typings";
-var command3 = withVerbose(
-  new Command3().name("build").action(() => {
-    const projectRoot = process.cwd();
-    getBindings().build({ projectRoot });
-  })
-);
+var command3 = createBindingCommand("build");
 
 // src/commands/show.ts
-import { Command as Command4 } from "@commander-js/extra-typings";
-var command4 = withVerbose(
-  new Command4().name("show").action(async () => {
-    const projectRoot = process.cwd();
-    getBindings().show({ projectRoot });
-  })
-);
+var command4 = createBindingCommand("show");
 
 // src/commands/doctor.ts
-import { Command as Command5 } from "@commander-js/extra-typings";
-var command5 = withVerbose(
-  new Command5().name("doctor").action(() => {
-    const projectRoot = process.cwd();
-    getBindings().doctor({ projectRoot });
-  })
-);
+var command5 = createBindingCommand("doctor");
 
 // src/commands/clean.ts
-import { Command as Command6 } from "@commander-js/extra-typings";
-var command6 = withVerbose(
-  new Command6().name("clean").action(() => {
-    const projectRoot = process.cwd();
-    getBindings().clean({ projectRoot });
-  })
-);
+var command6 = createBindingCommand("clean");
 
 // package.json
 var version = "0.1.0-alpha.3";

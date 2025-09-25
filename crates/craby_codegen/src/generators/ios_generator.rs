@@ -5,7 +5,7 @@ use indoc::formatdoc;
 
 use crate::{
     constants::{cxx_mod_cls_name, objc_mod_provider_name},
-    types::types::Project,
+    types::CodegenContext,
     utils::indent_str,
 };
 
@@ -19,11 +19,9 @@ pub enum IosFileType {
 }
 
 impl IosTemplate {
-    fn module_provider(&self, project: &Project) -> Result<String, anyhow::Error> {
+    fn module_provider(&self, project: &CodegenContext) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
         let mut cxx_registers = vec![];
-
-        // TODO: support multiple schemas
         let objc_mod_provider_name = objc_mod_provider_name(&project.name);
 
         project.schemas.iter().for_each(|schema| {
@@ -73,10 +71,9 @@ impl Template for IosTemplate {
 
     fn render(
         &self,
-        project: &Project,
+        project: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-        // TODO: support multiple schemas
         let res = match file_type {
             IosFileType::ModuleProvider => {
                 vec![(
@@ -97,7 +94,7 @@ impl IosGenerator {
 }
 
 impl Generator<IosTemplate> for IosGenerator {
-    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
         let ios_base_path = ios_base_path(&project.root);
         let template = self.template_ref();
         let mut files = vec![];
@@ -123,7 +120,10 @@ impl Generator<IosTemplate> for IosGenerator {
 }
 
 impl GeneratorInvoker for IosGenerator {
-    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(
+        &self,
+        project: &CodegenContext,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
         self.generate(project)
     }
 }
@@ -132,25 +132,21 @@ impl GeneratorInvoker for IosGenerator {
 mod tests {
     use insta::assert_snapshot;
 
-    use crate::{tests::load_schema_json, types::schema::Schema};
+    use crate::tests::get_codegen_context;
 
     use super::*;
 
     #[test]
     fn test_ios_generator() {
-        let schema = load_schema_json::<Schema>();
+        let ctx = get_codegen_context();
         let generator = IosGenerator::new();
-        let project = Project {
-            name: "test_module".to_string(),
-            root: PathBuf::from("."),
-            schemas: vec![schema],
-        };
-        let results = generator.generate(&project).unwrap();
-
-        assert_snapshot!(results
+        let results = generator.generate(&ctx).unwrap();
+        let result = results
             .iter()
             .map(|res| format!("{}\n{}", res.path.display(), res.content))
             .collect::<Vec<_>>()
-            .join("\n\n"));
+            .join("\n\n");
+
+        assert_snapshot!(result);
     }
 }

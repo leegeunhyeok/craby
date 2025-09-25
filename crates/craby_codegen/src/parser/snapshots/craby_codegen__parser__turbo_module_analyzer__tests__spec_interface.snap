@@ -1,10 +1,9 @@
 ---
 source: crates/craby_codegen/src/parser/turbo_module_analyzer.rs
-assertion_line: 808
 expression: schemas
 ---
 [
-    Schema2 {
+    Schema {
         module_name: "MyModule",
         alias_map: [],
         enum_map: [],

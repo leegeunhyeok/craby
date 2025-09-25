@@ -8,7 +8,7 @@ use indoc::formatdoc;
 
 use crate::{
     constants::cxx_mod_cls_name,
-    types::{schema::Schema, types::Project},
+    types::{CodegenContext, Schema},
     utils::indent_str,
 };
 
@@ -84,7 +84,7 @@ impl AndroidTemplate {
         Ok(content)
     }
 
-    fn cmakelists(&self, project: &Project) -> String {
+    fn cmakelists(&self, project: &CodegenContext) -> String {
         let kebab_name = kebab_case(&project.name);
         let lib_name = dest_lib_name(&SanitizedString::from(&project.name));
         let cxx_mod_cpp_files = project
@@ -156,7 +156,7 @@ impl Template for AndroidTemplate {
 
     fn render(
         &self,
-        project: &Project,
+        project: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
@@ -176,7 +176,7 @@ impl AndroidGenerator {
 }
 
 impl Generator<AndroidTemplate> for AndroidGenerator {
-    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
         let android_base_path = android_path(&project.root);
         let jni_base_path = jni_base_path(&project.root);
         let template = self.template_ref();
@@ -214,7 +214,10 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
 }
 
 impl GeneratorInvoker for AndroidGenerator {
-    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(
+        &self,
+        project: &CodegenContext,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
         self.generate(project)
     }
 }
@@ -223,25 +226,21 @@ impl GeneratorInvoker for AndroidGenerator {
 mod tests {
     use insta::assert_snapshot;
 
-    use crate::tests::load_schema_json;
+    use crate::tests::get_codegen_context;
 
     use super::*;
 
     #[test]
     fn test_android_generator() {
-        let schema = load_schema_json::<Schema>();
+        let ctx = get_codegen_context();
         let generator = AndroidGenerator::new();
-        let project = Project {
-            name: "test_module".to_string(),
-            root: PathBuf::from("."),
-            schemas: vec![schema],
-        };
-        let results = generator.generate(&project).unwrap();
-
-        assert_snapshot!(results
+        let results = generator.generate(&ctx).unwrap();
+        let result = results
             .iter()
             .map(|res| format!("{}\n{}", res.path.display(), res.content))
             .collect::<Vec<_>>()
-            .join("\n\n"));
+            .join("\n\n");
+
+        assert_snapshot!(result);
     }
 }

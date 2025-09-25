@@ -1,0 +1,349 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: result
+---
+[
+    Schema {
+        module_name: "CrabyTest",
+        alias_map: [
+            Object(
+                ObjectTypeAnnotation {
+                    name: "SubObject",
+                    props: [
+                        Prop {
+                            name: "a",
+                            type_annotation: Nullable(
+                                String,
+                            ),
+                        },
+                        Prop {
+                            name: "b",
+                            type_annotation: Number,
+                        },
+                        Prop {
+                            name: "c",
+                            type_annotation: Boolean,
+                        },
+                    ],
+                },
+            ),
+            Object(
+                ObjectTypeAnnotation {
+                    name: "TestObject",
+                    props: [
+                        Prop {
+                            name: "foo",
+                            type_annotation: String,
+                        },
+                        Prop {
+                            name: "bar",
+                            type_annotation: Number,
+                        },
+                        Prop {
+                            name: "baz",
+                            type_annotation: Boolean,
+                        },
+                        Prop {
+                            name: "sub",
+                            type_annotation: Nullable(
+                                Object(
+                                    ObjectTypeAnnotation {
+                                        name: "SubObject",
+                                        props: [
+                                            Prop {
+                                                name: "a",
+                                                type_annotation: Nullable(
+                                                    String,
+                                                ),
+                                            },
+                                            Prop {
+                                                name: "b",
+                                                type_annotation: Number,
+                                            },
+                                            Prop {
+                                                name: "c",
+                                                type_annotation: Boolean,
+                                            },
+                                        ],
+                                    },
+                                ),
+                            ),
+                        },
+                    ],
+                },
+            ),
+        ],
+        enum_map: [
+            Enum(
+                EnumTypeAnnotation {
+                    name: "MyEnum",
+                    members: [
+                        EnumMember {
+                            name: "Foo",
+                            value: String(
+                                "foo",
+                            ),
+                        },
+                        EnumMember {
+                            name: "Bar",
+                            value: String(
+                                "bar",
+                            ),
+                        },
+                        EnumMember {
+                            name: "Baz",
+                            value: String(
+                                "baz",
+                            ),
+                        },
+                    ],
+                },
+            ),
+            Enum(
+                EnumTypeAnnotation {
+                    name: "SwitchState",
+                    members: [
+                        EnumMember {
+                            name: "Off",
+                            value: Number(
+                                0,
+                            ),
+                        },
+                        EnumMember {
+                            name: "On",
+                            value: Number(
+                                1,
+                            ),
+                        },
+                    ],
+                },
+            ),
+        ],
+        methods: [
+            Method {
+                name: "numericMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Number,
+                    },
+                ],
+                ret_type: Number,
+            },
+            Method {
+                name: "booleanMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Boolean,
+                    },
+                ],
+                ret_type: Boolean,
+            },
+            Method {
+                name: "stringMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: String,
+                    },
+                ],
+                ret_type: String,
+            },
+            Method {
+                name: "objectMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Object(
+                            ObjectTypeAnnotation {
+                                name: "TestObject",
+                                props: [
+                                    Prop {
+                                        name: "foo",
+                                        type_annotation: String,
+                                    },
+                                    Prop {
+                                        name: "bar",
+                                        type_annotation: Number,
+                                    },
+                                    Prop {
+                                        name: "baz",
+                                        type_annotation: Boolean,
+                                    },
+                                    Prop {
+                                        name: "sub",
+                                        type_annotation: Nullable(
+                                            Object(
+                                                ObjectTypeAnnotation {
+                                                    name: "SubObject",
+                                                    props: [
+                                                        Prop {
+                                                            name: "a",
+                                                            type_annotation: Nullable(
+                                                                String,
+                                                            ),
+                                                        },
+                                                        Prop {
+                                                            name: "b",
+                                                            type_annotation: Number,
+                                                        },
+                                                        Prop {
+                                                            name: "c",
+                                                            type_annotation: Boolean,
+                                                        },
+                                                    ],
+                                                },
+                                            ),
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+                ret_type: Object(
+                    ObjectTypeAnnotation {
+                        name: "TestObject",
+                        props: [
+                            Prop {
+                                name: "foo",
+                                type_annotation: String,
+                            },
+                            Prop {
+                                name: "bar",
+                                type_annotation: Number,
+                            },
+                            Prop {
+                                name: "baz",
+                                type_annotation: Boolean,
+                            },
+                            Prop {
+                                name: "sub",
+                                type_annotation: Nullable(
+                                    Object(
+                                        ObjectTypeAnnotation {
+                                            name: "SubObject",
+                                            props: [
+                                                Prop {
+                                                    name: "a",
+                                                    type_annotation: Nullable(
+                                                        String,
+                                                    ),
+                                                },
+                                                Prop {
+                                                    name: "b",
+                                                    type_annotation: Number,
+                                                },
+                                                Prop {
+                                                    name: "c",
+                                                    type_annotation: Boolean,
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                ),
+                            },
+                        ],
+                    },
+                ),
+            },
+            Method {
+                name: "arrayMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Array(
+                            Number,
+                        ),
+                    },
+                ],
+                ret_type: Array(
+                    Number,
+                ),
+            },
+            Method {
+                name: "enumMethod",
+                params: [
+                    Param {
+                        name: "arg0",
+                        type_annotation: Enum(
+                            EnumTypeAnnotation {
+                                name: "MyEnum",
+                                members: [
+                                    EnumMember {
+                                        name: "Foo",
+                                        value: String(
+                                            "foo",
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "Bar",
+                                        value: String(
+                                            "bar",
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "Baz",
+                                        value: String(
+                                            "baz",
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    Param {
+                        name: "arg1",
+                        type_annotation: Enum(
+                            EnumTypeAnnotation {
+                                name: "SwitchState",
+                                members: [
+                                    EnumMember {
+                                        name: "Off",
+                                        value: Number(
+                                            0,
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "On",
+                                        value: Number(
+                                            1,
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                ],
+                ret_type: String,
+            },
+            Method {
+                name: "nullableMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Nullable(
+                            Number,
+                        ),
+                    },
+                ],
+                ret_type: Nullable(
+                    Number,
+                ),
+            },
+            Method {
+                name: "promiseMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Number,
+                    },
+                ],
+                ret_type: Promise(
+                    Number,
+                ),
+            },
+        ],
+    },
+]

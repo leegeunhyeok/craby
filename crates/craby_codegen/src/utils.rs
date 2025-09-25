@@ -1,8 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    platform::cxx::template::cxx_nullable_bridging_template,
-    types::schema::{FunctionSpec, Schema, TypeAnnotation},
+    parser::types::{EnumTypeAnnotation, ObjectTypeAnnotation, TypeAnnotation},
+    types::Schema,
 };
 
 pub fn indent_str(str: String, indent_size: usize) -> String {
@@ -19,103 +19,61 @@ pub fn indent_str(str: String, indent_size: usize) -> String {
         .join("\n")
 }
 
-pub fn collect_nullable_types_from_func(
-    module_name: &String,
-    spec: &FunctionSpec,
-) -> Result<BTreeMap<String, String>, anyhow::Error> {
-    let mut nullable_bridging_templates = BTreeMap::new();
-
-    if let TypeAnnotation::FunctionTypeAnnotation {
-        params,
-        return_type_annotation,
-    } = &*spec.type_annotation
-    {
-        params
-            .iter()
-            .try_for_each(|param| -> Result<(), anyhow::Error> {
-                if let nullable_type @ TypeAnnotation::NullableTypeAnnotation { type_annotation } =
-                    &*param.type_annotation
-                {
-                    let key = nullable_type.as_cxx_type(module_name)?;
-
-                    if !nullable_bridging_templates.contains_key(&key) {
-                        return Ok(());
-                    }
-
-                    let bridging_template = cxx_nullable_bridging_template(
-                        module_name,
-                        &nullable_type.as_cxx_type(module_name)?,
-                        type_annotation,
-                    )?;
-
-                    nullable_bridging_templates.insert(key, bridging_template);
-                }
-
-                Ok(())
-            })?;
-
-        if let nullable_type @ TypeAnnotation::NullableTypeAnnotation { type_annotation } =
-            &**return_type_annotation
-        {
-            let key = nullable_type.as_cxx_type(module_name)?;
-
-            if !nullable_bridging_templates.contains_key(&key) {
-                let bridging_template = cxx_nullable_bridging_template(
-                    module_name,
-                    &nullable_type.as_cxx_type(module_name)?,
-                    type_annotation,
-                )?;
-
-                nullable_bridging_templates.insert(key, bridging_template);
-            }
-        }
-    }
-
-    Ok(nullable_bridging_templates)
-}
-
 pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
     let mut dependencies = BTreeMap::new();
-
     let mut visited = BTreeSet::new();
     let mut in_progress = BTreeSet::new();
     let mut result = vec![];
 
-    schema.alias_map.iter().for_each(|(name, _)| {
-        dependencies.insert(name.clone(), vec![]);
+    schema.alias_map.iter().for_each(|type_annotation| {
+        dependencies.insert(type_annotation.as_object().unwrap().name.clone(), vec![]);
     });
 
     schema
         .alias_map
         .iter()
-        .try_for_each(|(name, alias_spec)| -> Result<(), anyhow::Error> {
+        .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
+            let alias_spec = type_annotation.as_object().unwrap();
+
             alias_spec
-                .properties
+                .props
                 .iter()
                 .try_for_each(|prop| -> Result<(), anyhow::Error> {
-                    match &*prop.type_annotation {
-                        TypeAnnotation::TypeAliasTypeAnnotation { name: alias_name } => {
-                            dependencies.get_mut(name).unwrap().push(alias_name.clone());
+                    match &prop.type_annotation {
+                        TypeAnnotation::Object(ObjectTypeAnnotation {
+                            name: alias_name, ..
+                        }) => {
+                            dependencies
+                                .get_mut(&alias_spec.name)
+                                .unwrap()
+                                .push(alias_name.clone());
                         }
-                        TypeAnnotation::EnumDeclaration {
+                        TypeAnnotation::Enum(EnumTypeAnnotation {
                             name: enum_name, ..
-                        } => {
-                            dependencies.get_mut(name).unwrap().push(enum_name.clone());
+                        }) => {
+                            dependencies
+                                .get_mut(&alias_spec.name)
+                                .unwrap()
+                                .push(enum_name.clone());
                         }
-                        nullable @ TypeAnnotation::NullableTypeAnnotation { type_annotation } => {
+                        nullable @ TypeAnnotation::Nullable(type_annotation) => {
                             let rs_type = nullable.as_rs_bridge_type()?.0;
                             dependencies.entry(rs_type.clone()).or_insert(vec![]);
 
                             match &**type_annotation {
-                                TypeAnnotation::TypeAliasTypeAnnotation { name: alias_name } => {
+                                TypeAnnotation::Object(ObjectTypeAnnotation {
+                                    name: alias_name,
+                                    ..
+                                }) => {
                                     dependencies
                                         .get_mut(&rs_type)
                                         .unwrap()
                                         .push(alias_name.clone());
                                 }
-                                TypeAnnotation::EnumDeclaration {
-                                    name: enum_name, ..
-                                } => {
+                                TypeAnnotation::Enum(EnumTypeAnnotation {
+                                    name: enum_name,
+                                    ..
+                                }) => {
                                     dependencies
                                         .get_mut(&rs_type)
                                         .unwrap()

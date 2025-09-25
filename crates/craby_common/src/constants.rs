@@ -31,6 +31,7 @@ pub mod android {
 pub mod ios {}
 
 pub const TEMP_DIR: &str = ".craby";
+pub const SPEC_FILE_PREFIX: &str = "Native";
 
 pub fn lib_base_name(name: &SanitizedString) -> String {
     format!("{}", flat_case(name.0.as_ref()))

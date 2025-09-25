@@ -14,7 +14,7 @@ export type SubObject = {
   c: boolean;
 };
 
-type NullableNumber = number | null;
+export type MaybeNumber = number | null;
 
 export enum MyEnum {
   Foo = 'foo',
@@ -34,7 +34,7 @@ export interface Spec extends TurboModule {
   objectMethod(arg: TestObject): TestObject;
   arrayMethod(arg: number[]): number[];
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
-  nullableMethod(arg: number | null): NullableNumber;
+  nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;
 }
 

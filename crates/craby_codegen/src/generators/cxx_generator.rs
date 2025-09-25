@@ -6,7 +6,7 @@ use indoc::formatdoc;
 use crate::{
     constants::cxx_mod_cls_name,
     platform::cxx::CxxMethod,
-    types::{schema::Schema, types::Project},
+    types::{CodegenContext, Schema},
     utils::indent_str,
 };
 
@@ -25,7 +25,6 @@ pub enum CxxFileType {
 impl CxxTemplate {
     fn cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
         let res = schema
-            .spec
             .methods
             .iter()
             .map(|spec| spec.as_cxx_method(&schema.module_name))
@@ -281,7 +280,7 @@ impl Template for CxxTemplate {
 
     fn render(
         &self,
-        project: &Project,
+        project: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let res = match file_type {
@@ -316,7 +315,7 @@ impl CxxGenerator {
 }
 
 impl Generator<CxxTemplate> for CxxGenerator {
-    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
         let base_path = cxx_dir(&project.root);
         let template = self.template_ref();
         let res = [
@@ -341,7 +340,10 @@ impl Generator<CxxTemplate> for CxxGenerator {
 }
 
 impl GeneratorInvoker for CxxGenerator {
-    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(
+        &self,
+        project: &CodegenContext,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
         self.generate(project)
     }
 }
@@ -350,25 +352,21 @@ impl GeneratorInvoker for CxxGenerator {
 mod tests {
     use insta::assert_snapshot;
 
-    use crate::tests::load_schema_json;
+    use crate::tests::get_codegen_context;
 
     use super::*;
 
     #[test]
     fn test_cxx_generator() {
-        let schema = load_schema_json::<Schema>();
+        let ctx = get_codegen_context();
         let generator = CxxGenerator::new();
-        let project = Project {
-            name: "test_module".to_string(),
-            root: PathBuf::from("."),
-            schemas: vec![schema],
-        };
-        let results = generator.generate(&project).unwrap();
-
-        assert_snapshot!(results
+        let results = generator.generate(&ctx).unwrap();
+        let result = results
             .iter()
             .map(|res| format!("{}\n{}", res.path.display(), res.content))
             .collect::<Vec<_>>()
-            .join("\n\n"));
+            .join("\n\n");
+
+        assert_snapshot!(result);
     }
 }

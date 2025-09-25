@@ -1,20 +1,17 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use craby_codegen::{
+    codegen,
     constants::GENERATED_COMMENT,
     generators::{
         android_generator::AndroidGenerator, cxx_generator::CxxGenerator,
         ios_generator::IosGenerator, rs_generator::RsGenerator, types::GeneratorInvoker,
     },
-    parser::{
-        turbo_module_analyzer::parse_schema,
-        types::ParseError,
-        utils::{render_report, RenderReportOptions},
-    },
-    types::{schema::Schema, types::Project},
+    types::CodegenContext,
 };
-use craby_common::{config::load_config, env::is_initialized, utils::fs::collect_files};
+use craby_common::{config::load_config, env::is_initialized};
 use log::{debug, info};
+use owo_colors::OwoColorize;
 
 use crate::utils::{file::write_file, schema::print_schema};
 
@@ -30,72 +27,29 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     let config = load_config(&opts.project_root)?;
 
     info!(
-        "Collecting source files from {}",
-        config.source_dir.display()
+        "Collecting source files... {}",
+        format!("({})", config.source_dir.display()).dimmed()
     );
-    let srcs = collect_files(&config.source_dir, &|path: &PathBuf| {
-        path.extension().unwrap_or_default() == "ts"
-            && path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .starts_with("Native")
+    let schemas = codegen(craby_codegen::CodegenOptions {
+        project_root: &opts.project_root,
+        source_dir: &config.source_dir,
     })?;
-    debug!("{} source file(s) found", srcs.len());
+    let total_schemas = schemas.len();
+    info!("{} module schema(s) found", total_schemas);
 
-    if srcs.len() == 0 {
-        anyhow::bail!("No native module specification files found.");
+    // Print schema for each module
+    for (i, schema) in schemas.iter().enumerate() {
+        info!(
+            "Found module: {} ({}/{})",
+            schema.module_name,
+            i + 1,
+            total_schemas,
+        );
+        print_schema(schema)?;
+        println!();
     }
 
-    srcs.iter()
-        .try_for_each(|path| -> Result<(), anyhow::Error> {
-            let src = fs::read_to_string(path)?;
-            let src = src.as_str();
-
-            match parse_schema(src) {
-                Ok(schemas) => {
-                    info!("{} module schema(s) found", schemas.len());
-                }
-                Err(ParseError::Oxc { diagnostics }) => {
-                    render_report(
-                        diagnostics,
-                        RenderReportOptions {
-                            project_root: &opts.project_root,
-                            path,
-                            src,
-                        },
-                    );
-                    anyhow::bail!("Failed to parse schema");
-                }
-                Err(ParseError::General(e)) => {
-                    anyhow::bail!(e);
-                }
-            }
-
-            Ok(())
-        })?;
-
-    let schemas: Vec<Schema> = vec![]; // TODO
-    info!("{} module schema(s) found", schemas.len());
-
-    // let schemas = opts
-    //     .schemas
-    //     .iter()
-    //     .enumerate()
-    //     .map(|(i, schema)| {
-    //         let schema = serde_json::from_str::<Schema>(&schema)?;
-    //         info!(
-    //             "Preparing for {} module... ({}/{})",
-    //             schema.module_name,
-    //             i + 1,
-    //             opts.schemas.len()
-    //         );
-    //         print_schema(&schema)?;
-    //         Ok(schema)
-    //     })
-    //     .collect::<Result<Vec<Schema>, anyhow::Error>>()?;
-
-    let project = Project {
+    let ctx = CodegenContext {
         name: config.project.name,
         root: opts.project_root,
         schemas,
@@ -113,7 +67,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     generators
         .iter()
         .try_for_each(|generator| -> Result<(), anyhow::Error> {
-            generate_res.extend(generator.invoke_generate(&project)?);
+            generate_res.extend(generator.invoke_generate(&ctx)?);
             Ok(())
         })?;
 

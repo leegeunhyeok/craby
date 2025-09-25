@@ -8,7 +8,7 @@ use indoc::formatdoc;
 
 use crate::{
     platform::rust::RsCxxBridge,
-    types::{schema::Schema, types::Project},
+    types::{CodegenContext, Schema},
     utils::indent_str,
 };
 
@@ -101,7 +101,6 @@ impl RsTemplate {
     fn rs_spec(&self, schema: &Schema) -> Result<String, anyhow::Error> {
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
         let methods = schema
-            .spec
             .methods
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
@@ -127,7 +126,6 @@ impl RsTemplate {
         let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
 
         let methods = schema
-            .spec
             .methods
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
@@ -366,7 +364,7 @@ impl Template for RsTemplate {
 
     fn render(
         &self,
-        project: &Project,
+        project: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
@@ -388,7 +386,7 @@ impl RsGenerator {
 }
 
 impl Generator<RsTemplate> for RsGenerator {
-    fn generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
         let base_path = crate_dir(&project.root).join("src");
         let template = self.template_ref();
         let mut res = [
@@ -431,7 +429,10 @@ impl Generator<RsTemplate> for RsGenerator {
 }
 
 impl GeneratorInvoker for RsGenerator {
-    fn invoke_generate(&self, project: &Project) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(
+        &self,
+        project: &CodegenContext,
+    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
         self.generate(project)
     }
 }
@@ -440,25 +441,21 @@ impl GeneratorInvoker for RsGenerator {
 mod tests {
     use insta::assert_snapshot;
 
-    use crate::tests::load_schema_json;
+    use crate::tests::get_codegen_context;
 
     use super::*;
 
     #[test]
     fn test_rs_generator() {
-        let schema = load_schema_json::<Schema>();
+        let ctx = get_codegen_context();
         let generator = RsGenerator::new();
-        let project = Project {
-            name: "test_module".to_string(),
-            root: PathBuf::from("."),
-            schemas: vec![schema],
-        };
-        let results = generator.generate(&project).unwrap();
-
-        assert_snapshot!(results
+        let results = generator.generate(&ctx).unwrap();
+        let result = results
             .iter()
             .map(|res| format!("{}\n{}", res.path.display(), res.content))
             .collect::<Vec<_>>()
-            .join("\n\n"));
+            .join("\n\n");
+
+        assert_snapshot!(result);
     }
 }

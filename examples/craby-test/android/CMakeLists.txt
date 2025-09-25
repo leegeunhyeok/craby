@@ -21,8 +21,8 @@ target_include_directories(craby-test-lib INTERFACE
 add_library(cxx-craby-test SHARED
   src/main/jni/OnLoad.cpp
   src/main/jni/src/ffi.rs.cc
-  ../cpp/CxxCrabyTestModule.cpp
   ../cpp/CxxCalculatorModule.cpp
+  ../cpp/CxxCrabyTestModule.cpp
 )
 target_include_directories(cxx-craby-test PRIVATE
   ../cpp
