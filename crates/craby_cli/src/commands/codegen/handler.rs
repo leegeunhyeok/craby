@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Instant};
 
 use craby_codegen::{
     codegen,
@@ -25,6 +25,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     }
 
     let config = load_config(&opts.project_root)?;
+    let start_time = Instant::now();
 
     info!(
         "Collecting source files... {}",
@@ -92,8 +93,12 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             Ok(())
         })?;
 
+    let elapsed = start_time.elapsed().as_millis();
     info!("{} files generated", wrote_cnt);
-    info!("Codegen completed successfully 🎉");
+    info!(
+        "Codegen completed successfully 🎉 {}",
+        format!("({}ms)", elapsed).dimmed()
+    );
 
     Ok(())
 }

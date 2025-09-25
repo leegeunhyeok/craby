@@ -20,13 +20,9 @@
     "!napi/*.node"
   ],
   "dependencies": {
-    "@babel/parser": "^7.28.0",
     "@commander-js/extra-typings": "^14.0.0",
-    "@react-native/codegen": "^0.80.1",
-    "commander": "^14.0.0",
-    "es-toolkit": "^1.39.7",
-    "glob": "^11.0.3",
-    "zx": "^8.8.1"
+    "commander": "^14.0.1",
+    "es-toolkit": "^1.39.10"
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.1.5",
