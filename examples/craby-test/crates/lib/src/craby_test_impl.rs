@@ -1,3 +1,4 @@
+use crate::ffi;
 use crate::ffi::bridging::*;
 use crate::generated::*;
 use crate::types::*;
@@ -62,6 +63,8 @@ impl CrabyTestSpec for CrabyTest {
     }
 
     fn promise_method(arg: Number) -> Promise<Number> {
+        ffi::bridging::get_event_emitter_registry().emit(0, "Hi, Rust!");
+
         if arg >= 0.0 {
             promise::resolve(arg * 2.0)
         } else {

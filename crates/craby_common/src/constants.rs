@@ -69,6 +69,10 @@ pub fn cxx_bridge_dir(project_root: &PathBuf, target: &str) -> PathBuf {
     project_root.join("target").join(target).join("cxxbridge")
 }
 
+pub fn cxx_bridge_include_dir(project_root: &PathBuf) -> PathBuf {
+    crate_dir(project_root).join("include")
+}
+
 pub fn cxx_dir(project_root: &PathBuf) -> PathBuf {
     project_root.join("cpp")
 }

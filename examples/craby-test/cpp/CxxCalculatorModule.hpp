@@ -13,6 +13,7 @@ public:
   static constexpr const char *kModuleName = "Calculator";
 
   CxxCalculatorModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
+  ~CxxCalculatorModule();
 
   static facebook::jsi::Value
   add(facebook::jsi::Runtime &rt,

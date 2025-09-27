@@ -9,15 +9,32 @@
 #include "bridging-generated.hpp"
 #include "utils.hpp"
 
+#include <os/log.h>
+
 using namespace facebook;
 
 namespace craby {
 namespace calculator {
 
+CxxCalculatorModule::~CxxCalculatorModule() {
+  uintptr_t id = reinterpret_cast<uintptr_t>(this);
+  auto& registry = craby::eventemitter::EventEmitterRegistry::getInstance();
+  registry.unregisterDelegate(id);
+  os_log(OS_LOG_DEFAULT, "[C++] Unregisterd: %lu", id);
+}
+
 CxxCalculatorModule::CxxCalculatorModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCalculatorModule::kModuleName, jsInvoker) {
   callInvoker_ = std::move(jsInvoker);
+
+  uintptr_t id = reinterpret_cast<uintptr_t>(this);
+  auto& registry = craby::eventemitter::EventEmitterRegistry::getInstance();
+  registry.registerDelegate(id,
+                            [id](std::string name) {
+                              os_log(OS_LOG_DEFAULT, "[C++] From Rust: %s (Module: %lu)", name.c_str(), id);
+                            });
+  os_log(OS_LOG_DEFAULT, "[C++] Registered: %lu", id);
 
   methodMap_["add"] = MethodMetadata{2, &CxxCalculatorModule::add};
   methodMap_["subtract"] = MethodMetadata{2, &CxxCalculatorModule::subtract};

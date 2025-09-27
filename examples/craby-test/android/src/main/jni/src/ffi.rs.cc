@@ -1,3 +1,4 @@
+#include "EventEmitter.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -11,11 +12,15 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#if __cplusplus >= 201703L
+#include <string_view>
+#endif
 #if __cplusplus >= 202002L
 #include <ranges>
 #endif
 
 #ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #pragma GCC diagnostic ignored "-Wshadow"
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
@@ -116,6 +121,56 @@ private:
   std::array<std::uintptr_t, 3> repr;
 };
 #endif // CXXBRIDGE1_RUST_STRING
+
+#ifndef CXXBRIDGE1_RUST_STR
+#define CXXBRIDGE1_RUST_STR
+class Str final {
+public:
+  Str() noexcept;
+  Str(const String &) noexcept;
+  Str(const std::string &);
+  Str(const char *);
+  Str(const char *, std::size_t);
+
+  Str &operator=(const Str &) & noexcept = default;
+
+  explicit operator std::string() const;
+#if __cplusplus >= 201703L
+  explicit operator std::string_view() const;
+#endif
+
+  const char *data() const noexcept;
+  std::size_t size() const noexcept;
+  std::size_t length() const noexcept;
+  bool empty() const noexcept;
+
+  Str(const Str &) noexcept = default;
+  ~Str() noexcept = default;
+
+  using iterator = const char *;
+  using const_iterator = const char *;
+  const_iterator begin() const noexcept;
+  const_iterator end() const noexcept;
+  const_iterator cbegin() const noexcept;
+  const_iterator cend() const noexcept;
+
+  bool operator==(const Str &) const noexcept;
+  bool operator!=(const Str &) const noexcept;
+  bool operator<(const Str &) const noexcept;
+  bool operator<=(const Str &) const noexcept;
+  bool operator>(const Str &) const noexcept;
+  bool operator>=(const Str &) const noexcept;
+
+  void swap(Str &) noexcept;
+
+private:
+  class uninit;
+  Str(uninit) noexcept;
+  friend impl<Str>;
+
+  std::array<std::uintptr_t, 2> repr;
+};
+#endif // CXXBRIDGE1_RUST_STR
 
 #ifndef CXXBRIDGE1_RUST_SLICE
 #define CXXBRIDGE1_RUST_SLICE
@@ -828,6 +883,9 @@ namespace craby {
     enum class MyEnum : ::std::uint8_t;
     enum class SwitchState : ::std::uint8_t;
   }
+  namespace eventemitter {
+    using EventEmitterRegistry = ::craby::eventemitter::EventEmitterRegistry;
+  }
 }
 
 namespace craby {
@@ -927,7 +985,23 @@ void craby$bridging$cxxbridge1$craby_test_nullable_method(::craby::bridging::Nul
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_promise_method(double arg, double *return$) noexcept;
 } // extern "C"
+} // namespace bridging
 
+namespace eventemitter {
+extern "C" {
+void craby$eventemitter$cxxbridge1$EventEmitterRegistry$emit(::craby::eventemitter::EventEmitterRegistry const &self, ::std::size_t id, ::rust::Str name) noexcept {
+  void (::craby::eventemitter::EventEmitterRegistry::*emit$)(::std::size_t, ::rust::Str) const = &::craby::eventemitter::EventEmitterRegistry::emit;
+  (self.*emit$)(id, name);
+}
+
+::craby::eventemitter::EventEmitterRegistry const *craby$eventemitter$cxxbridge1$get_event_emitter_registry() noexcept {
+  ::craby::eventemitter::EventEmitterRegistry const &(*get_event_emitter_registry$)() = ::craby::eventemitter::getEventEmitterRegistry;
+  return &get_event_emitter_registry$();
+}
+} // extern "C"
+} // namespace eventemitter
+
+namespace bridging {
 double add(double a, double b) noexcept {
   return craby$bridging$cxxbridge1$calculator_add(a, b);
 }

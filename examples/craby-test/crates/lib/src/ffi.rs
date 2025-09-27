@@ -85,6 +85,17 @@ pub mod bridging {
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(arg: f64) -> Result<f64>;
     }
+
+    #[namespace = "craby::eventemitter"]
+    unsafe extern "C++" {
+        include!("EventEmitter.h");
+
+        type EventEmitterRegistry;
+
+        fn emit(self: &EventEmitterRegistry, id: usize, name: &str);
+        #[rust_name = "get_event_emitter_registry"]
+        fn getEventEmitterRegistry() -> &'static EventEmitterRegistry;
+    }
 }
 
 fn calculator_add(a: f64, b: f64) -> f64 {

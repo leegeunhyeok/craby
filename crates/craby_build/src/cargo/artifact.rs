@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use craby_common::{
     config::CompleteCrabyConfig,
-    constants::{crate_target_dir, cxx_bridge_dir, lib_base_name},
+    constants::{crate_target_dir, cxx_bridge_dir, cxx_bridge_include_dir, lib_base_name},
     utils::{fs::collect_files, string::SanitizedString},
 };
 use log::debug;
@@ -31,6 +31,7 @@ impl Artifacts {
         target: &Target,
     ) -> Result<Artifacts, anyhow::Error> {
         let cxx_bridge_dir = cxx_bridge_dir(&config.project_root, target.to_str());
+        let cxx_bridge_include_dir = cxx_bridge_include_dir(&config.project_root);
 
         let cxx_src_filter = |path: &PathBuf| {
             let ext = path.extension().unwrap_or_default();
@@ -46,6 +47,7 @@ impl Artifacts {
 
         let cxx_srcs = collect_files(&cxx_bridge_dir, &cxx_src_filter)?;
         let cxx_headers = collect_files(&cxx_bridge_dir, &cxx_header_filter)?;
+        let cxx_bridge_headers = collect_files(&cxx_bridge_include_dir, &cxx_header_filter)?;
 
         let lib_name = SanitizedString::from(&config.project.name);
         let lib = crate_target_dir(&config.project_root, target.to_str())
@@ -53,11 +55,12 @@ impl Artifacts {
 
         debug!("cxx_srcs: {:?}", cxx_srcs);
         debug!("cxx_headers: {:?}", cxx_headers);
+        debug!("cxx_bridge_headers: {:?}", cxx_bridge_headers);
         debug!("lib: {:?}", lib);
 
         Ok(Artifacts {
             srcs: cxx_srcs,
-            headers: cxx_headers,
+            headers: [cxx_headers, cxx_bridge_headers].concat(),
             libs: vec![lib],
         })
     }
