@@ -1,0 +1,3 @@
+[project]
+name = "{{ snake_name }}"
+source_dir = "src"

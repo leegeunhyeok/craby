@@ -1,7 +1,7 @@
 {
-  "name": "craby-test",
+  "name": "{{ pkg_name }}",
   "version": "0.1.0",
-  "description": "Craby test module",
+  "description": "{{ description }}",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -49,12 +49,12 @@
     "ios",
     "android"
   ],
-  "author": "leegeunhyeok <dev.ghlee@gmail.com> (https://github.com/leegeunhyeok)",
-  "license": "MIT",
+  "author": "{{ author }}",
+  "license": "{{ license }}",
   "bugs": {
-    "url": "https://github.com/leegeunhyeok/craby/issues"
+    "url": "{{ bugs_url }}"
   },
-  "homepage": "https://github.com/leegeunhyeok/craby#readme",
+  "homepage": "{{ homepage }}",
   "dependencies": {
     "craby-modules": "workspace:*"
   },

@@ -12789,3 +12789,22 @@ __metadata:
   checksum: 10/d731e3ba776a0ee19021d909787942933a6c2eafb2bbe85541f0c59aa5c7d475ce86fcb860d5803105e32244c3dd5ba875b87c4c6bf2d6f297da416aa54e556f
   languageName: node
   linkType: hard
+
+"{{ lib_name }}@workspace:template":
+  version: 0.0.0-use.local
+  resolution: "{{ lib_name }}@workspace:template"
+  dependencies:
+    "@biomejs/biome": "npm:2.2.4"
+    "@craby/cli": "workspace:*"
+    "@types/react": "npm:^19.0.0"
+    craby-modules: "workspace:*"
+    del-cli: "npm:^7.0.0"
+    react: "npm:19.1.1"
+    react-native: "npm:0.81.4"
+    tsdown: "npm:^0.15.5"
+    typescript: "npm:^5.9.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
