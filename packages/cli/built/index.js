@@ -4,8 +4,17 @@ typeof require !== 'function' && (globalThis.require = $$__Module.createRequire(
 // src/cli.ts
 import { program } from "@commander-js/extra-typings";
 
+// package.json
+var version = "0.1.0-alpha.3";
+
 // src/utils/command.ts
 import { Command, Option } from "@commander-js/extra-typings";
+
+// src/napi.ts
+import * as mod from "../napi/index.js";
+function getBindings() {
+  return mod;
+}
 
 // src/utils/common-options.ts
 import path2 from "path";
@@ -31,55 +40,28 @@ function getCommonOptions() {
   };
 }
 
-// src/napi.ts
-import * as mod from "../napi/index.js";
-function getBindings() {
-  return mod;
-}
-
 // src/utils/command.ts
 var VERBOSE_OPTION = new Option("-v, --verbose", "Print all logs");
-function withVerbose(command7) {
-  return command7.addOption(VERBOSE_OPTION);
+function withVerbose(command) {
+  return command.addOption(VERBOSE_OPTION);
 }
 function createBindingCommand(commandName) {
-  const command7 = new Command().name(commandName).action(async () => {
+  const command = new Command().name(commandName).action(async () => {
     const execute = getBindings()[commandName];
     execute(getCommonOptions());
   });
-  return withVerbose(command7);
+  return withVerbose(command);
 }
-
-// src/commands/init.ts
-var command = createBindingCommand("init");
-
-// src/commands/codegen.ts
-var command2 = createBindingCommand("codegen");
-
-// src/commands/build.ts
-var command3 = createBindingCommand("build");
-
-// src/commands/show.ts
-var command4 = createBindingCommand("show");
-
-// src/commands/doctor.ts
-var command5 = createBindingCommand("doctor");
-
-// src/commands/clean.ts
-var command6 = createBindingCommand("clean");
-
-// package.json
-var version = "0.1.0-alpha.3";
 
 // src/cli.ts
 function run() {
   const cli = program.name("craby").version(version);
-  cli.addCommand(command);
-  cli.addCommand(command2);
-  cli.addCommand(command3);
-  cli.addCommand(command4);
-  cli.addCommand(command5);
-  cli.addCommand(command6);
+  cli.addCommand(createBindingCommand("init"));
+  cli.addCommand(createBindingCommand("codegen"));
+  cli.addCommand(createBindingCommand("build"));
+  cli.addCommand(createBindingCommand("show"));
+  cli.addCommand(createBindingCommand("doctor"));
+  cli.addCommand(createBindingCommand("clean"));
   cli.parse();
 }
 
@@ -90,13 +72,14 @@ function getLogger() {
     return logger;
   }
   const bindings = getBindings();
-  return logger = {
+  logger = {
     trace: bindings.trace,
     debug: bindings.debug,
     info: bindings.info,
     warn: bindings.warn,
     error: bindings.error
   };
+  return logger;
 }
 var loggerProxy = new Proxy({}, {
   get(_, prop) {
@@ -107,9 +90,7 @@ var loggerProxy = new Proxy({}, {
 // src/index.ts
 async function run2() {
   const { setup } = getBindings();
-  const verbose = Boolean(
-    process.argv.find((arg) => arg === "-v" || arg === "--verbose")
-  );
+  const verbose = Boolean(process.argv.find((arg) => arg === "-v" || arg === "--verbose"));
   try {
     setup(verbose ? "debug" : process.env.RUST_LOG);
     run();

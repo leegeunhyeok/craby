@@ -14,6 +14,18 @@ pub struct DoctorOptions {
 }
 
 pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
+    println!("\n{}", "Platform".bold().dimmed());
+    assert_with_status("macOS", || {
+        if std::env::consts::OS == "macos" {
+            Ok(Status::Ok)
+        } else {
+            Err(anyhow::anyhow!(
+                "Unsupported platform: {}",
+                std::env::consts::OS
+            ))
+        }
+    });
+
     println!("\n{}", "Rust".bold().dimmed());
     let installed_targets = get_installed_targets()?;
     TARGETS.iter().for_each(|target| {
@@ -35,10 +47,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
         "Environment variable `ANDROID_HOME`",
         || match std::env::var("ANDROID_HOME") {
             Ok(_) => Ok(Status::Ok),
-            Err(e) => Err(anyhow::anyhow!(
-                "`ANDROID_HOME` environment variable is not set: {}",
-                e
-            )),
+            Err(e) => Ok(Status::Warn(e.to_string())),
         },
     );
     assert_with_status(

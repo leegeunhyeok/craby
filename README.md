@@ -28,6 +28,7 @@ Type-safe Rust for React Native—auto generated, integrated with pure C++ Turbo
 
 ### Prerequisites
 
+- [XCode 12 or higher](https://developer.apple.com/xcode) for [iOS targets](https://doc.rust-lang.org/rustc/platform-support/apple-ios.html) (macOS required)
 - [Android NDK](https://developer.android.com/ndk/downloads) and `ANDROID_NDK_HOME` environment variable
 
 ### Installation
@@ -200,7 +201,7 @@ end
 ### Requirements
 
 - Node.js 18+
-- Rust (latest stable version)
+- Rust (nightly-2025-08-04)
 
 ## License
 
