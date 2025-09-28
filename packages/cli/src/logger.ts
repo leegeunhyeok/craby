@@ -17,13 +17,15 @@ function getLogger() {
 
   const bindings = getBindings();
 
-  return (logger = {
+  logger = {
     trace: bindings.trace,
     debug: bindings.debug,
     info: bindings.info,
     warn: bindings.warn,
     error: bindings.error,
-  });
+  };
+
+  return logger;
 }
 
 const loggerProxy = new Proxy({} as Logger, {

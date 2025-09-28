@@ -5,9 +5,12 @@
     "packages/*"
   ],
   "scripts": {
+    "lint:all": "biome check",
+    "lint:fix": "biome check --write",
     "script:version": "./scripts/version.sh"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.4",
     "@types/node": "^22",
     "typescript": "^5.8.3"
   },

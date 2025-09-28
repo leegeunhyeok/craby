@@ -17,16 +17,17 @@ const TEST_SUITES: TestSuite[] = [
   },
   {
     label: 'Object',
-    action: () => Module.CrabyTestModule.objectMethod({
-      foo: 'foo',
-      bar: 123,
-      baz: false,
-      sub: {
-        a: 'a',
-        b: 456,
-        c: true,
-      },
-    }),
+    action: () =>
+      Module.CrabyTestModule.objectMethod({
+        foo: 'foo',
+        bar: 123,
+        baz: false,
+        sub: {
+          a: 'a',
+          b: 456,
+          c: true,
+        },
+      }),
   },
   {
     label: 'Object',
@@ -162,7 +163,7 @@ const TEST_SUITES: TestSuite[] = [
         divide: Module.CalculatorModule.divide(a, b),
       };
     },
-  }
+  },
 ];
 
 export { TEST_SUITES };

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::parser::types::{Signal, Method, TypeAnnotation};
+use crate::parser::types::{Method, Signal, TypeAnnotation};
 
 pub struct CodegenContext {
     pub name: String,

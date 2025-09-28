@@ -93,11 +93,12 @@ impl RsTemplate {
         };
 
         let code = [
-          struct_defs.join("\n\n"),
-          enum_defs.join("\n\n"),
-          cxx_extern,
-          cxx_signal_manager,
-        ].join("\n\n");
+            struct_defs.join("\n\n"),
+            enum_defs.join("\n\n"),
+            cxx_extern,
+            cxx_signal_manager,
+        ]
+        .join("\n\n");
 
         formatdoc! {
             r#"

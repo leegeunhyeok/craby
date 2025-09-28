@@ -1,4 +1,5 @@
-import { Registry, type Module, type Signal } from 'craby-modules';
+import type { Module, Signal } from 'craby-modules';
+import { Registry } from 'craby-modules';
 
 export interface TestObject {
   foo: string;

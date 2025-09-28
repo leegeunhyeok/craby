@@ -5,9 +5,7 @@ import { getBindings } from './napi';
 export async function run() {
   const { setup } = getBindings();
 
-  const verbose = Boolean(
-    process.argv.find((arg) => arg === '-v' || arg === '--verbose')
-  );
+  const verbose = Boolean(process.argv.find((arg) => arg === '-v' || arg === '--verbose'));
 
   try {
     setup(verbose ? 'debug' : process.env.RUST_LOG);

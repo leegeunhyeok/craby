@@ -1,10 +1,8 @@
 import { TurboModuleRegistry } from 'react-native';
 
-interface Module {}
+type Module = {};
 
-interface Signal {
-  (handler: () => void): () => void;
-}
+type Signal = (handler: () => void) => () => void;
 
 interface Registry {
   get<T extends Module>(moduleName: string): T | null;

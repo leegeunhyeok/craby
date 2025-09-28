@@ -1,4 +1,5 @@
-import { Registry, type Module } from 'craby-modules';
+import type { Module } from 'craby-modules';
+import { Registry } from 'craby-modules';
 
 export interface Spec extends Module {
   add(a: number, b: number): number;

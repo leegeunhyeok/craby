@@ -19,7 +19,7 @@ const config = {
       'react': path.join(__dirname, 'node_modules', 'react'),
       // For resolving workspace packages
       'craby-test': path.join(root, 'examples', 'craby-test', 'src'),
-      'craby-modules': path.join(root, 'packages', 'craby-modules', 'dist'),
+      'craby-modules': path.join(root, 'packages', 'craby-modules', 'src'),
     },
   },
 };
