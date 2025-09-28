@@ -79,13 +79,9 @@ android/keystores/debug.keystore
 ios/generated
 android/generated
 
-# React Native Nitro Modules
-nitrogen/
-
 # Craby
 target/
 .craby
 
 # JavaScript build output
-lib/module/
-lib/typescript/
+dist/

@@ -8,3 +8,4 @@
 /packages/cli/napi/**/*           linguist-vendored
 /packages/cli/templates/**/*      linguist-vendored
 /examples/**/*                    linguist-vendored
+/template/**/*                    linguist-vendored

@@ -2,11 +2,11 @@
   "name": "craby-test",
   "version": "0.1.0",
   "description": "Craby test module",
-  "main": "./lib/module/index.js",
-  "types": "./lib/typescript/src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "source": "./src/index.tsx",
+      "source": "./src/index.ts",
       "types": "./lib/typescript/src/index.d.ts",
       "default": "./lib/module/index.js"
     },
@@ -14,7 +14,7 @@
   },
   "files": [
     "src",
-    "lib",
+    "dist",
     "android",
     "ios",
     "cpp",
@@ -33,11 +33,10 @@
   ],
   "scripts": {
     "prepack": "yarn prepare",
-    "typecheck": "tsc",
-    "lint": "eslint \"**/*.{js,ts,tsx}\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "craby build && bob build",
-    "release": "release-it --only-version"
+    "build": "craby build && tsdown"
   },
   "keywords": [
     "react-native",
@@ -54,43 +53,17 @@
     "craby-modules": "workspace:*"
   },
   "devDependencies": {
-    "@commitlint/config-conventional": "^19.6.0",
+    "@biomejs/biome": "2.2.4",
     "@craby/cli": "workspace:*",
-    "@eslint/compat": "^1.2.7",
-    "@eslint/eslintrc": "^3.3.0",
-    "@eslint/js": "^9.22.0",
-    "@evilmartians/lefthook": "^1.5.0",
-    "@react-native-community/cli": "15.0.0-alpha.2",
-    "@react-native-community/cli-types": "15.0.0-alpha.2",
-    "@react-native/babel-preset": "0.79.2",
-    "@react-native/eslint-config": "^0.78.0",
-    "@release-it/conventional-changelog": "^9.0.2",
     "@types/react": "^19.0.0",
-    "commitlint": "^19.6.1",
-    "del-cli": "^5.1.0",
-    "eslint": "^9.22.0",
-    "react": "19.0.0",
-    "react-native": "0.79.2",
-    "react-native-builder-bob": "^0.40.12",
-    "release-it": "^17.10.0",
-    "turbo": "^1.10.7",
-    "typescript": "^5.8.3"
+    "del-cli": "^7.0.0",
+    "react": "19.1.1",
+    "react-native": "0.81.4",
+    "tsdown": "^0.15.5",
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
-  },
-  "react-native-builder-bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      [
-        "module",
-        {
-          "esm": true
-        }
-      ],
-      "typescript"
-    ]
   }
 }
