@@ -19,7 +19,6 @@ use bridging::*;
 
 #[cxx::bridge(namespace = "craby::bridging")]
 pub mod bridging {
-    // Type definitions
     struct NullableNumber {
         null: bool,
         val: f64,
@@ -61,68 +60,88 @@ pub mod bridging {
 
     extern "Rust" {
         #[cxx_name = "numericMethod"]
-        fn craby_test_numeric_method(arg: f64) -> f64;
+        fn craby_test_numeric_method(id_: usize, arg: f64) -> f64;
 
         #[cxx_name = "booleanMethod"]
-        fn craby_test_boolean_method(arg: bool) -> bool;
+        fn craby_test_boolean_method(id_: usize, arg: bool) -> bool;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(arg: String) -> String;
+        fn craby_test_string_method(id_: usize, arg: String) -> String;
 
         #[cxx_name = "objectMethod"]
-        fn craby_test_object_method(arg: TestObject) -> TestObject;
+        fn craby_test_object_method(id_: usize, arg: TestObject) -> TestObject;
 
         #[cxx_name = "arrayMethod"]
-        fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64>;
+        fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Vec<f64>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
+        fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> String;
 
         #[cxx_name = "nullableMethod"]
-        fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber;
+        fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> NullableNumber;
 
         #[cxx_name = "promiseMethod"]
-        fn craby_test_promise_method(arg: f64) -> Result<f64>;
+        fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64>;
+    }
+
+
+    #[namespace = "craby::signals"]
+    unsafe extern "C++" {
+        include!("signals.h");
+
+        type SignalManager;
+
+        fn emit(self: &SignalManager, id: usize, name: &str);
+        #[rust_name = "get_signal_manager"]
+        fn getSignalManager() -> &'static SignalManager;
     }
 }
 
-fn craby_test_numeric_method(arg: f64) -> f64 {
-    let ret = CrabyTest::numeric_method(arg);
+fn craby_test_numeric_method(id_: usize, arg: f64) -> f64 {
+    let it = CrabyTest::new(id_);
+    let ret = it.numeric_method(arg);
     ret
 }
 
-fn craby_test_boolean_method(arg: bool) -> bool {
-    let ret = CrabyTest::boolean_method(arg);
+fn craby_test_boolean_method(id_: usize, arg: bool) -> bool {
+    let it = CrabyTest::new(id_);
+    let ret = it.boolean_method(arg);
     ret
 }
 
-fn craby_test_string_method(arg: String) -> String {
-    let ret = CrabyTest::string_method(arg);
+fn craby_test_string_method(id_: usize, arg: String) -> String {
+    let it = CrabyTest::new(id_);
+    let ret = it.string_method(arg);
     ret
 }
 
-fn craby_test_object_method(arg: TestObject) -> TestObject {
-    let ret = CrabyTest::object_method(arg);
+fn craby_test_object_method(id_: usize, arg: TestObject) -> TestObject {
+    let it = CrabyTest::new(id_);
+    let ret = it.object_method(arg);
     ret
 }
 
-fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64> {
-    let ret = CrabyTest::array_method(arg);
+fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Vec<f64> {
+    let it = CrabyTest::new(id_);
+    let ret = it.array_method(arg);
     ret
 }
 
-fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String {
-    let ret = CrabyTest::enum_method(arg0, arg1);
+fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> String {
+    let it = CrabyTest::new(id_);
+    let ret = it.enum_method(arg0, arg1);
     ret
 }
 
-fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber {
-    let ret = CrabyTest::nullable_method(arg.into());
+fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> NullableNumber {
+    let it = CrabyTest::new(id_);
+    let ret = it.nullable_method(arg.into());
     ret.into()
 }
 
-fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {
-    let ret = CrabyTest::promise_method(arg);
+fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+    let it = CrabyTest::new(id_);
+    let ret = it.promise_method(arg);
     ret
 }
 
@@ -131,15 +150,27 @@ fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {
 use crate::ffi::bridging::*;
 use crate::types::*;
 
+pub enum CrabyTestSignal {
+    OnSignal,
+}
+
 pub trait CrabyTestSpec {
-    fn numeric_method(arg: Number) -> Number;
-    fn boolean_method(arg: Boolean) -> Boolean;
-    fn string_method(arg: String) -> String;
-    fn object_method(arg: TestObject) -> TestObject;
-    fn array_method(arg: Array<Number>) -> Array<Number>;
-    fn enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
-    fn nullable_method(arg: Nullable<Number>) -> Nullable<Number>;
-    fn promise_method(arg: Number) -> Promise<Number>;
+    fn new(id: usize) -> Self;
+    fn id(&self) -> usize;
+    fn emit(&self, signal_name: CrabyTestSignal) {
+        let manager = crate::ffi::bridging::get_signal_manager();
+        match signal_name {
+            CrabyTestSignal::OnSignal => manager.emit(self.id(), "onSignal"),
+        }
+    }
+    fn numeric_method(&self, arg: Number) -> Number;
+    fn boolean_method(&self, arg: Boolean) -> Boolean;
+    fn string_method(&self, arg: String) -> String;
+    fn object_method(&self, arg: TestObject) -> TestObject;
+    fn array_method(&self, arg: Array<Number>) -> Array<Number>;
+    fn enum_method(&self, arg0: MyEnum, arg1: SwitchState) -> String;
+    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number>;
+    fn promise_method(&self, arg: Number) -> Promise<Number>;
 }
 
 impl Default for MyEnum {
@@ -152,7 +183,7 @@ impl Default for NullableString {
     fn default() -> Self {
         NullableString {
             null: true,
-            val: String::default()
+            val: String::default(),
         }
     }
 }
@@ -194,7 +225,7 @@ impl Default for NullableSubObject {
     fn default() -> Self {
         NullableSubObject {
             null: true,
-            val: SubObject::default()
+            val: SubObject::default(),
         }
     }
 }
@@ -231,7 +262,7 @@ impl Default for NullableNumber {
     fn default() -> Self {
         NullableNumber {
             null: true,
-            val: 0.0
+            val: 0.0,
         }
     }
 }
@@ -310,38 +341,48 @@ use crate::ffi::bridging::*;
 use crate::generated::*;
 use crate::types::*;
 
-pub struct CrabyTest;
+pub struct CrabyTest {
+    id: usize,
+};
 
 impl CrabyTestSpec for CrabyTest {
-    fn numeric_method(arg: Number) -> Number {
+    fn new(id: usize) -> Self {
+        CrabyTest { id }
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn numeric_method(&self, arg: Number) -> Number {
         unimplemented!();
     }
 
-    fn boolean_method(arg: Boolean) -> Boolean {
+    fn boolean_method(&self, arg: Boolean) -> Boolean {
         unimplemented!();
     }
 
-    fn string_method(arg: String) -> String {
+    fn string_method(&self, arg: String) -> String {
         unimplemented!();
     }
 
-    fn object_method(arg: TestObject) -> TestObject {
+    fn object_method(&self, arg: TestObject) -> TestObject {
         unimplemented!();
     }
 
-    fn array_method(arg: Array<Number>) -> Array<Number> {
+    fn array_method(&self, arg: Array<Number>) -> Array<Number> {
         unimplemented!();
     }
 
-    fn enum_method(arg0: MyEnum, arg1: SwitchState) -> String {
+    fn enum_method(&self, arg0: MyEnum, arg1: SwitchState) -> String {
         unimplemented!();
     }
 
-    fn nullable_method(arg: Nullable<Number>) -> Nullable<Number> {
+    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number> {
         unimplemented!();
     }
 
-    fn promise_method(arg: Number) -> Promise<Number> {
+    fn promise_method(&self, arg: Number) -> Promise<Number> {
         unimplemented!();
     }
 }

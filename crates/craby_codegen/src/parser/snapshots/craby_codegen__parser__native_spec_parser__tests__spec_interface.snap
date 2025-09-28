@@ -5,8 +5,8 @@ expression: schemas
 [
     Schema {
         module_name: "MyModule",
-        alias_map: [],
-        enum_map: [],
+        aliases: [],
+        enums: [],
         methods: [
             Method {
                 name: "myMethod",
@@ -14,5 +14,6 @@ expression: schemas
                 ret_type: Void,
             },
         ],
+        signals: [],
     },
 ]

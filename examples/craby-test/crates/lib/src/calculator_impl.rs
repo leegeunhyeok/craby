@@ -2,22 +2,32 @@ use crate::ffi::bridging::*;
 use crate::generated::*;
 use crate::types::*;
 
-pub struct Calculator;
+pub struct Calculator {
+    id: usize,
+}
 
 impl CalculatorSpec for Calculator {
-    fn add(a: Number, b: Number) -> Number {
+    fn new(id: usize) -> Calculator {
+        Calculator { id }
+    }
+
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn add(&self, a: Number, b: Number) -> Number {
         a + b
     }
 
-    fn subtract(a: Number, b: Number) -> Number {
+    fn subtract(&self, a: Number, b: Number) -> Number {
         a - b
     }
 
-    fn multiply(a: Number, b: Number) -> Number {
+    fn multiply(&self, a: Number, b: Number) -> Number {
         a * b
     }
 
-    fn divide(a: Number, b: Number) -> Number {
+    fn divide(&self, a: Number, b: Number) -> Number {
         a / b
     }
 }

@@ -5,7 +5,7 @@ expression: schemas
 [
     Schema {
         module_name: "FooModule",
-        alias_map: [
+        aliases: [
             Object(
                 ObjectTypeAnnotation {
                     name: "Common",
@@ -18,7 +18,7 @@ expression: schemas
                 },
             ),
         ],
-        enum_map: [],
+        enums: [],
         methods: [
             Method {
                 name: "foo",
@@ -41,10 +41,11 @@ expression: schemas
                 ret_type: Void,
             },
         ],
+        signals: [],
     },
     Schema {
         module_name: "BarModule",
-        alias_map: [
+        aliases: [
             Object(
                 ObjectTypeAnnotation {
                     name: "Common",
@@ -57,7 +58,7 @@ expression: schemas
                 },
             ),
         ],
-        enum_map: [],
+        enums: [],
         methods: [
             Method {
                 name: "bar",
@@ -80,5 +81,6 @@ expression: schemas
                 ret_type: Void,
             },
         ],
+        signals: [],
     },
 ]

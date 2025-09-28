@@ -3,22 +3,39 @@
 use crate::ffi::bridging::*;
 use crate::types::*;
 
+
 pub trait CalculatorSpec {
-    fn add(a: Number, b: Number) -> Number;
-    fn subtract(a: Number, b: Number) -> Number;
-    fn multiply(a: Number, b: Number) -> Number;
-    fn divide(a: Number, b: Number) -> Number;
+    fn new(id: usize) -> Self;
+    fn id(&self) -> usize;
+
+    fn add(&self, a: Number, b: Number) -> Number;
+    fn subtract(&self, a: Number, b: Number) -> Number;
+    fn multiply(&self, a: Number, b: Number) -> Number;
+    fn divide(&self, a: Number, b: Number) -> Number;
+}
+
+pub enum CrabyTestSignal {
+    OnSignal,
 }
 
 pub trait CrabyTestSpec {
-    fn numeric_method(arg: Number) -> Number;
-    fn boolean_method(arg: Boolean) -> Boolean;
-    fn string_method(arg: String) -> String;
-    fn object_method(arg: TestObject) -> TestObject;
-    fn array_method(arg: Array<Number>) -> Array<Number>;
-    fn enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
-    fn nullable_method(arg: Nullable<Number>) -> Nullable<Number>;
-    fn promise_method(arg: Number) -> Promise<Number>;
+    fn new(id: usize) -> Self;
+    fn id(&self) -> usize;
+    fn emit(&self, signal_name: CrabyTestSignal) {
+        let manager = crate::ffi::bridging::get_signal_manager();
+        match signal_name {
+            CrabyTestSignal::OnSignal => manager.emit(self.id(), "onSignal"),
+        }
+    }
+    fn numeric_method(&self, arg: Number) -> Number;
+    fn boolean_method(&self, arg: Boolean) -> Boolean;
+    fn string_method(&self, arg: String) -> String;
+    fn object_method(&self, arg: TestObject) -> TestObject;
+    fn array_method(&self, arg: Array<Number>) -> Array<Number>;
+    fn enum_method(&self, arg0: MyEnum, arg1: SwitchState) -> String;
+    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number>;
+    fn promise_method(&self, arg: Number) -> Promise<Number>;
+    fn trigger_signal(&self, ) -> Void;
 }
 
 impl Default for MyEnum {
@@ -31,7 +48,7 @@ impl Default for NullableString {
     fn default() -> Self {
         NullableString {
             null: true,
-            val: String::default()
+            val: String::default(),
         }
     }
 }
@@ -73,7 +90,7 @@ impl Default for NullableSubObject {
     fn default() -> Self {
         NullableSubObject {
             null: true,
-            val: SubObject::default()
+            val: SubObject::default(),
         }
     }
 }
@@ -110,7 +127,7 @@ impl Default for NullableNumber {
     fn default() -> Self {
         NullableNumber {
             null: true,
-            val: 0.0
+            val: 0.0,
         }
     }
 }

@@ -1,7 +1,7 @@
 const path = require('node:path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
-const root = path.resolve(__dirname, '..');
+const root = path.resolve(__dirname, '..', '..');
 
 /**
  * Metro configuration
@@ -14,7 +14,12 @@ const config = {
   watchFolders: [root],
   resolver: {
     extraNodeModules: {
-      'craby-test': path.join(root, 'craby-test/src'),
+      // For resolving peerDependencies
+      'react-native': path.join(__dirname, 'node_modules', 'react-native'),
+      'react': path.join(__dirname, 'node_modules', 'react'),
+      // For resolving workspace packages
+      'craby-test': path.join(root, 'examples', 'craby-test', 'src'),
+      'craby-modules': path.join(root, 'packages', 'craby-modules', 'dist'),
     },
   },
 };

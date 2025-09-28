@@ -17,6 +17,12 @@ namespace crabytest {
 CxxCrabyTestModule::CxxCrabyTestModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
+  uintptr_t id = reinterpret_cast<uintptr_t>(this);
+  auto& registry = craby::signals::SignalManager::getInstance();
+  registry.registerDelegate(id,
+                            std::bind(&CxxCrabyTestModule::emit,
+                            this,
+                            std::placeholders::_1));
   callInvoker_ = std::move(jsInvoker);
 
   methodMap_["numericMethod"] = MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
@@ -27,7 +33,40 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
   methodMap_["nullableMethod"] = MethodMetadata{1, &CxxCrabyTestModule::nullableMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
+  methodMap_["triggerSignal"] = MethodMetadata{0, &CxxCrabyTestModule::triggerSignal};
+  methodMap_["onSignal"] = MethodMetadata{1, &CxxCrabyTestModule::onSignal};
 }
+
+CxxCrabyTestModule::~CxxCrabyTestModule() {
+  uintptr_t id = reinterpret_cast<uintptr_t>(this);
+  auto& registry = craby::signals::SignalManager::getInstance();
+  registry.unregisterDelegate(id);
+}
+
+void CxxCrabyTestModule::emit(std::string name) {
+  std::vector<std::shared_ptr<facebook::jsi::Function>> listeners;
+
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it = listenersMap_.find(name);
+    if (it != listenersMap_.end()) {
+      for (const auto& fn : it->second) {
+        listeners.push_back(fn);
+      }
+    }
+  }
+
+  for (auto& listener : listeners) {
+    try {
+      callInvoker_->invokeAsync([listener](jsi::Runtime &rt) {
+        listener->call(rt);
+      });
+    } catch (const std::exception& err) {
+      // Noop
+    }
+  }
+}
+
 
 jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
                                 react::TurboModule &turboModule,
@@ -41,8 +80,9 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::numericMethod(arg0);
+    auto ret = craby::bridging::numericMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -64,8 +104,9 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<bool>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::booleanMethod(arg0);
+    auto ret = craby::bridging::booleanMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -87,8 +128,9 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<rust::String>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::stringMethod(arg0);
+    auto ret = craby::bridging::stringMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -110,8 +152,9 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::TestObject>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::objectMethod(arg0);
+    auto ret = craby::bridging::objectMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -133,8 +176,9 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<rust::Vec<double>>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::arrayMethod(arg0);
+    auto ret = craby::bridging::arrayMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -156,9 +200,10 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::MyEnum>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<craby::bridging::SwitchState>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::enumMethod(arg0, arg1);
+    auto ret = craby::bridging::enumMethod(id_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -180,8 +225,9 @@ jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::NullableNumber>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::nullableMethod(arg0);
+    auto ret = craby::bridging::nullableMethod(id_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -203,12 +249,13 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     react::AsyncPromise<double> promise(rt, callInvoker);
 
-    std::thread([promise, arg0]() mutable {
+    std::thread([id_, arg0, promise]() mutable {
       try {
-        auto ret = craby::bridging::promiseMethod(arg0);
+        auto ret = craby::bridging::promiseMethod(id_, arg0);
         promise.resolve(ret);
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
@@ -218,6 +265,82 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
     }).detach();
 
     return react::bridging::toJs(rt, promise);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::triggerSignal(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (0 != count) {
+      throw jsi::JSError(rt, "Expected 0 argument");
+    }
+
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
+    craby::bridging::triggerSignal(id_);
+
+    return jsi::Value::undefined();
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
+                      react::TurboModule &turboModule,
+                      const jsi::Value args[],
+                      size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto callback = args[0].asObject(rt).asFunction(rt);
+    uint64_t listenerId = nextListenerId_++;
+    
+    auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
+    auto name = "onSignal";
+    
+    if (listenersMap_.find(name) == listenersMap_.end()) {
+      listenersMap_[name] = std::vector<std::shared_ptr<jsi::Function>>();
+    }
+    listenersMap_[name].push_back(callbackRef);
+
+    return jsi::Function::createFromHostFunction(
+        rt,
+        jsi::PropNameID::forAscii(rt, "cleanup"),
+        0,
+        [listenerId, callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {
+            std::lock_guard<std::mutex> lock(mutex_);
+            
+            auto& listeners = listenersMap_[name];
+            listeners.erase(
+                std::remove_if(listeners.begin(), listeners.end(),
+                    [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {
+                        return fn.get() == callbackRef.get();
+                    }),
+                listeners.end()
+            );
+
+            if (listeners.empty()) {
+                listenersMap_.erase(name);
+            }
+
+            return jsi::Value::undefined();
+        }
+    );
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

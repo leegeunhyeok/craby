@@ -8,7 +8,6 @@ use bridging::*;
 
 #[cxx::bridge(namespace = "craby::bridging")]
 pub mod bridging {
-    // Type definitions
     struct NullableNumber {
         null: bool,
         val: f64,
@@ -50,110 +49,132 @@ pub mod bridging {
 
     extern "Rust" {
         #[cxx_name = "add"]
-        fn calculator_add(a: f64, b: f64) -> f64;
+        fn calculator_add(id_: usize, a: f64, b: f64) -> f64;
 
         #[cxx_name = "subtract"]
-        fn calculator_subtract(a: f64, b: f64) -> f64;
+        fn calculator_subtract(id_: usize, a: f64, b: f64) -> f64;
 
         #[cxx_name = "multiply"]
-        fn calculator_multiply(a: f64, b: f64) -> f64;
+        fn calculator_multiply(id_: usize, a: f64, b: f64) -> f64;
 
         #[cxx_name = "divide"]
-        fn calculator_divide(a: f64, b: f64) -> f64;
+        fn calculator_divide(id_: usize, a: f64, b: f64) -> f64;
 
         #[cxx_name = "numericMethod"]
-        fn craby_test_numeric_method(arg: f64) -> f64;
+        fn craby_test_numeric_method(id_: usize, arg: f64) -> f64;
 
         #[cxx_name = "booleanMethod"]
-        fn craby_test_boolean_method(arg: bool) -> bool;
+        fn craby_test_boolean_method(id_: usize, arg: bool) -> bool;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(arg: String) -> String;
+        fn craby_test_string_method(id_: usize, arg: String) -> String;
 
         #[cxx_name = "objectMethod"]
-        fn craby_test_object_method(arg: TestObject) -> TestObject;
+        fn craby_test_object_method(id_: usize, arg: TestObject) -> TestObject;
 
         #[cxx_name = "arrayMethod"]
-        fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64>;
+        fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Vec<f64>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String;
+        fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> String;
 
         #[cxx_name = "nullableMethod"]
-        fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber;
+        fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> NullableNumber;
 
         #[cxx_name = "promiseMethod"]
-        fn craby_test_promise_method(arg: f64) -> Result<f64>;
+        fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64>;
+
+        #[cxx_name = "triggerSignal"]
+        fn craby_test_trigger_signal(id_: usize);
     }
 
-    #[namespace = "craby::eventemitter"]
+
+    #[namespace = "craby::signals"]
     unsafe extern "C++" {
-        include!("EventEmitter.h");
+        include!("signals.h");
 
-        type EventEmitterRegistry;
+        type SignalManager;
 
-        fn emit(self: &EventEmitterRegistry, id: usize, name: &str);
-        #[rust_name = "get_event_emitter_registry"]
-        fn getEventEmitterRegistry() -> &'static EventEmitterRegistry;
+        fn emit(self: &SignalManager, id: usize, name: &str);
+        #[rust_name = "get_signal_manager"]
+        fn getSignalManager() -> &'static SignalManager;
     }
 }
 
-fn calculator_add(a: f64, b: f64) -> f64 {
-    let ret = Calculator::add(a, b);
+fn calculator_add(id_: usize, a: f64, b: f64) -> f64 {
+    let it = Calculator::new(id_);
+    let ret = it.add(a, b);
     ret
 }
 
-fn calculator_subtract(a: f64, b: f64) -> f64 {
-    let ret = Calculator::subtract(a, b);
+fn calculator_subtract(id_: usize, a: f64, b: f64) -> f64 {
+    let it = Calculator::new(id_);
+    let ret = it.subtract(a, b);
     ret
 }
 
-fn calculator_multiply(a: f64, b: f64) -> f64 {
-    let ret = Calculator::multiply(a, b);
+fn calculator_multiply(id_: usize, a: f64, b: f64) -> f64 {
+    let it = Calculator::new(id_);
+    let ret = it.multiply(a, b);
     ret
 }
 
-fn calculator_divide(a: f64, b: f64) -> f64 {
-    let ret = Calculator::divide(a, b);
+fn calculator_divide(id_: usize, a: f64, b: f64) -> f64 {
+    let it = Calculator::new(id_);
+    let ret = it.divide(a, b);
     ret
 }
 
-fn craby_test_numeric_method(arg: f64) -> f64 {
-    let ret = CrabyTest::numeric_method(arg);
+fn craby_test_numeric_method(id_: usize, arg: f64) -> f64 {
+    let it = CrabyTest::new(id_);
+    let ret = it.numeric_method(arg);
     ret
 }
 
-fn craby_test_boolean_method(arg: bool) -> bool {
-    let ret = CrabyTest::boolean_method(arg);
+fn craby_test_boolean_method(id_: usize, arg: bool) -> bool {
+    let it = CrabyTest::new(id_);
+    let ret = it.boolean_method(arg);
     ret
 }
 
-fn craby_test_string_method(arg: String) -> String {
-    let ret = CrabyTest::string_method(arg);
+fn craby_test_string_method(id_: usize, arg: String) -> String {
+    let it = CrabyTest::new(id_);
+    let ret = it.string_method(arg);
     ret
 }
 
-fn craby_test_object_method(arg: TestObject) -> TestObject {
-    let ret = CrabyTest::object_method(arg);
+fn craby_test_object_method(id_: usize, arg: TestObject) -> TestObject {
+    let it = CrabyTest::new(id_);
+    let ret = it.object_method(arg);
     ret
 }
 
-fn craby_test_array_method(arg: Vec<f64>) -> Vec<f64> {
-    let ret = CrabyTest::array_method(arg);
+fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Vec<f64> {
+    let it = CrabyTest::new(id_);
+    let ret = it.array_method(arg);
     ret
 }
 
-fn craby_test_enum_method(arg0: MyEnum, arg1: SwitchState) -> String {
-    let ret = CrabyTest::enum_method(arg0, arg1);
+fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> String {
+    let it = CrabyTest::new(id_);
+    let ret = it.enum_method(arg0, arg1);
     ret
 }
 
-fn craby_test_nullable_method(arg: NullableNumber) -> NullableNumber {
-    let ret = CrabyTest::nullable_method(arg.into());
+fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> NullableNumber {
+    let it = CrabyTest::new(id_);
+    let ret = it.nullable_method(arg.into());
     ret.into()
 }
 
-fn craby_test_promise_method(arg: f64) -> Result<f64, anyhow::Error> {
-    let ret = CrabyTest::promise_method(arg);
+fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+    let it = CrabyTest::new(id_);
+    let ret = it.promise_method(arg);
+    ret
+}
+
+fn craby_test_trigger_signal(id_: usize) {
+    let it = CrabyTest::new(id_);
+    let ret = it.trigger_signal();
     ret
 }

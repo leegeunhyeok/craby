@@ -11,8 +11,14 @@ namespace crabytest {
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
   static constexpr const char *kModuleName = "CrabyTest";
+  inline static std::mutex mutex_;
+  inline static std::atomic<uint64_t> nextListenerId_;
+  inline static std::unordered_map<std::string, std::vector<std::shared_ptr<facebook::jsi::Function>>> listenersMap_;
 
   CxxCrabyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
+  ~CxxCrabyTestModule();
+
+  void emit(std::string name);
 
   static facebook::jsi::Value
   numericMethod(facebook::jsi::Runtime &rt,
@@ -51,6 +57,16 @@ public:
 
   static facebook::jsi::Value
   promiseMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  triggerSignal(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  onSignal(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 

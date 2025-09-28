@@ -6,6 +6,7 @@ use log::debug;
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{android::Abi, toolchain::Target},
+    cxx::replace_cxx_header,
 };
 
 const ANDROID_TARGETS: [Target; 4] = [
@@ -36,6 +37,11 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
         } else {
             unreachable!();
         }
+    }
+
+    let signal_path = jni_base_path.join("include").join("signals.h");
+    if signal_path.exists() {
+        replace_cxx_header(&signal_path)?;
     }
 
     Ok(())

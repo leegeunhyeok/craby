@@ -1,5 +1,5 @@
 #pragma once
-#include "EventEmitter.h"
+#include "signals.h"
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -812,8 +812,8 @@ namespace craby {
     enum class MyEnum : ::std::uint8_t;
     enum class SwitchState : ::std::uint8_t;
   }
-  namespace eventemitter {
-    using EventEmitterRegistry = ::craby::eventemitter::EventEmitterRegistry;
+  namespace signals {
+    using SignalManager = ::craby::signals::SignalManager;
   }
 }
 
@@ -889,29 +889,31 @@ enum class SwitchState : ::std::uint8_t {
 };
 #endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
-double add(double a, double b) noexcept;
+double add(::std::size_t id_, double a, double b) noexcept;
 
-double subtract(double a, double b) noexcept;
+double subtract(::std::size_t id_, double a, double b) noexcept;
 
-double multiply(double a, double b) noexcept;
+double multiply(::std::size_t id_, double a, double b) noexcept;
 
-double divide(double a, double b) noexcept;
+double divide(::std::size_t id_, double a, double b) noexcept;
 
-double numericMethod(double arg) noexcept;
+double numericMethod(::std::size_t id_, double arg) noexcept;
 
-bool booleanMethod(bool arg) noexcept;
+bool booleanMethod(::std::size_t id_, bool arg) noexcept;
 
-::rust::String stringMethod(::rust::String arg) noexcept;
+::rust::String stringMethod(::std::size_t id_, ::rust::String arg) noexcept;
 
-::craby::bridging::TestObject objectMethod(::craby::bridging::TestObject arg) noexcept;
+::craby::bridging::TestObject objectMethod(::std::size_t id_, ::craby::bridging::TestObject arg) noexcept;
 
-::rust::Vec<double> arrayMethod(::rust::Vec<double> arg) noexcept;
+::rust::Vec<double> arrayMethod(::std::size_t id_, ::rust::Vec<double> arg) noexcept;
 
-::rust::String enumMethod(::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) noexcept;
+::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) noexcept;
 
-::craby::bridging::NullableNumber nullableMethod(::craby::bridging::NullableNumber arg) noexcept;
+::craby::bridging::NullableNumber nullableMethod(::std::size_t id_, ::craby::bridging::NullableNumber arg) noexcept;
 
-double promiseMethod(double arg);
+double promiseMethod(::std::size_t id_, double arg);
+
+void triggerSignal(::std::size_t id_) noexcept;
 } // namespace bridging
 } // namespace craby
 

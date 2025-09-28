@@ -25,12 +25,12 @@ pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
     let mut in_progress = BTreeSet::new();
     let mut result = vec![];
 
-    schema.alias_map.iter().for_each(|type_annotation| {
+    schema.aliases.iter().for_each(|type_annotation| {
         dependencies.insert(type_annotation.as_object().unwrap().name.clone(), vec![]);
     });
 
     schema
-        .alias_map
+        .aliases
         .iter()
         .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
             let alias_spec = type_annotation.as_object().unwrap();

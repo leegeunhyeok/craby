@@ -5,19 +5,19 @@ import { toErrorObject } from './utils';
 const TEST_SUITES: TestSuite[] = [
   {
     label: 'Number',
-    action: () => Module.numericMethod(123),
+    action: () => Module.CrabyTestModule.numericMethod(123),
   },
   {
     label: 'Boolean',
-    action: () => Module.booleanMethod(true),
+    action: () => Module.CrabyTestModule.booleanMethod(true),
   },
   {
     label: 'String',
-    action: () => Module.stringMethod('Hello, World!'),
+    action: () => Module.CrabyTestModule.stringMethod('Hello, World!'),
   },
   {
     label: 'Object',
-    action: () => Module.objectMethod({
+    action: () => Module.CrabyTestModule.objectMethod({
       foo: 'foo',
       bar: 123,
       baz: false,
@@ -33,7 +33,7 @@ const TEST_SUITES: TestSuite[] = [
     description: '(Invalid object)',
     action: () => {
       try {
-        return Module.objectMethod({ foo: 123 } as any);
+        return Module.CrabyTestModule.objectMethod({ foo: 123 } as any);
       } catch (error: any) {
         return toErrorObject(error);
       }
@@ -44,7 +44,7 @@ const TEST_SUITES: TestSuite[] = [
     description: '(Nullable 1)',
     action: () => {
       try {
-        return Module.objectMethod({
+        return Module.CrabyTestModule.objectMethod({
           foo: 'foo',
           bar: 456,
           baz: true,
@@ -60,7 +60,7 @@ const TEST_SUITES: TestSuite[] = [
     description: '(Nullable 2)',
     action: () => {
       try {
-        return Module.objectMethod({
+        return Module.CrabyTestModule.objectMethod({
           foo: 'foo',
           bar: 456,
           baz: true,
@@ -77,18 +77,18 @@ const TEST_SUITES: TestSuite[] = [
   },
   {
     label: 'Array',
-    action: () => Module.arrayMethod([1, 2, 3]),
+    action: () => Module.CrabyTestModule.arrayMethod([1, 2, 3]),
   },
   {
     label: 'Enum',
-    action: () => Module.enumMethod(Module.MyEnum.Foo, Module.SwitchState.Off),
+    action: () => Module.CrabyTestModule.enumMethod(Module.MyEnum.Foo, Module.SwitchState.Off),
   },
   {
     label: 'Enum',
     description: '(Invalid string enum value)',
     action: () => {
       try {
-        return Module.enumMethod('UNKNOWN' as any, Module.SwitchState.Off);
+        return Module.CrabyTestModule.enumMethod('UNKNOWN' as any, Module.SwitchState.Off);
       } catch (error: any) {
         return toErrorObject(error);
       }
@@ -99,7 +99,7 @@ const TEST_SUITES: TestSuite[] = [
     description: '(Invalid numeric enum value)',
     action: () => {
       try {
-        return Module.enumMethod(Module.MyEnum.Baz, -999 as any);
+        return Module.CrabyTestModule.enumMethod(Module.MyEnum.Baz, -999 as any);
       } catch (error: any) {
         return toErrorObject(error);
       }
@@ -108,26 +108,45 @@ const TEST_SUITES: TestSuite[] = [
   {
     label: 'Nullable',
     description: '(Non null)',
-    action: () => Module.nullableMethod(123),
+    action: () => Module.CrabyTestModule.nullableMethod(123),
   },
   {
     label: 'Nullable',
     description: '(Null -> Non null)',
-    action: () => Module.nullableMethod(null),
+    action: () => Module.CrabyTestModule.nullableMethod(null),
   },
   {
     label: 'Nullable',
     description: '(Non null -> Null)',
-    action: () => Module.nullableMethod(-123),
+    action: () => Module.CrabyTestModule.nullableMethod(-123),
   },
   {
     label: 'Promise',
-    action: () => Module.promiseMethod(123),
+    action: () => Module.CrabyTestModule.promiseMethod(123),
   },
   {
     label: 'Promise',
     description: '(Rejected promise)',
-    action: () => Module.promiseMethod(-123).catch((error) => toErrorObject(error)),
+    action: () => Module.CrabyTestModule.promiseMethod(-123).catch((error) => toErrorObject(error)),
+  },
+  {
+    label: 'Signal',
+    action: () => {
+      const promise = new Promise<string>((resolve, reject) => {
+        try {
+          const cleanup = Module.CrabyTestModule.onSignal(() => {
+            cleanup();
+            resolve('Signal received');
+          });
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      Module.CrabyTestModule.triggerSignal();
+
+      return promise;
+    },
   },
   {
     label: 'Multiple TurboModules',
@@ -137,10 +156,10 @@ const TEST_SUITES: TestSuite[] = [
       const b = 10;
 
       return {
-        add: Module.add(a, b),
-        subtract: Module.subtract(a, b),
-        multiply: Module.multiply(a, b),
-        divide: Module.divide(a, b),
+        add: Module.CalculatorModule.add(a, b),
+        subtract: Module.CalculatorModule.subtract(a, b),
+        multiply: Module.CalculatorModule.multiply(a, b),
+        divide: Module.CalculatorModule.divide(a, b),
       };
     },
   }

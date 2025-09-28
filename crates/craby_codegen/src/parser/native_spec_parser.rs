@@ -10,17 +10,10 @@ use oxc::{
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
+    constants::specs::*,
     parser::{types::*, utils::error},
     types::Schema,
 };
-
-const REACT_NATIVE_PKG: &str = "react-native";
-const NATIVE_MODULE_INTERFACE: &str = "TurboModule";
-const NATIVE_MODULE_REGISTRY: &str = "TurboModuleRegistry";
-const REGISTRY_GET: &str = "get";
-const REGISTRY_GET_ENFORCING: &str = "getEnforcing";
-
-const RESERVED_TYPE_PROMISE: &str = "Promise";
 
 const INVALID_SPEC: &str = "Invalid specification";
 const INVALID_TYPE_REFERENCE: &str = "Invalid type reference";
@@ -33,24 +26,25 @@ const INVALID_TYPE_LITERAL: &str =
 const INVALID_UNION_TYPE: &str = "Union types only allow nullable type (eg. `T | null`)";
 const INVALID_MIXED_ENUM_MEMBER: &str =
     "Enum member type must be single type (eg. only `number` or `string`)";
-const INVALID_REGISTRY_METHOD: &str = "Invalid TurboModuleRegistry method";
-const INVALID_PROPERTY_SIG: &str =
-    "Property signature is not allowed. Use method signature instead";
+const INVALID_REGISTRY_METHOD: &str = "Invalid Registry method";
+const INVALID_RESERVED_ARG_NAME_ID: &str = "Reserved argument name `id_` is not allowed";
 
 pub struct NativeModuleAnalyzer<'a> {
     pub diagnostics: Vec<OxcDiagnostic>,
     scoping: &'a Scoping,
-    /// Symbol ID of `TurboModule` identifier's reference
+    /// Symbol ID of `Module` identifier's reference
     mod_type_sym_id: Option<SymbolId>,
-    /// Symbol ID of `TurboModuleRegistry` identifier's reference
+    /// Symbol ID of `Signal` identifier's reference
+    mod_signal_sym_id: Option<SymbolId>,
+    /// Symbol ID of `Registry` identifier's reference
     mod_reg_sym_id: Option<SymbolId>,
     /// Symbol ID of `react-native` namespace's reference
     mod_ns_sym_id: Option<SymbolId>,
-    /// TurboModule modules collected from the source code
+    /// Modules collected from the source code
     mods: FxHashMap<SymbolId, String>,
     /// Declarations collected from the source code
     decls: FxHashMap<SymbolId, TypeAnnotation>,
-    /// TurboModule specs collected from the source code
+    /// Module specs collected from the source code
     specs: FxHashMap<SymbolId, Spec>,
 }
 
@@ -60,6 +54,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
             scoping,
             diagnostics: vec![],
             mod_type_sym_id: None,
+            mod_signal_sym_id: None,
             mod_reg_sym_id: None,
             mod_ns_sym_id: None,
             specs: FxHashMap::default(),
@@ -86,23 +81,28 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
     fn collect_spec(&mut self, it: &TSInterfaceDeclaration<'a>) {
         let mut methods = vec![];
+        let mut signals = vec![];
 
         for sig in &it.body.body {
-            let try_res = match sig {
-                TSSignature::TSMethodSignature(method_sig) => self.try_into_method(method_sig),
+            match sig {
+                TSSignature::TSMethodSignature(method_sig) => {
+                    match self.try_into_method(method_sig) {
+                        Ok(method) => methods.push(method),
+                        Err(e) => return self.diagnostics.push(e),
+                    }
+                }
                 TSSignature::TSPropertySignature(prop_sig) => {
-                    return self.collect_error(INVALID_PROPERTY_SIG, prop_sig.span)
+                    match self.try_into_signal(prop_sig) {
+                        Ok(signal) => signals.push(signal),
+                        Err(e) => return self.diagnostics.push(e),
+                    }
                 }
                 _ => return self.collect_error(INVALID_SPEC, it.span),
             };
-
-            match try_res {
-                Ok(method) => methods.push(method),
-                Err(e) => return self.diagnostics.push(e),
-            }
         }
 
-        self.specs.insert(it.id.symbol_id(), Spec { methods });
+        self.specs
+            .insert(it.id.symbol_id(), Spec { methods, signals });
     }
 
     fn collect_interface_type(&mut self, it: &TSInterfaceDeclaration<'a>) {
@@ -251,10 +251,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
             Some(type_arguments) => match type_arguments.params.first() {
                 Some(spec_generic) => {
                     // With generic argument, but not exactly one
-                    // `TurboModuleRegistry.get<T, U, V>();`
+                    // `Registry.get<T, U, V>();`
                     if type_arguments.params.len() != 1 {
                         self.collect_error(
-                            "TurboModule specification generic argument must be exactly one",
+                            "Module specification generic argument must be exactly one",
                             it.span,
                         );
                         return None;
@@ -264,14 +264,14 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 }
                 None => {
                     // Without generic argument
-                    // `TurboModuleRegistry.getEnforcing<>();`
+                    // `Registry.getEnforcing<>();`
                     self.collect_error(INVALID_NO_SPEC_GENERIC, it.span);
                     return None;
                 }
             },
             None => {
                 // Without generic argument
-                // `TurboModuleRegistry.getEnforcing();`
+                // `Registry.getEnforcing();`
                 self.collect_error(INVALID_NO_SPEC_GENERIC, it.span);
                 return None;
             }
@@ -312,15 +312,15 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     return None;
                 }
 
-                debug!("TurboModule found: {}", mod_name);
+                debug!("Module found: {}", mod_name);
                 Some(mod_name)
             }
             Some(_) => {
-                self.collect_error("TurboModule name must be a string literal", it.span);
+                self.collect_error("Module name must be a string literal", it.span);
                 return None;
             }
             None => {
-                self.collect_error("TurboModule name is required", it.span);
+                self.collect_error("Module name is required", it.span);
                 return None;
             }
         }
@@ -333,6 +333,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     Ok(name) => name,
                     Err(e) => return Err(error(&e.to_string(), prop_sig.span)),
                 };
+
+                if prop_name == RESERVED_ARG_NAME_ID {
+                    return Err(error(INVALID_RESERVED_ARG_NAME_ID, prop_sig.span));
+                }
 
                 let type_annotation =
                     match self.try_into_type_annotation(&type_annotation.type_annotation) {
@@ -409,6 +413,36 @@ impl<'a> NativeModuleAnalyzer<'a> {
         }
     }
 
+    fn try_into_signal(&mut self, sig: &TSPropertySignature<'a>) -> Result<Signal, OxcDiagnostic> {
+        if sig.type_annotation.is_none() {
+            return Err(error(INVALID_SPEC, sig.span));
+        }
+
+        let event_name = match &sig.key {
+            PropertyKey::StaticIdentifier(ident) => ident.name.to_string(),
+            _ => return Err(error(INVALID_SPEC, sig.span)),
+        };
+
+        match &sig.type_annotation.as_ref().unwrap().type_annotation {
+            TSType::TSTypeReference(type_ref) => match &type_ref.type_name {
+                TSTypeName::IdentifierReference(ident_ref) => {
+                    let sym_id = self
+                        .scoping
+                        .get_reference(ident_ref.reference_id())
+                        .symbol_id();
+
+                    if sym_id == self.mod_signal_sym_id {
+                        return Ok(Signal { name: event_name });
+                    } else {
+                        return Err(error(INVALID_SPEC, sig.span));
+                    }
+                }
+                _ => return Err(error(INVALID_SPEC, sig.span)),
+            },
+            _ => return Err(error(INVALID_SPEC, sig.span)),
+        }
+    }
+
     fn try_into_prop_name(&self, key: &PropertyKey) -> Result<String, anyhow::Error> {
         match key {
             PropertyKey::StaticIdentifier(ident) => Ok(ident.name.to_string()),
@@ -478,19 +512,19 @@ impl<'a> NativeModuleAnalyzer<'a> {
         Ok(TypeAnnotation::Nullable(Box::new(base)))
     }
 
-    /// Check the specification interface extends `TurboModule` interface of 'react-native' package.
+    /// Check the specification interface extends `NativeModule` interface of 'craby-modules' package.
     fn is_spec(&self, it: &TSInterfaceDeclaration<'a>) -> bool {
         it.extends
             .iter()
             .find(|ex| {
                 if let Some(ref_id) = ex.expression.get_identifier_reference() {
-                    // Check if the expression is `TurboModule` of 'react-native' package
-                    // eg. `import type { TurboModule } from 'react-native';`
+                    // Check if the expression is `NativeModule` of 'craby-modules' package
+                    // eg. `import type { NativeModule } from 'craby-modules';`
                     let sym_id = self.scoping.get_reference(ref_id.reference_id()).symbol_id();
                     sym_id == self.mod_type_sym_id
                 } else if let Some(member_expr) = ex.expression.get_member_expr() {
-                    // Check if the expression is `Namespace.TurboModule` of 'react-native' package
-                    // eg. `import * as Namespace from 'react-native'`
+                    // Check if the expression is `Namespace.NativeModule` of 'craby-modules' package
+                    // eg. `import * as Namespace from 'craby-modules'`
                     matches!(
                         member_expr.object(),
                         Expression::Identifier(ident)
@@ -525,7 +559,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 }
                 Expression::StaticMemberExpression(inner_member) => {
                     // FIXME: Could not get the symbol id of namespace
-                    // inner_member: `Namespace.TurboModuleRegistry`
+                    // inner_member: `Namespace.NativeModuleRegistry`
                     let is_ns = if let Some(ident) = inner_member.object.get_identifier_reference()
                     {
                         let sym_id = self.scoping.get_reference(ident.reference_id()).symbol_id();
@@ -708,17 +742,18 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 })
                 .collect::<Vec<Method>>();
 
-            let mut alias_map = types.into_iter().collect::<Vec<_>>();
-            let mut enum_map = enums.into_iter().collect::<Vec<_>>();
+            let mut aliases = types.into_iter().collect::<Vec<_>>();
+            let mut enums = enums.into_iter().collect::<Vec<_>>();
 
-            alias_map.sort();
-            enum_map.sort();
+            aliases.sort();
+            enums.sort();
 
             schemas.push(Schema {
                 module_name: module_name.to_owned(),
-                alias_map,
-                enum_map,
+                aliases,
+                enums,
                 methods,
+                signals: spec.signals,
             });
         }
 
@@ -728,7 +763,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
 impl<'a> Visit<'a> for NativeModuleAnalyzer<'a> {
     fn visit_import_declaration(&mut self, it: &ImportDeclaration<'a>) {
-        if it.source.value.as_str() != REACT_NATIVE_PKG {
+        if it.source.value.as_str() != NATIVE_MODULE_PKG {
             return;
         }
 
@@ -752,6 +787,7 @@ impl<'a> Visit<'a> for NativeModuleAnalyzer<'a> {
                     match imported_name.as_str() {
                         NATIVE_MODULE_INTERFACE => self.mod_type_sym_id = Some(symbol_id),
                         NATIVE_MODULE_REGISTRY => self.mod_reg_sym_id = Some(symbol_id),
+                        SIGNAL_TYPE => self.mod_signal_sym_id = Some(symbol_id),
                         _ => {}
                     };
                 }
@@ -769,7 +805,7 @@ impl<'a> Visit<'a> for NativeModuleAnalyzer<'a> {
         }
 
         if self.is_spec(it) {
-            // Collect TurboModule spec
+            // Collect module spec
             self.collect_spec(it);
         } else {
             // Collect user defined type (interface)
@@ -796,7 +832,7 @@ impl<'a> Visit<'a> for NativeModuleAnalyzer<'a> {
     }
 
     fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
-        // Collect TurboModule name from `TurboModuleRegistry.get()` or `TurboModuleRegistry.getEnforcing()`
+        // Collect module name from `Registry.get()` or `Registry.getEnforcing()`
         self.collect_mod(it);
     }
 }
@@ -849,8 +885,8 @@ mod tests {
     #[test]
     fn test_common_spec() {
         let src = "
-        import type { TurboModule } from 'react-native';
-        import { TurboModuleRegistry } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         export interface TestObject {
             foo: string;
@@ -878,7 +914,7 @@ mod tests {
             On = 1,
         }
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             numericMethod(arg: number): number;
             booleanMethod(arg: boolean): boolean;
             stringMethod(arg: string): string;
@@ -887,9 +923,10 @@ mod tests {
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;
             promiseMethod(arg: number): Promise<number>;
+            onSignal: Signal;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('CrabyTest');
+        export default Registry.getEnforcing<Spec>('CrabyTest');
 
         ";
         let result = try_parse_schema(&src).unwrap();
@@ -901,14 +938,14 @@ mod tests {
     #[test]
     fn test_spec_interface() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let schemas = try_parse_schema(&src).unwrap();
 
@@ -919,13 +956,13 @@ mod tests {
     #[test]
     fn test_spec_interface_with_namespace() {
         // let src = "
-        // import type * as ReactNative from 'react-native';
+        // import type * as CrabyModules from 'craby-modules';
 
-        // export interface Spec extends ReactNative.TurboModule {
+        // export interface Spec extends CrabyModules.Module {
         //     myMethod(): void;
         // }
 
-        // export default ReactNative.TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        // export default CrabyModules.Registry.getEnforcing<Spec>('MyModule');
         // ";
         // let schemas = try_parse_schema(&src).unwrap();
 
@@ -934,23 +971,42 @@ mod tests {
     }
 
     #[test]
+    fn test_signals() {
+        let src = "
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
+
+        export interface Spec extends Module {
+            onFoo: Signal;
+        }
+
+        export const Foo = Registry.getEnforcing<Spec>('TestModule');
+        ";
+        let schemas = try_parse_schema(&src).unwrap();
+
+        assert!(schemas.len() == 1);
+        assert!(schemas[0].signals.len() == 1);
+        assert_debug_snapshot!(schemas);
+    }
+
+    #[test]
     fn test_multiple_specs() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         type Common = { value: number };
 
-        export interface Spec1 extends TurboModule {
+        export interface Spec1 extends Module {
             foo(arg: Common): void;
         }
 
-        export interface Spec2 extends TurboModule {
+        export interface Spec2 extends Module {
             bar(arg: Common): void;
         }
 
-        export const Foo = TurboModuleRegistry.getEnforcing<Spec1>('FooModule');
-        export const Bar = TurboModuleRegistry.getEnforcing<Spec2>('BarModule');
+        export const Foo = Registry.getEnforcing<Spec1>('FooModule');
+        export const Bar = Registry.getEnforcing<Spec2>('BarModule');
         ";
         let schemas = try_parse_schema(&src).unwrap();
 
@@ -961,14 +1017,14 @@ mod tests {
     #[test]
     fn test_non_spec_1() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { Unknown } from 'react-native';
+        import type { Unknown } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         export interface Spec extends Unknown {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -978,13 +1034,13 @@ mod tests {
     #[test]
     fn test_non_spec_2() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
+        import { Registry } from 'react-native';
 
         export interface Spec {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -994,14 +1050,14 @@ mod tests {
     #[test]
     fn test_invalid_spec_generic_1() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Unknown>('MyModule');
+        export default Registry.getEnforcing<Unknown>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1011,14 +1067,14 @@ mod tests {
     #[test]
     fn test_invalid_spec_generic_2() {
         let src = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec, any>('MyModule');
+        export default Registry.getEnforcing<Spec, any>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1028,10 +1084,10 @@ mod tests {
     #[test]
     fn test_non_registry() {
         let src: &'static str = "
-        import { Something } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Something } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
@@ -1045,14 +1101,14 @@ mod tests {
     #[test]
     fn test_non_registry_call() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
-        export default TurboModuleRegistry.foo<Spec>('MyModule');
+        export default Registry.foo<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1062,15 +1118,15 @@ mod tests {
     #[test]
     fn test_duplicate_spec() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(): void;
         }
 
-        export const Foo = TurboModuleRegistry.getEnforcing<Spec>('MyModule');
-        export const Bar = TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export const Foo = Registry.getEnforcing<Spec>('MyModule');
+        export const Bar = Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1080,19 +1136,19 @@ mod tests {
     #[test]
     fn test_invalid_enum_1() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         enum MyEnum {
             Foo = 'foo',
             Bar = 1
         }
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(arg: MyEnum): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1102,19 +1158,19 @@ mod tests {
     #[test]
     fn test_invalid_enum_2() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         enum MyEnum {
             Foo = 1,
             Bar = 3.14
         }
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(arg: MyEnum): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1124,16 +1180,16 @@ mod tests {
     #[test]
     fn test_reserved_type() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         type Promise = number;
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod(arg: Promise): void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1143,14 +1199,14 @@ mod tests {
     #[test]
     fn test_optional_method() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod?: () => void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1160,14 +1216,14 @@ mod tests {
     #[test]
     fn test_property_method() {
         let src: &'static str = "
-        import { TurboModuleRegistry } from 'react-native';
-        import type { TurboModule } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             myMethod: () => void;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('MyModule');
+        export default Registry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 

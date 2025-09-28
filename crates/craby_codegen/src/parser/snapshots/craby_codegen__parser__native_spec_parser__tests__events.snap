@@ -1,0 +1,17 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: schemas
+---
+[
+    Schema {
+        module_name: "TestModule",
+        aliases: [],
+        enums: [],
+        methods: [],
+        events: [
+            Event {
+                name: "onFoo",
+            },
+        ],
+    },
+]

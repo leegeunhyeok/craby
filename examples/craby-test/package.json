@@ -50,6 +50,9 @@
     "url": "https://github.com/leegeunhyeok/craby/issues"
   },
   "homepage": "https://github.com/leegeunhyeok/craby#readme",
+  "dependencies": {
+    "craby-modules": "workspace:*"
+  },
   "devDependencies": {
     "@commitlint/config-conventional": "^19.6.0",
     "@craby/cli": "workspace:*",

@@ -33,34 +33,32 @@ pub fn print_schema(schema: &Schema) -> Result<(), anyhow::Error> {
         })?;
 
     // Type Aliases
-    println!("├─ Alias types ({})", schema.alias_map.len());
-    schema.alias_map.iter().enumerate().for_each(|(i, obj)| {
-        if i == schema.alias_map.len() - 1 {
+    let alias_count = schema.aliases.len();
+    println!("├─ Alias types ({})", alias_count);
+    schema.aliases.iter().enumerate().for_each(|(i, obj)| {
+        if i == alias_count - 1 {
             print!("│   └─ ");
         } else {
             print!("│   ├─ ");
         }
         println!("{}", obj.as_object().unwrap().name.blue());
     });
-    if schema.alias_map.is_empty() {
+    if schema.aliases.is_empty() {
         println!("│  {}", "(None)".dimmed());
     }
 
     // Enums
-    println!("└─ Enum types ({})", schema.enum_map.len());
-    schema
-        .enum_map
-        .iter()
-        .enumerate()
-        .for_each(|(i, enum_spec)| {
-            if i == schema.enum_map.len() - 1 {
-                print!("    └─ ");
-            } else {
-                print!("    ├─ ");
-            }
-            println!("{}", enum_spec.as_enum().unwrap().name.blue());
-        });
-    if schema.enum_map.is_empty() {
+    let enum_count = schema.enums.len();
+    println!("└─ Enum types ({})", enum_count);
+    schema.enums.iter().enumerate().for_each(|(i, enum_spec)| {
+        if i == enum_count - 1 {
+            print!("    └─ ");
+        } else {
+            print!("    ├─ ");
+        }
+        println!("{}", enum_spec.as_enum().unwrap().name.blue());
+    });
+    if schema.enums.is_empty() {
         println!("   {}", "(None)".dimmed());
     }
 

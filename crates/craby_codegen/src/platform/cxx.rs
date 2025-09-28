@@ -5,7 +5,7 @@ use log::debug;
 use template::{cxx_arg_ref, cxx_arg_var};
 
 use crate::{
-    constants::cxx_mod_cls_name,
+    constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_ID},
     parser::types::{EnumTypeAnnotation, Method, ObjectTypeAnnotation, TypeAnnotation},
     platform::cxx::template::{
         cxx_enum_bridging_template, cxx_nullable_bridging_template, cxx_struct_bridging_template,
@@ -207,6 +207,7 @@ impl TypeAnnotation {
             TypeAnnotation::Promise(..) => {
                 format!("react::bridging::toJs(rt, {})", ident)
             }
+            TypeAnnotation::Void => "jsi::Value::undefined()".to_string(),
             _ => {
                 return Err(anyhow::anyhow!(
                     "[as_cxx_to_js] Unsupported type annotation: {:?}",
@@ -221,10 +222,17 @@ impl TypeAnnotation {
 
 impl Method {
     pub fn as_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error> {
+        let vec_size = self.params.len() + 1;
         // ["arg0", "arg1", "arg2"]
-        let mut args = vec![];
+        let mut args = Vec::with_capacity(vec_size);
         // ["auto arg0 = facebook::react::bridging::fromJs<T>(rt, value, callInvoker)", "..."]
-        let mut args_decls = vec![];
+        let mut args_decls = Vec::with_capacity(vec_size);
+
+        args.push(RESERVED_ARG_NAME_ID.to_string());
+        args_decls.push(format!(
+            "uintptr_t {} = reinterpret_cast<uintptr_t>(&thisModule);",
+            RESERVED_ARG_NAME_ID
+        ));
 
         for (idx, param) in self.params.iter().enumerate() {
             let arg_ref = cxx_arg_ref(idx);
@@ -237,8 +245,29 @@ impl Method {
         let invoke_stmts = match &self.ret_type {
             TypeAnnotation::Promise(resolve_type) => {
                 let fn_args = args.join(", ");
-                let mut bind_args = vec!["promise".to_string()];
+                let mut bind_args = Vec::with_capacity(args.len() + 2);
                 bind_args.extend(args);
+                bind_args.push("promise".to_string());
+
+                let ret_stmts = if let TypeAnnotation::Void = &**resolve_type {
+                    formatdoc! {
+                        r#"
+                        craby::bridging::{fn_name}({fn_args});
+                        promise.resolve();
+                        "#,
+                        fn_name = self.name,
+                        fn_args = fn_args,
+                    }
+                } else {
+                    formatdoc! {
+                        r#"
+                        auto ret = craby::bridging::{fn_name}({fn_args});
+                        promise.resolve(ret);
+                        "#,
+                        fn_name = self.name,
+                        fn_args = fn_args,
+                    }
+                };
 
                 // Create a promise object and invoke the FFI function in a separate thread
                 //
@@ -264,8 +293,7 @@ impl Method {
 
                     std::thread([{bind_args}]() mutable {{
                       try {{
-                        auto ret = craby::bridging::{fn_name}({fn_args});
-                        promise.resolve(ret);
+                    {ret_stmts}
                       }} catch (const jsi::JSError &err) {{
                         promise.reject(err.getMessage());
                       }} catch (const std::exception &err) {{
@@ -275,8 +303,7 @@ impl Method {
 
                     return {ret};"#,
                     bind_args = bind_args.join(", "),
-                    fn_name = self.name,
-                    fn_args = fn_args,
+                    ret_stmts = indent_str(ret_stmts, 4),
                     ret_type = resolve_type.as_cxx_type(mod_name)?,
                     ret = self.ret_type.as_cxx_to_js(&"promise".to_string())?.expr,
                 }
@@ -288,14 +315,27 @@ impl Method {
                 // auto ret = craby::bridging::myFunc(arg0, arg1, arg2);
                 // return ret;
                 // ```
+                let ret_stmts = if let TypeAnnotation::Void = &self.ret_type {
+                    formatdoc! {
+                        r#"craby::bridging::{fn_name}({fn_args});"#,
+                        fn_name = self.name,
+                        fn_args = args.join(", "),
+                    }
+                } else {
+                    formatdoc! {
+                        r#"auto ret = craby::bridging::{fn_name}({fn_args});"#,
+                        fn_name = self.name,
+                        fn_args = args.join(", "),
+                    }
+                };
+
                 formatdoc! {
                     r#"
-                    auto ret = craby::bridging::{fn_name}({fn_args});
+                    {ret_stmts}
 
-                    return {ret};"#,
-                    fn_name = self.name,
-                    fn_args = args.join(", "),
-                    ret = self.ret_type.as_cxx_to_js(&"ret".to_string())?.expr,
+                    return {to_js};"#,
+                    ret_stmts = ret_stmts,
+                    to_js = self.ret_type.as_cxx_to_js(&"ret".to_string())?.expr,
                 }
             }
         };
@@ -342,7 +382,7 @@ impl Method {
             args_count = args_count,
             args_decls = indent_str(args_decls, 4),
             invoke_stmts = indent_str(invoke_stmts, 4),
-            plural = if args_count == 1 { "" } else { "s" },
+            plural = if args_count > 1 { "s" } else { "" },
         };
 
         Ok(CxxMethod {
@@ -359,7 +399,7 @@ impl Schema {
         let mut enum_bridging_templates = BTreeMap::new();
         let mut nullable_bridging_templates = self.collect_nullable_types()?;
 
-        self.alias_map
+        self.aliases
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 let alias_spec = type_annotation.as_object().unwrap();
@@ -370,7 +410,7 @@ impl Schema {
                 Ok(())
             })?;
 
-        self.enum_map
+        self.enums
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 let enum_spec = type_annotation.as_enum().unwrap();
@@ -462,7 +502,7 @@ impl Schema {
                 Ok(())
             })?;
 
-        self.alias_map
+        self.aliases
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 let alias_spec = type_annotation.as_object().unwrap();

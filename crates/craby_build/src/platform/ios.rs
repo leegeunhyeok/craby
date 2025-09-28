@@ -3,6 +3,7 @@ use std::{fs, path::PathBuf};
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{ios::Identifier, toolchain::Target},
+    cxx::replace_cxx_header,
 };
 
 use craby_common::{
@@ -37,6 +38,11 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
         } else {
             unreachable!();
         }
+    }
+
+    let signal_path = ios_base_path.join("include").join("signals.h");
+    if signal_path.exists() {
+        replace_cxx_header(&signal_path)?;
     }
 
     Ok(())

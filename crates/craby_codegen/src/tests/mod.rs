@@ -5,8 +5,8 @@ use crate::{parser::native_spec_parser::try_parse_schema, types::CodegenContext}
 pub fn get_codegen_context() -> CodegenContext {
     let schemas = try_parse_schema(
         "
-        import type { TurboModule } from 'react-native';
-        import { TurboModuleRegistry } from 'react-native';
+        import type { Module, Signal } from 'craby-modules';
+        import { Registry } from 'craby-modules';
 
         export interface TestObject {
             foo: string;
@@ -34,7 +34,7 @@ pub fn get_codegen_context() -> CodegenContext {
             On = 1,
         }
 
-        export interface Spec extends TurboModule {
+        export interface Spec extends Module {
             numericMethod(arg: number): number;
             booleanMethod(arg: boolean): boolean;
             stringMethod(arg: string): string;
@@ -43,9 +43,10 @@ pub fn get_codegen_context() -> CodegenContext {
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;
             promiseMethod(arg: number): Promise<number>;
+            onSignal: Signal;
         }
 
-        export default TurboModuleRegistry.getEnforcing<Spec>('CrabyTest');
+        export default Registry.getEnforcing<Spec>('CrabyTest');
         ",
     )
     .unwrap();

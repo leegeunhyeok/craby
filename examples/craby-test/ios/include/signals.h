@@ -1,19 +1,19 @@
 #pragma once
 
-#include "rust/cxx.h"
+#include "cxx.h"
 #include <functional>
 #include <memory>
 #include <unordered_map>
 
 namespace craby {
-namespace eventemitter {
+namespace signals {
 
-using Delegate = std::function<void(const std::string& eventName)>;
+using Delegate = std::function<void(const std::string& signalName)>;
 
-class EventEmitterRegistry {
+class SignalManager {
 public:
-  static EventEmitterRegistry& getInstance() {
-    static EventEmitterRegistry instance;
+  static SignalManager& getInstance() {
+    static SignalManager instance;
     return instance;
   }
 
@@ -36,14 +36,14 @@ public:
   }
 
 private:
-  EventEmitterRegistry() = default;
+  SignalManager() = default;
   mutable std::unordered_map<uintptr_t, Delegate> delegates_;
   mutable std::mutex mutex_;
 };
 
-inline const EventEmitterRegistry& getEventEmitterRegistry() {
-  return EventEmitterRegistry::getInstance();
+inline const SignalManager& getSignalManager() {
+  return SignalManager::getInstance();
 }
 
-} // namespace eventemitter
+} // namespace signals
 } // namespace craby

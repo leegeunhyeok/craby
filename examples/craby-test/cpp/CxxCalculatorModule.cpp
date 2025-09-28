@@ -9,37 +9,25 @@
 #include "bridging-generated.hpp"
 #include "utils.hpp"
 
-#include <os/log.h>
-
 using namespace facebook;
 
 namespace craby {
 namespace calculator {
 
-CxxCalculatorModule::~CxxCalculatorModule() {
-  uintptr_t id = reinterpret_cast<uintptr_t>(this);
-  auto& registry = craby::eventemitter::EventEmitterRegistry::getInstance();
-  registry.unregisterDelegate(id);
-  os_log(OS_LOG_DEFAULT, "[C++] Unregisterd: %lu", id);
-}
-
 CxxCalculatorModule::CxxCalculatorModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCalculatorModule::kModuleName, jsInvoker) {
+  // No signals
   callInvoker_ = std::move(jsInvoker);
-
-  uintptr_t id = reinterpret_cast<uintptr_t>(this);
-  auto& registry = craby::eventemitter::EventEmitterRegistry::getInstance();
-  registry.registerDelegate(id,
-                            [id](std::string name) {
-                              os_log(OS_LOG_DEFAULT, "[C++] From Rust: %s (Module: %lu)", name.c_str(), id);
-                            });
-  os_log(OS_LOG_DEFAULT, "[C++] Registered: %lu", id);
 
   methodMap_["add"] = MethodMetadata{2, &CxxCalculatorModule::add};
   methodMap_["subtract"] = MethodMetadata{2, &CxxCalculatorModule::subtract};
   methodMap_["multiply"] = MethodMetadata{2, &CxxCalculatorModule::multiply};
   methodMap_["divide"] = MethodMetadata{2, &CxxCalculatorModule::divide};
+}
+
+CxxCalculatorModule::~CxxCalculatorModule() {
+  // No signals
 }
 
 jsi::Value CxxCalculatorModule::add(jsi::Runtime &rt,
@@ -54,9 +42,10 @@ jsi::Value CxxCalculatorModule::add(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::add(arg0, arg1);
+    auto ret = craby::bridging::add(id_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -78,9 +67,10 @@ jsi::Value CxxCalculatorModule::subtract(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::subtract(arg0, arg1);
+    auto ret = craby::bridging::subtract(id_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -102,9 +92,10 @@ jsi::Value CxxCalculatorModule::multiply(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::multiply(arg0, arg1);
+    auto ret = craby::bridging::multiply(id_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -126,9 +117,10 @@ jsi::Value CxxCalculatorModule::divide(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::divide(arg0, arg1);
+    auto ret = craby::bridging::divide(id_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {

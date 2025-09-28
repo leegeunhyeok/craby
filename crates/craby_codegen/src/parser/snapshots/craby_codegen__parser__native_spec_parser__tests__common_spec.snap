@@ -5,7 +5,7 @@ expression: result
 [
     Schema {
         module_name: "CrabyTest",
-        alias_map: [
+        aliases: [
             Object(
                 ObjectTypeAnnotation {
                     name: "SubObject",
@@ -73,7 +73,7 @@ expression: result
                 },
             ),
         ],
-        enum_map: [
+        enums: [
             Enum(
                 EnumTypeAnnotation {
                     name: "MyEnum",
@@ -343,6 +343,11 @@ expression: result
                 ret_type: Promise(
                     Number,
                 ),
+            },
+        ],
+        signals: [
+            Signal {
+                name: "onSignal",
             },
         ],
     },

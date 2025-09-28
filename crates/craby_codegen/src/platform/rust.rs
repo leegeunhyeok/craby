@@ -5,7 +5,10 @@ use indoc::formatdoc;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    parser::types::{EnumTypeAnnotation, Method, ObjectTypeAnnotation, Param, RefTypeAnnotation, TypeAnnotation},
+    constants::specs::RESERVED_ARG_NAME_ID,
+    parser::types::{
+        EnumTypeAnnotation, Method, ObjectTypeAnnotation, Param, RefTypeAnnotation, TypeAnnotation,
+    },
     platform::rust::template::{alias_default_impl, as_struct_def, enum_default_impl},
     types::Schema,
     utils::indent_str,
@@ -223,7 +226,7 @@ impl Method {
         };
 
         Ok(format!(
-            "fn {}({}){}",
+            "fn {}(&self, {}){}",
             fn_name.to_string(),
             params_sig,
             ret_annotation
@@ -319,7 +322,10 @@ impl Schema {
                     .iter()
                     .map(|param| param.as_cxx_sig())
                     .collect::<Result<Vec<_>, _>>()
-                    .map(|params| params.join(", "))?;
+                    .map(|mut params| {
+                        params.insert(0, format!("{}: usize", RESERVED_ARG_NAME_ID));
+                        params.join(", ")
+                    })?;
 
                 let impl_name = pascal_case(&self.module_name);
                 let mod_name = snake_case(&self.module_name);
@@ -370,12 +376,14 @@ impl Schema {
                 let impl_func = formatdoc! {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
-                        let ret = {impl_name}::{fn_name}({fn_args});
+                        let it = {impl_name}::new({id});
+                        let ret = it.{fn_name}({fn_args});
                         {ret}
                     }}"#,
                     params_sig = params_sig,
                     ret_type = ret_annotation,
                     impl_name = impl_name,
+                    id = RESERVED_ARG_NAME_ID,
                     prefixed_fn_name = prefixed_fn_name,
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
@@ -388,7 +396,7 @@ impl Schema {
             })?;
 
         // Collect alias types (struct)
-        self.alias_map
+        self.aliases
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 if struct_defs.contains_key(type_annotation) {
@@ -403,7 +411,7 @@ impl Schema {
 
         // Collect enum types
         let enum_defs = self
-            .enum_map
+            .enums
             .iter()
             .map(|type_annotation| {
                 let enum_schema = type_annotation.as_enum().unwrap();
@@ -459,7 +467,7 @@ impl Schema {
                                     fn default() -> Self {{
                                         {nullable_type} {{
                                             null: true,
-                                            val: {default_val}
+                                            val: {default_val},
                                         }}
                                     }}
                                 }}"#,
@@ -514,7 +522,7 @@ impl Schema {
                                 fn default() -> Self {{
                                     {nullable_type} {{
                                         null: true,
-                                        val: {default_val}
+                                        val: {default_val},
                                     }}
                                 }}
                             }}"#,
@@ -554,7 +562,7 @@ impl Schema {
             })?;
 
         // impl Default trait for the alias type
-        self.alias_map
+        self.aliases
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 let obj = type_annotation.as_object().unwrap();
@@ -566,7 +574,7 @@ impl Schema {
             })?;
 
         // Collect enum types
-        self.enum_map
+        self.enums
             .iter()
             .try_for_each(|type_annotation| -> Result<(), anyhow::Error> {
                 let enum_schema = type_annotation.as_enum().unwrap();
@@ -692,7 +700,7 @@ pub mod template {
                             fn default() -> Self {{
                                 {nullable_type} {{
                                     null: true,
-                                    val: {default_val}
+                                    val: {default_val},
                                 }}
                             }}
                         }}"#,

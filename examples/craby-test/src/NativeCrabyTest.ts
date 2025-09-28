@@ -1,5 +1,4 @@
-import type { TurboModule } from 'react-native';
-import { TurboModuleRegistry } from 'react-native';
+import { Registry, type Module, type Signal } from 'craby-modules';
 
 export interface TestObject {
   foo: string;
@@ -27,7 +26,7 @@ export enum SwitchState {
   On = 1,
 }
 
-export interface Spec extends TurboModule {
+export interface Spec extends Module {
   numericMethod(arg: number): number;
   booleanMethod(arg: boolean): boolean;
   stringMethod(arg: string): string;
@@ -36,6 +35,9 @@ export interface Spec extends TurboModule {
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;
+  // Signals
+  onSignal: Signal;
+  triggerSignal(): void;
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('CrabyTest');
+export default Registry.getEnforcing<Spec>('CrabyTest');

@@ -13,6 +13,8 @@ pub enum ParseError {
 pub struct Spec {
     /// Module methods
     pub methods: Vec<Method>,
+    /// Module signals
+    pub signals: Vec<Signal>,
 }
 
 #[derive(Debug)]
@@ -92,5 +94,10 @@ pub enum EnumMemberValue {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct RefTypeAnnotation {
     pub ref_id: ReferenceId,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Signal {
     pub name: String,
 }
