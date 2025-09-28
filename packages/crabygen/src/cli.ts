@@ -3,7 +3,7 @@ import { version } from '../package.json';
 import { createBindingCommand } from './utils/command';
 
 export function run() {
-  const cli = program.name('craby').version(version);
+  const cli = program.name('crabygen').version(version);
 
   cli.addCommand(createBindingCommand('init'));
   cli.addCommand(createBindingCommand('codegen'));

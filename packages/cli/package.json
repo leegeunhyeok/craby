@@ -1,10 +1,15 @@
 {
-  "name": "@craby/cli",
+  "name": "@craby/cli-bindings",
   "version": "0.1.0-alpha.3",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "craby": "./bin.js"
+  "main": "./built/index.js",
+  "types": "./built/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./built/index.d.ts",
+      "default": "./built/index.js"
+    }
   },
   "scripts": {
     "dev": "yarn build && ./bin.js",
@@ -14,7 +19,6 @@
     "test": "vitest --run"
   },
   "files": [
-    "bin.js",
     "built",
     "napi",
     "!napi/*.node"

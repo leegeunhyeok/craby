@@ -22,6 +22,12 @@
     "typecheck": "tsc --noEmit",
     "build": "tsdown"
   },
+  "author": "leegeunhyeok <dev.ghlee@gmail.com> (https://github.com/leegeunhyeok)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leegeunhyeok/craby/issues"
+  },
+  "homepage": "https://github.com/leegeunhyeok/craby#readme",
   "devDependencies": {
     "@arethetypeswrong/core": "^0.18.2",
     "react": "^19.1.1",

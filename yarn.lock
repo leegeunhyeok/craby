@@ -1616,9 +1616,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@craby/cli@workspace:*, @craby/cli@workspace:packages/cli":
+"@craby/cli-bindings@workspace:*, @craby/cli-bindings@workspace:packages/cli":
   version: 0.0.0-use.local
-  resolution: "@craby/cli@workspace:packages/cli"
+  resolution: "@craby/cli-bindings@workspace:packages/cli"
   dependencies:
     "@commander-js/extra-typings": "npm:^14.0.0"
     "@napi-rs/cli": "npm:^3.1.5"
@@ -1628,8 +1628,6 @@ __metadata:
     tsup: "npm:^8.5.0"
     typescript: "npm:^5.9.2"
     vitest: "npm:^3.2.4"
-  bin:
-    craby: ./bin.js
   languageName: unknown
   linkType: soft
 
@@ -5676,9 +5674,9 @@ __metadata:
   resolution: "craby-test@workspace:examples/craby-test"
   dependencies:
     "@biomejs/biome": "npm:2.2.4"
-    "@craby/cli": "workspace:*"
     "@types/react": "npm:^19.0.0"
     craby-modules: "workspace:*"
+    crabygen: "workspace:*"
     del-cli: "npm:^7.0.0"
     react: "npm:19.1.1"
     react-native: "npm:0.81.4"
@@ -5700,9 +5698,19 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"crabygen@workspace:packages/crabygen":
+"crabygen@workspace:*, crabygen@workspace:packages/crabygen":
   version: 0.0.0-use.local
   resolution: "crabygen@workspace:packages/crabygen"
+  dependencies:
+    "@commander-js/extra-typings": "npm:^14.0.0"
+    "@craby/cli-bindings": "workspace:*"
+    "@types/node": "npm:^22"
+    commander: "npm:^14.0.1"
+    es-toolkit: "npm:^1.39.10"
+    tsdown: "npm:^0.15.5"
+    typescript: "npm:^5.9.2"
+  bin:
+    crabygen: ./bin.js
   languageName: unknown
   linkType: soft
 
@@ -12790,14 +12798,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"{{ lib_name }}@workspace:template":
+"{{ pkg_name }}@workspace:template":
   version: 0.0.0-use.local
-  resolution: "{{ lib_name }}@workspace:template"
+  resolution: "{{ pkg_name }}@workspace:template"
   dependencies:
     "@biomejs/biome": "npm:2.2.4"
-    "@craby/cli": "workspace:*"
     "@types/react": "npm:^19.0.0"
     craby-modules: "workspace:*"
+    crabygen: "workspace:*"
     del-cli: "npm:^7.0.0"
     react: "npm:19.1.1"
     react-native: "npm:0.81.4"

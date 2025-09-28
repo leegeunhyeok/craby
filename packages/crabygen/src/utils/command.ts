@@ -1,6 +1,8 @@
 import { Command, Option } from '@commander-js/extra-typings';
-import { type BindingMethod, getBindings } from '../napi';
+import { getBindings } from '@craby/cli-bindings';
 import { getCommonOptions } from './common-options';
+
+type BindingMethod = keyof ReturnType<typeof getBindings>;
 
 const VERBOSE_OPTION = new Option('-v, --verbose', 'Print all logs');
 

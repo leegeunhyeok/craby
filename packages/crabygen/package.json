@@ -1,5 +1,35 @@
 {
   "name": "crabygen",
   "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "crabygen": "./bin.js"
+  },
+  "scripts": {
+    "prepack": "yarn build",
+    "typecheck": "tsc --noEmit",
+    "build": "tsdown"
+  },
+  "files": [
+    "dist",
+    "bin.js"
+  ],
+  "author": "leegeunhyeok <dev.ghlee@gmail.com> (https://github.com/leegeunhyeok)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leegeunhyeok/craby/issues"
+  },
+  "homepage": "https://github.com/leegeunhyeok/craby#readme",
+  "dependencies": {
+    "@commander-js/extra-typings": "^14.0.0",
+    "@craby/cli-bindings": "workspace:*",
+    "commander": "^14.0.1",
+    "es-toolkit": "^1.39.10"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "tsdown": "^0.15.5",
+    "typescript": "^5.9.2"
+  },
   "packageManager": "yarn@4.9.2"
 }

@@ -1,5 +1,3 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { defineConfig } from 'tsup';
 
 const CJS_REQUIRE_SHIM = `
@@ -14,7 +12,7 @@ export default defineConfig({
   platform: 'node',
   target: 'node20',
   sourcemap: false,
-  dts: false,
+  dts: true,
   shims: true,
   clean: true,
   external: [/\.node$/, '../napi/index.js'],

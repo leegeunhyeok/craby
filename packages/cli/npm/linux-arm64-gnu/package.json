@@ -1,5 +1,5 @@
 {
-  "name": "@craby/cli-linux-arm64-gnu",
+  "name": "@craby/cli-bindings-linux-arm64-gnu",
   "version": "0.0.0",
   "os": [
     "linux"

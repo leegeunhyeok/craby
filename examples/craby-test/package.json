@@ -42,7 +42,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "build": "craby build && tsdown"
+    "build": "crabygen build && tsdown"
   },
   "keywords": [
     "react-native",
@@ -60,8 +60,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
-    "@craby/cli": "workspace:*",
     "@types/react": "^19.0.0",
+    "crabygen": "workspace:*",
     "del-cli": "^7.0.0",
     "react": "19.1.1",
     "react-native": "0.81.4",
