@@ -62,7 +62,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     ]);
 
     let template_dir = clone_template()?;
-    render_template(&template_dir, &template_data)?;
+    render_template(&template_dir.join("template"), &template_data)?;
     info!("Template generation completed");
 
     if is_rustup_installed() {
