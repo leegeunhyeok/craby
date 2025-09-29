@@ -1,21 +1,21 @@
 import { TurboModuleRegistry } from 'react-native';
 
-type Module = {};
+type NativeModule = {};
 
 type Signal = (handler: () => void) => () => void;
 
-interface Registry {
-  get<T extends Module>(moduleName: string): T | null;
-  getEnforcing<T extends Module>(moduleName: string): T;
+interface NativeModuleRegistry {
+  get<T extends NativeModule>(moduleName: string): T | null;
+  getEnforcing<T extends NativeModule>(moduleName: string): T;
 }
 
-export const Registry: Registry = {
-  get<T extends Module>(moduleName: string): T | null {
+export const NativeModuleRegistry: NativeModuleRegistry = {
+  get<T extends NativeModule>(moduleName: string): T | null {
     return TurboModuleRegistry.get<T>(moduleName);
   },
-  getEnforcing<T extends Module>(moduleName: string): T {
+  getEnforcing<T extends NativeModule>(moduleName: string): T {
     return TurboModuleRegistry.getEnforcing<T>(moduleName);
   },
 };
 
-export type { Module, Signal };
+export type { NativeModule, Signal };

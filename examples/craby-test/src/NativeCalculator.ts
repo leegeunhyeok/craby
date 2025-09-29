@@ -1,11 +1,11 @@
-import type { Module } from 'craby-modules';
-import { Registry } from 'craby-modules';
+import type { NativeModule } from 'craby-modules';
+import { NativeModuleRegistry } from 'craby-modules';
 
-export interface Spec extends Module {
+export interface Spec extends NativeModule {
   add(a: number, b: number): number;
   subtract(a: number, b: number): number;
   multiply(a: number, b: number): number;
   divide(a: number, b: number): number;
 }
 
-export default Registry.getEnforcing<Spec>('Calculator');
+export default NativeModuleRegistry.getEnforcing<Spec>('Calculator');

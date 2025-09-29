@@ -5,8 +5,8 @@ use crate::{parser::native_spec_parser::try_parse_schema, types::CodegenContext}
 pub fn get_codegen_context() -> CodegenContext {
     let schemas = try_parse_schema(
         "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         export interface TestObject {
             foo: string;
@@ -34,7 +34,7 @@ pub fn get_codegen_context() -> CodegenContext {
             On = 1,
         }
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             numericMethod(arg: number): number;
             booleanMethod(arg: boolean): boolean;
             stringMethod(arg: string): string;
@@ -46,7 +46,7 @@ pub fn get_codegen_context() -> CodegenContext {
             onSignal: Signal;
         }
 
-        export default Registry.getEnforcing<Spec>('CrabyTest');
+        export default NativeModuleRegistry.getEnforcing<Spec>('CrabyTest');
         ",
     )
     .unwrap();

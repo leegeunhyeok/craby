@@ -57,7 +57,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
 
     // eg. fast_calculator
     let crate_name = snake_case(&opts.pkg_name);
-    let description = Text::new("Enter a short description of the package:")
+    let description = Text::new("Enter a description of the package:")
         .with_validator(non_empty_validator)
         .prompt()?;
     let author_name = Text::new("Author name:")

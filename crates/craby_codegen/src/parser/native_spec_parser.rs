@@ -26,25 +26,25 @@ const INVALID_TYPE_LITERAL: &str =
 const INVALID_UNION_TYPE: &str = "Union types only allow nullable type (eg. `T | null`)";
 const INVALID_MIXED_ENUM_MEMBER: &str =
     "Enum member type must be single type (eg. only `number` or `string`)";
-const INVALID_REGISTRY_METHOD: &str = "Invalid Registry method";
+const INVALID_REGISTRY_METHOD: &str = "Invalid NativeModuleRegistry method";
 const INVALID_RESERVED_ARG_NAME_ID: &str = "Reserved argument name `id_` is not allowed";
 
 pub struct NativeModuleAnalyzer<'a> {
     pub diagnostics: Vec<OxcDiagnostic>,
     scoping: &'a Scoping,
-    /// Symbol ID of `Module` identifier's reference
+    /// Symbol ID of `NativeModule` identifier's reference
     mod_type_sym_id: Option<SymbolId>,
     /// Symbol ID of `Signal` identifier's reference
     mod_signal_sym_id: Option<SymbolId>,
-    /// Symbol ID of `Registry` identifier's reference
+    /// Symbol ID of `NativeModuleRegistry` identifier's reference
     mod_reg_sym_id: Option<SymbolId>,
     /// Symbol ID of `react-native` namespace's reference
     mod_ns_sym_id: Option<SymbolId>,
-    /// Modules collected from the source code
+    /// NativeModules collected from the source code
     mods: FxHashMap<SymbolId, String>,
     /// Declarations collected from the source code
     decls: FxHashMap<SymbolId, TypeAnnotation>,
-    /// Module specs collected from the source code
+    /// NativeModule specs collected from the source code
     specs: FxHashMap<SymbolId, Spec>,
 }
 
@@ -251,10 +251,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
             Some(type_arguments) => match type_arguments.params.first() {
                 Some(spec_generic) => {
                     // With generic argument, but not exactly one
-                    // `Registry.get<T, U, V>();`
+                    // `NativeModuleRegistry.get<T, U, V>();`
                     if type_arguments.params.len() != 1 {
                         self.collect_error(
-                            "Module specification generic argument must be exactly one",
+                            "NativeModule specification generic argument must be exactly one",
                             it.span,
                         );
                         return None;
@@ -264,14 +264,14 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 }
                 None => {
                     // Without generic argument
-                    // `Registry.getEnforcing<>();`
+                    // `NativeModuleRegistry.getEnforcing<>();`
                     self.collect_error(INVALID_NO_SPEC_GENERIC, it.span);
                     return None;
                 }
             },
             None => {
                 // Without generic argument
-                // `Registry.getEnforcing();`
+                // `NativeModuleRegistry.getEnforcing();`
                 self.collect_error(INVALID_NO_SPEC_GENERIC, it.span);
                 return None;
             }
@@ -312,15 +312,15 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     return None;
                 }
 
-                debug!("Module found: {}", mod_name);
+                debug!("NativeModule found: {}", mod_name);
                 Some(mod_name)
             }
             Some(_) => {
-                self.collect_error("Module name must be a string literal", it.span);
+                self.collect_error("NativeModule name must be a string literal", it.span);
                 return None;
             }
             None => {
-                self.collect_error("Module name is required", it.span);
+                self.collect_error("NativeModule name is required", it.span);
                 return None;
             }
         }
@@ -701,7 +701,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
             let module_name = self
                 .mods
                 .get(&id)
-                .ok_or(anyhow::anyhow!("Module name not found"))?;
+                .ok_or(anyhow::anyhow!("NativeModule name not found"))?;
 
             let methods = spec
                 .methods
@@ -832,7 +832,7 @@ impl<'a> Visit<'a> for NativeModuleAnalyzer<'a> {
     }
 
     fn visit_call_expression(&mut self, it: &CallExpression<'a>) {
-        // Collect module name from `Registry.get()` or `Registry.getEnforcing()`
+        // Collect module name from `NativeModuleRegistry.get()` or `NativeModuleRegistry.getEnforcing()`
         self.collect_mod(it);
     }
 }
@@ -885,8 +885,8 @@ mod tests {
     #[test]
     fn test_common_spec() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         export interface TestObject {
             foo: string;
@@ -914,7 +914,7 @@ mod tests {
             On = 1,
         }
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             numericMethod(arg: number): number;
             booleanMethod(arg: boolean): boolean;
             stringMethod(arg: string): string;
@@ -926,7 +926,7 @@ mod tests {
             onSignal: Signal;
         }
 
-        export default Registry.getEnforcing<Spec>('CrabyTest');
+        export default NativeModuleRegistry.getEnforcing<Spec>('CrabyTest');
 
         ";
         let result = try_parse_schema(&src).unwrap();
@@ -938,14 +938,14 @@ mod tests {
     #[test]
     fn test_spec_interface() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let schemas = try_parse_schema(&src).unwrap();
 
@@ -956,13 +956,13 @@ mod tests {
     #[test]
     fn test_spec_interface_with_namespace() {
         // let src = "
-        // import type * as CrabyModules from 'craby-modules';
+        // import type * as CrabyNativeModules from 'craby-modules';
 
-        // export interface Spec extends CrabyModules.Module {
+        // export interface Spec extends CrabyNativeModules.NativeModule {
         //     myMethod(): void;
         // }
 
-        // export default CrabyModules.Registry.getEnforcing<Spec>('MyModule');
+        // export default CrabyNativeModules.NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         // ";
         // let schemas = try_parse_schema(&src).unwrap();
 
@@ -973,14 +973,14 @@ mod tests {
     #[test]
     fn test_signals() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             onFoo: Signal;
         }
 
-        export const Foo = Registry.getEnforcing<Spec>('TestModule');
+        export const Foo = NativeModuleRegistry.getEnforcing<Spec>('TestModule');
         ";
         let schemas = try_parse_schema(&src).unwrap();
 
@@ -992,21 +992,21 @@ mod tests {
     #[test]
     fn test_multiple_specs() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         type Common = { value: number };
 
-        export interface Spec1 extends Module {
+        export interface Spec1 extends NativeModule {
             foo(arg: Common): void;
         }
 
-        export interface Spec2 extends Module {
+        export interface Spec2 extends NativeModule {
             bar(arg: Common): void;
         }
 
-        export const Foo = Registry.getEnforcing<Spec1>('FooModule');
-        export const Bar = Registry.getEnforcing<Spec2>('BarModule');
+        export const Foo = NativeModuleRegistry.getEnforcing<Spec1>('FooModule');
+        export const Bar = NativeModuleRegistry.getEnforcing<Spec2>('BarModule');
         ";
         let schemas = try_parse_schema(&src).unwrap();
 
@@ -1018,13 +1018,13 @@ mod tests {
     fn test_non_spec_1() {
         let src = "
         import type { Unknown } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         export interface Spec extends Unknown {
             myMethod(): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1034,13 +1034,13 @@ mod tests {
     #[test]
     fn test_non_spec_2() {
         let src = "
-        import { Registry } from 'react-native';
+        import { NativeModuleRegistry } from 'react-native';
 
         export interface Spec {
             myMethod(): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1050,14 +1050,14 @@ mod tests {
     #[test]
     fn test_invalid_spec_generic_1() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
-        export default Registry.getEnforcing<Unknown>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Unknown>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1067,14 +1067,14 @@ mod tests {
     #[test]
     fn test_invalid_spec_generic_2() {
         let src = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
-        export default Registry.getEnforcing<Spec, any>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec, any>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1084,10 +1084,10 @@ mod tests {
     #[test]
     fn test_non_registry() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
         import { Something } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
@@ -1101,14 +1101,14 @@ mod tests {
     #[test]
     fn test_non_registry_call() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
-        export default Registry.foo<Spec>('MyModule');
+        export default NativeModuleRegistry.foo<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1118,15 +1118,15 @@ mod tests {
     #[test]
     fn test_duplicate_spec() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(): void;
         }
 
-        export const Foo = Registry.getEnforcing<Spec>('MyModule');
-        export const Bar = Registry.getEnforcing<Spec>('MyModule');
+        export const Foo = NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        export const Bar = NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1136,19 +1136,19 @@ mod tests {
     #[test]
     fn test_invalid_enum_1() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         enum MyEnum {
             Foo = 'foo',
             Bar = 1
         }
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(arg: MyEnum): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1158,19 +1158,19 @@ mod tests {
     #[test]
     fn test_invalid_enum_2() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         enum MyEnum {
             Foo = 1,
             Bar = 3.14
         }
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(arg: MyEnum): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1180,16 +1180,16 @@ mod tests {
     #[test]
     fn test_reserved_type() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
         type Promise = number;
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod(arg: Promise): void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1199,14 +1199,14 @@ mod tests {
     #[test]
     fn test_optional_method() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod?: () => void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 
@@ -1216,14 +1216,14 @@ mod tests {
     #[test]
     fn test_property_method() {
         let src: &'static str = "
-        import type { Module, Signal } from 'craby-modules';
-        import { Registry } from 'craby-modules';
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
 
-        export interface Spec extends Module {
+        export interface Spec extends NativeModule {
             myMethod: () => void;
         }
 
-        export default Registry.getEnforcing<Spec>('MyModule');
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
         let result = try_parse_schema(&src);
 

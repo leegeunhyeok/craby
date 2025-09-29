@@ -1,0 +1,16 @@
+use anyhow::Result;
+use std::env;
+
+mod tasks;
+
+fn main() -> Result<()> {
+    let task = env::args().nth(1);
+    match task.as_deref() {
+        Some("version") => tasks::version::run(),
+        Some("publish") => tasks::publish::run(),
+        _ => {
+            eprintln!("Usage: cargo xtask [version|publish]");
+            std::process::exit(1);
+        }
+    }
+}

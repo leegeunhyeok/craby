@@ -7,10 +7,7 @@
   ],
   "scripts": {
     "lint:all": "biome check packages/*",
-    "lint:fix": "biome check packages/* --write",
-    "check:publish": "tsx ./scripts/check-publish.mts",
-    "prepare-publish": "tsx ./scripts/prepare-publish.mts",
-    "script:version": "./scripts/version.sh"
+    "lint:fix": "biome check packages/* --write"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

@@ -89,10 +89,10 @@ jobs:
         if: ${{ !matrix.settings.docker }}
         with:
           node-version: 22
-      - name: Install
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: nightly-2025-08-04
           targets: ${{ matrix.settings.target }}
       - name: Cache cargo
         uses: actions/cache@v4
@@ -259,11 +259,27 @@ jobs:
           options: -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }} --platform ${{ steps.docker.outputs.PLATFORM }}
           run: sh -c "corepack enable && yarn workspace ${{ env.PACKAGE_NAME }} test"
 
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Typecheck
+        run: yarn workspaces foreach --all --exclude template run typecheck
 
   publish-packages:
     name: Publish packages
     runs-on: ubuntu-latest
     needs:
+      - typecheck
       - test-macOS-windows-binding
       - test-linux-binding
     steps:
@@ -286,29 +302,7 @@ jobs:
         run: ls -R ${{ env.PACKAGE_PATH }}/npm
         shell: bash
       - name: Publish packages
-        run: |
-          cd ${{ env.PACKAGE_PATH }}
-          yarn config set npmPublishRegistry "https://registry.npmjs.org/"
-          yarn config set npmAuthToken "$NPM_TOKEN"
-          if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
-          then
-            yarn check:publish
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            yarn napi prepublish -t npm --skip-gh-release
-            yarn npm publish --access public
-            yarn workspace crabygen npm publish --access public
-            yarn workspace crabygen-modules npm publish --access public
-          elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
-          then
-            yarn check:publish
-            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            yarn napi prepublish -t npm --skip-gh-release
-            yarn npm publish --tag next --access public
-            yarn workspace crabygen npm publish --tag next --access public
-            yarn workspace crabygen-modules npm publish --tag next --access public
-          else
-            echo "Not a release, skipping publish"
-          fi
+        run: cargo xtask publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

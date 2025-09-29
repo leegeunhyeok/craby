@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "crates/*",
-    "packages/cli",
+    "packages/cli-bindings",
+    "xtask",
 ]
 resolver = "2"
 
