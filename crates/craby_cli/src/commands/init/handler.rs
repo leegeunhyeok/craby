@@ -1,20 +1,21 @@
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, path::PathBuf};
 
 use crate::{
     commands::init::validators,
-    utils::{template::render_template, terminal::with_spinner},
+    utils::{
+        git::{clone_template, is_git_available},
+        template::render_template,
+        terminal::with_spinner,
+    },
 };
 use craby_build::setup::setup_project;
-use craby_codegen::{
-    codegen,
-    constants::{cxx_mod_cls_name, objc_mod_provider_name},
-};
+use craby_codegen::constants::{cxx_mod_cls_name, objc_mod_provider_name};
 use craby_common::{
     env::is_rustup_installed,
     utils::string::{flat_case, kebab_case, snake_case},
 };
 use inquire::Text;
-use log::{debug, info, warn};
+use log::{info, warn};
 use owo_colors::OwoColorize;
 
 pub struct InitOptions {
@@ -24,6 +25,10 @@ pub struct InitOptions {
 }
 
 pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
+    if is_git_available() == false {
+        anyhow::bail!("Git command is not available. Please install Git and try again.");
+    }
+
     // eg. fast_calculator
     let crate_name = snake_case(&opts.package_name);
     let crate_name = Text::new("Enter the crate name")
@@ -56,68 +61,9 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         ("objc_provider_name", objc_provider_name.as_str()),
     ]);
 
-    fs::create_dir_all(opts.project_root.join(".craby"))?;
-    render_template(&root_template, &opts.project_root, &template_data)?;
-    render_template(
-        &crates_template,
-        &opts.project_root.join("crates"),
-        &template_data,
-    )?;
-    render_template(
-        &android_template,
-        &opts.project_root.join("android"),
-        &template_data,
-    )?;
-    render_template(
-        &ios_template,
-        &opts.project_root.join("ios"),
-        &template_data,
-    )?;
-
-    let default_source_dir = opts.project_root.join("src");
-    let schemas = codegen(craby_codegen::CodegenOptions {
-        project_root: &opts.project_root,
-        source_dir: &default_source_dir,
-    })?;
-
-    // Generate C++ code for each TurboModule schema
-    schemas.into_iter().try_for_each(|schema| {
-        let mut cxx_template_data = template_data.clone();
-        cxx_template_data.insert("turbo_module_name", schema.module_name.as_str());
-        render_template(
-            &cxx_template,
-            &opts.project_root.join("cpp"),
-            &cxx_template_data,
-        )?;
-        Ok::<(), anyhow::Error>(())
-    })?;
-
+    let template_dir = clone_template()?;
+    render_template(&template_dir, &template_data)?;
     info!("Template generation completed");
-
-    let gitignore = opts.project_root.join(".gitignore");
-    if gitignore.exists() {
-        let content = fs::read_to_string(&gitignore)?;
-        let mut append_contents = vec![];
-
-        if !content.contains("target/") {
-            append_contents.push("target/".to_string());
-        }
-
-        if !content.contains(".craby") {
-            append_contents.push(".craby".to_string());
-            debug!("`.craby` directory added to .gitignore");
-        }
-
-        if append_contents.len() > 0 {
-            debug!("{} added to .gitignore", append_contents.join(", "));
-            fs::write(
-                &gitignore,
-                format!("{}\n\n# Craby\n{}", content, append_contents.join("\n")),
-            )?;
-        }
-    } else {
-        fs::write(&gitignore, "# Craby\n.craby\ntarget/\n")?;
-    }
 
     if is_rustup_installed() {
         info!("Setting up the Rust project");
