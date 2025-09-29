@@ -49,12 +49,12 @@
     "ios",
     "android"
   ],
-  "author": "{{ author }}",
-  "license": "{{ license }}",
+  "author": "{{ author_name }} <{{ author_email }}>",
+  "license": "MIT",
   "bugs": {
-    "url": "{{ bugs_url }}"
+    "url": "{{ repository_url }}/issues"
   },
-  "homepage": "{{ homepage }}",
+  "homepage": "{{ repository_url }}#readme",
   "dependencies": {
     "craby-modules": "workspace:*"
   },

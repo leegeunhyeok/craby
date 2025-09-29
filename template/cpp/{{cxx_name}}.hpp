@@ -10,7 +10,7 @@ namespace {{ flat_name }} {
 
 class JSI_EXPORT {{ cxx_name }} : public facebook::react::TurboModule {
 public:
-  static constexpr const char *kModuleName = "{{ module_name }}";
+  static constexpr const char *kModuleName = "{{ pascal_name }}";
 
   {{ cxx_name }}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
   ~{{ cxx_name }}();

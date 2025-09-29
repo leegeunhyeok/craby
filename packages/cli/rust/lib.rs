@@ -21,18 +21,16 @@ pub fn setup(level_filter: Option<String>) {
 }
 
 #[napi(object)]
-pub struct CommonOptions {
-    pub project_root: String,
-    pub template_base_path: String,
-    pub package_name: String,
+pub struct InitOptions {
+    pub cwd: String,
+    pub pkg_name: String,
 }
 
 #[napi]
-pub fn init(opts: CommonOptions) -> napi::Result<()> {
+pub fn init(opts: InitOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::init::InitOptions {
-        project_root: opts.project_root.into(),
-        template_base_path: opts.template_base_path.into(),
-        package_name: opts.package_name,
+        cwd: opts.cwd.into(),
+        pkg_name: opts.pkg_name.into(),
     };
 
     match craby_cli::commands::init::perform(opts) {
@@ -46,8 +44,13 @@ pub fn init(opts: CommonOptions) -> napi::Result<()> {
     Ok(())
 }
 
+#[napi(object)]
+pub struct CodegenOptions {
+    pub project_root: String,
+}
+
 #[napi]
-pub fn codegen(opts: CommonOptions) -> napi::Result<()> {
+pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::codegen::CodegenOptions {
         project_root: opts.project_root.into(),
     };
@@ -63,8 +66,13 @@ pub fn codegen(opts: CommonOptions) -> napi::Result<()> {
     Ok(())
 }
 
+#[napi(object)]
+pub struct BuildOptions {
+    pub project_root: String,
+}
+
 #[napi]
-pub fn build(opts: CommonOptions) -> napi::Result<()> {
+pub fn build(opts: BuildOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::build::BuildOptions {
         project_root: opts.project_root.into(),
     };
@@ -80,8 +88,13 @@ pub fn build(opts: CommonOptions) -> napi::Result<()> {
     Ok(())
 }
 
+#[napi(object)]
+pub struct ShowOptions {
+    pub project_root: String,
+}
+
 #[napi]
-pub fn show(opts: CommonOptions) -> napi::Result<()> {
+pub fn show(opts: ShowOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::show::ShowOptions {
         project_root: opts.project_root.into(),
     };
@@ -97,8 +110,13 @@ pub fn show(opts: CommonOptions) -> napi::Result<()> {
     Ok(())
 }
 
+#[napi(object)]
+pub struct DoctorOptions {
+    pub project_root: String,
+}
+
 #[napi]
-pub fn doctor(opts: CommonOptions) -> napi::Result<()> {
+pub fn doctor(opts: DoctorOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::doctor::DoctorOptions {
         project_root: opts.project_root.into(),
     };
@@ -114,8 +132,13 @@ pub fn doctor(opts: CommonOptions) -> napi::Result<()> {
     Ok(())
 }
 
+#[napi(object)]
+pub struct CleanOptions {
+    pub project_root: String,
+}
+
 #[napi]
-pub fn clean(opts: CommonOptions) -> napi::Result<()> {
+pub fn clean(opts: CleanOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::clean::CleanOptions {
         project_root: opts.project_root.into(),
     };

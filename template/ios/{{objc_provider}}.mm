@@ -3,10 +3,10 @@
 
 #import <ReactCommon/CxxTurboModuleUtils.h>
 
-@interface {{ mm_name }} : NSObject
+@interface {{ objc_provider }} : NSObject
 @end
 
-@implementation {{ mm_name }}
+@implementation {{ objc_provider }}
 + (void)load {
 }
 @end
