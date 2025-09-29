@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "{{ git_url }}", :tag => "#{s.version}" }
 
-  s.source_files = ["ios/**/*.{h,m,mm,cc,cpp}", "cpp/**/*.{hpp,cpp}"]
+  s.source_files = ["ios/**/*.{{{{raw}}}}{h,m,mm,cc,cpp}{{{{/raw}}}}", "cpp/**/*.{{{{raw}}}}{hpp,cpp}{{{{/raw}}}}"]
   s.private_header_files = "ios/include/*.h"
 
   s.vendored_frameworks = "ios/framework/lib{{ flat_name }}.xcframework"

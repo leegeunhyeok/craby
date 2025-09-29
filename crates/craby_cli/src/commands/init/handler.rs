@@ -12,7 +12,7 @@ use craby_build::setup::setup_project;
 use craby_codegen::constants::{cxx_mod_cls_name, objc_mod_provider_name};
 use craby_common::{
     env::is_rustup_installed,
-    utils::string::{flat_case, kebab_case, snake_case},
+    utils::string::{flat_case, kebab_case, pascal_case, snake_case},
 };
 use inquire::Text;
 use log::{info, warn};
@@ -45,20 +45,20 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     // fast-calculator
     let kebab_name = kebab_case(&crate_name);
 
-    // FastCalculatorModuleProvider
-    let objc_provider_name = objc_mod_provider_name(&crate_name);
+    // FastCalculator
+    let pascal_name = pascal_case(&crate_name);
 
-    let root_template = opts.template_base_path.join("root");
-    let crates_template = opts.template_base_path.join("crates");
-    let cxx_template = opts.template_base_path.join("cpp");
-    let android_template = opts.template_base_path.join("android");
-    let ios_template = opts.template_base_path.join("ios");
+    // FastCalculatorModuleProvider
+    let objc_provider = objc_mod_provider_name(&crate_name);
+
     let template_data = BTreeMap::from([
+        ("pkg_name", opts.package_name.as_str()),
         ("crate_name", crate_name.as_str()),
         ("flat_name", flat_name.as_str()),
         ("kebab_name", kebab_name.as_str()),
+        ("pascal_name", pascal_name.as_str()),
         ("cxx_name", cxx_name.as_str()),
-        ("objc_provider_name", objc_provider_name.as_str()),
+        ("objc_provider", objc_provider.as_str()),
     ]);
 
     let template_dir = clone_template()?;

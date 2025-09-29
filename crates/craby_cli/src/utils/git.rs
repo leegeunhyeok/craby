@@ -17,7 +17,7 @@ pub fn clone_template() -> Result<PathBuf, anyhow::Error> {
             "1",
             "--filter=blob:none",
             "-b",
-            "main",
+            "template",
             "--quiet",
             "--sparse",
             "https://github.com/leegeunhyeok/craby.git",
