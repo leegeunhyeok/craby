@@ -8,12 +8,16 @@
   "scripts": {
     "lint:all": "biome check packages/*",
     "lint:fix": "biome check packages/* --write",
+    "check:publish": "tsx ./scripts/check-publish.mts",
+    "prepare-publish": "tsx ./scripts/prepare-publish.mts",
     "script:version": "./scripts/version.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
     "@types/node": "^22",
-    "typescript": "^5.8.3"
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.2",
+    "zx": "^8.8.4"
   },
   "resolutions": {
     "rollup": "npm:@rollup/wasm-node@4.46.2"

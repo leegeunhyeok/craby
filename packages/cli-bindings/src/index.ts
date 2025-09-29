@@ -1,0 +1,1 @@
+export { getBindings } from './napi';
