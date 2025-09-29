@@ -1,16 +1,13 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 pub fn is_git_available() -> bool {
-    std::process::Command::new("git")
-        .arg("--version")
-        .output()
-        .is_ok()
+    Command::new("git").arg("--version").output().is_ok()
 }
 
 pub fn clone_template() -> Result<PathBuf, anyhow::Error> {
     let temp_dir = std::env::temp_dir().join("craby-init");
 
-    std::process::Command::new("git")
+    Command::new("git")
         .args([
             "clone",
             "--depth",
@@ -24,6 +21,11 @@ pub fn clone_template() -> Result<PathBuf, anyhow::Error> {
             temp_dir.to_str().unwrap(),
         ])
         .output()?;
+
+    Command::new("git")
+        .args(["sparse-checkout", "set", "template/"])
+        .current_dir(&temp_dir)
+        .status()?;
 
     Ok(temp_dir)
 }
