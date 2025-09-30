@@ -1,5 +1,5 @@
+use crate::utils::{collect_packages, is_valid_version, update_package_version};
 use anyhow::Result;
-use crate::tasks::utils::{collect_packages, is_valid_version, update_package_version};
 use std::env;
 
 pub fn run() -> Result<()> {

@@ -1,15 +1,22 @@
+use crate::utils::{
+    collect_packages, get_version_from_commit_message, validate_package_versions, PackageInfo,
+};
 use anyhow::Result;
-use crate::tasks::utils::{collect_packages, get_version_from_commit_message, validate_package_versions, PackageInfo};
-use std::process::Command;
 use std::env;
 use std::io::Write;
+use std::path::PathBuf;
+use std::process::Command;
 
 fn setup_npm() -> Result<()> {
-    let npm_token = env::var("NPM_TOKEN")
-        .map_err(|_| anyhow::anyhow!("NPM_TOKEN is not set"))?;
+    let npm_token = env::var("NPM_TOKEN").map_err(|_| anyhow::anyhow!("NPM_TOKEN is not set"))?;
 
     Command::new("yarn")
-        .args(&["config", "set", "npmPublishRegistry", "https://registry.npmjs.org/"])
+        .args(&[
+            "config",
+            "set",
+            "npmPublishRegistry",
+            "https://registry.npmjs.org/",
+        ])
         .status()?;
 
     Command::new("yarn")
@@ -17,8 +24,8 @@ fn setup_npm() -> Result<()> {
         .status()?;
 
     let npmrc_content = format!("//registry.npmjs.org/:_authToken={}\n", npm_token);
-    let home_dir = env::var("HOME")?;
-    let npmrc_path = format!("{}/.npmrc", home_dir);
+    let home_dir = PathBuf::from(env::var("HOME")?);
+    let npmrc_path = home_dir.join(".npmrc");
 
     std::fs::OpenOptions::new()
         .create(true)
@@ -49,7 +56,14 @@ fn publish_packages(packages: &[PackageInfo]) -> Result<()> {
     for package_info in packages {
         println!("Publishing {}...", package_info.name);
         Command::new("yarn")
-            .args(&["workspace", &package_info.name, "npm", "publish", "--access", "public"])
+            .args(&[
+                "workspace",
+                &package_info.name,
+                "npm",
+                "publish",
+                "--access",
+                "public",
+            ])
             .status()?;
     }
     Ok(())

@@ -272,6 +272,8 @@ jobs:
         run: corepack enable
       - name: Install dependencies
         run: yarn install --immutable
+      - name: Build
+        run: yarn workspaces foreach --all --topological-dev --exclude template run build
       - name: Typecheck
         run: yarn workspaces foreach --all --topological-dev --exclude template run typecheck
 

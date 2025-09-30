@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::env;
 
 mod tasks;
+mod utils;
 
 fn main() -> Result<()> {
     let task = env::args().nth(1);
