@@ -3,7 +3,7 @@ env:
   DEBUG: napi:*
   APP_NAME: cli
   PACKAGE_NAME: '@craby/cli-bindings'
-  PACKAGE_PATH: packages/cli
+  PACKAGE_PATH: packages/cli-bindings
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 
 permissions:
@@ -273,7 +273,7 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Typecheck
-        run: yarn workspaces foreach --all --exclude template run typecheck
+        run: yarn workspaces foreach --all --topological-dev --exclude template run typecheck
 
   publish-packages:
     name: Publish packages
