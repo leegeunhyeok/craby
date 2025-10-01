@@ -6,13 +6,19 @@
   ],
   "scripts": {
     "lint:all": "biome check",
-    "lint:fix": "biome check --write"
+    "lint:fix": "biome check --write",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
     "@types/node": "^22",
+    "mermaid": "^11.12.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.2",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17",
     "zx": "^8.8.4"
   },
   "resolutions": {

@@ -200,3 +200,6 @@ Cargo.lock
 
 #!.yarn/cache
 .pnp.*
+
+# vitepress
+docs/.vitepress/cache

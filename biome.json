@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["packages/*/src/**", "examples/*/src/**"]
+    "includes": ["packages/*/src/**", "examples/*/src/**", "docs/.vitepress/**"]
   },
   "formatter": {
     "enabled": true,

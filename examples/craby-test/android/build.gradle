@@ -40,12 +40,10 @@ android {
 
     externalNativeBuild {
       cmake {
-        // TODO: Auto configure target name
         targets "cxx-craby-test"
         cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
         arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
         abiFilters (*reactNativeArchitectures())
-
         buildTypes {
           debug {
             cppFlags "-O1 -g"
