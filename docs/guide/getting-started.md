@@ -1,16 +1,18 @@
 # Getting Started
 
+:::warning
+This project is currently under development and is in early alpha. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+:::
+
 This guide will walk you through creating your first Craby module from scratch.
 
 ## Prerequisites
 
 ::: warning macOS Required
-Craby development requires **macOS** with **Xcode 12 or higher** for building both iOS and Android targets.
+Craby development requires **macOS** with **Xcode 12 or higher** for building [*-apple-ios](https://doc.rust-lang.org/rustc/platform-support/apple-ios.html) targets.
 :::
 
 Before you begin, make sure you have the following installed:
-
-### Prerequisites
 
 - **macOS**: Required for building iOS targets
 - **Xcode 12 or higher**: [Download](https://developer.apple.com/xcode)
@@ -67,6 +69,82 @@ yarn add -D crabygen
 
 After installation, you'll need to set up the project structure manually (see [Project Structure](#project-structure) below).
 
+### iOS Configuration
+
+In your `.podspec` file:
+
+```ruby
+Pod::Spec.new do |s|
+  s.name         = "YourModule"
+  s.version      = "1.0.0"
+
+  # Include C++ and iOS source files
+  s.source_files = ["ios/**/*.{h,m,mm,cc,cpp}", "cpp/**/*.{hpp,cpp}"]
+  s.private_header_files = "ios/include/*.h"
+
+  # Link the XCFramework
+  s.vendored_frameworks = "ios/framework/libyourmodule.xcframework"
+
+  # Add flag to using C++20
+  s.pod_target_xcconfig = {
+    "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",
+  }
+end
+```
+
+### Android Configuration
+
+In `android/build.gradle`:
+
+```groovy
+def reactNativeArchitectures() {
+  def value = rootProject.getProperties().get("reactNativeArchitectures")
+  return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+// Configure CMake
+android {
+  defaultConfig {
+    externalNativeBuild {
+      cmake {
+        targets "cxx-my-module"
+        cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
+        arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+        abiFilters (*reactNativeArchitectures())
+        buildTypes {
+          debug {
+            cppFlags "-O1 -g"
+          }
+          release {
+            cppFlags "-O2"
+          }
+        }
+      }
+    }
+  }
+
+  externalNativeBuild {
+    cmake {
+      path "CMakeLists.txt"
+    }
+  }
+
+  buildTypes {
+    debug {
+      jniDebuggable true
+    }
+    release {
+      minifyEnabled false
+      externalNativeBuild {
+        cmake {
+          arguments "-DCMAKE_BUILD_TYPE=Release"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Project Structure
 
 After scaffolding or setup, your project will have this structure:
@@ -105,6 +183,10 @@ Let's create a simple calculator module to understand the Craby workflow.
 
 Create `src/NativeCalculator.ts`:
 
+::: info
+Module spec files must start with the "Native" prefix.
+:::
+
 ```typescript
 import type { NativeModule } from 'craby-modules';
 import { NativeModuleRegistry } from 'craby-modules';
@@ -132,13 +214,6 @@ Run the code generation command:
 ```bash
 npx crabygen
 ```
-
-This generates:
-- `crates/lib/src/generated.rs` - Rust trait definition
-- `crates/lib/src/calculator_impl.rs` - Implementation template
-- `crates/lib/src/ffi.rs` - FFI bridging code
-- C++ bridge files in `cpp/`
-- Native build configurations
 
 ### Step 3: Implement the Rust Logic
 
@@ -188,11 +263,12 @@ Build the Rust code for all target platforms:
 npx crabygen build
 ```
 
-This compiles your Rust code and generates:
-- **Android**: Static libraries in `android/src/main/jni/libs`
-- **iOS**: XCFramework in `ios/framework/`
+### Step 5: Sync with Native Projects
 
-### Step 5: Use in Your React Native App
+- Android: Sync Gradle
+- iOS: Install Pods
+
+### Step 6: Build the React Native Application and Run
 
 Now you can use your module in your React Native app:
 
@@ -209,7 +285,5 @@ const quotient = Calculator.divide(10, 5); // 2
 
 Now that you've created your first module, explore:
 
-- [Module Definition](/guide/module-definition) - Learn about supported types and patterns
-- [Code Generation](/guide/codegen) - Understand the code generation process
-- [Building](/guide/building) - Deep dive into the build system
-- [Advanced Features](/guide/advanced) - Promises, signals, and complex types
+- [Module Definition](/guide/module-definition) - Learn about module specs and types
+- [How to build](/guide/build) - Build native binaries

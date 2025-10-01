@@ -363,8 +363,8 @@ impl RsTemplate {
             pub type Boolean = bool;
             pub type Number = f64;
             pub type String = std::string::String;
-            pub type Array<T> = Vec<T>;
-            pub type Promise<T> = Result<T, anyhow::Error>;
+            pub type Array<T> = std::vec::Vec<T>;
+            pub type Promise<T> = std::result::Result<T, anyhow::Error>;
             pub type Void = ();
 
             pub mod promise {{
@@ -374,7 +374,7 @@ impl RsTemplate {
                     Ok(val)
                 }}
 
-                pub fn rejected<T>(err: impl AsRef<str>) -> Promise<T> {{
+                pub fn reject<T>(err: impl AsRef<str>) -> Promise<T> {{
                     Err(anyhow::anyhow!(err.as_ref().to_string()))
                 }}
             }}
@@ -408,6 +408,13 @@ impl RsTemplate {
                 pub fn into_value(self) -> Option<T> {{
                     self.val
                 }}
+            }}
+
+            #[macro_export]
+            macro_rules! throw {{
+                ($($arg:tt)*) => {{
+                    panic!($($arg)*)
+                }};
             }}"#
         }
     }

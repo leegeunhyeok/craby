@@ -1,19 +1,18 @@
 # Introduction
 
+:::warning
+This project is currently under development and is in early alpha. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+:::
+
 ## What is Craby?
 
 **Craby** is a type-safe Rust development tool for React Native that bridges the gap between JavaScript and native code. It automatically generates Rust and C++ code based on TypeScript NativeModule schemas and integrates with **pure C++ TurboModule**—no platform-specific interop like `ObjCTurboModule` or `JavaTurboModule` required.
 
-## Why Craby?
+## Motivation
 
-### The Problem
+React Native provides excellent **TurboModule** and **Codegen** capabilities. However, it requires using platform-specific languages (Kotlin/Java for Android, Objective-C/Swift for iOS) and goes through platform compatibility layers, which means it cannot match the performance of pure C++ TurboModules.
 
-Developing React Native native modules traditionally involves:
-
-- Writing boilerplate code in multiple languages (TypeScript, C++, Objective-C, Java)
-- Maintaining type safety manually across language boundaries
-- Dealing with platform-specific code and interop layers
-- Complex setup and configuration for native builds
+Craby was created as an alternative solution to address these limitations. It aims to integrate seamlessly with pure C++ TurboModules using the Rust language. While platform-specific features are not available, Craby strives to be the best choice for maximum performance.
 
 ### The Solution
 
@@ -23,24 +22,6 @@ Craby solves these problems by:
 2. **Type Safety**: Compile-time type checking across TypeScript, Rust, and C++ prevents runtime errors
 3. **Pure C++ Integration**: Direct integration with C++ TurboModule bypasses platform-specific layers for maximum performance
 4. **Simple Development**: Focus on implementing your business logic in Rust—Craby handles the rest
-
-## How It Works
-
-```mermaid
-graph LR
-    A[TypeScript Spec] --> B[Crabygen]
-    B --> C[Generated Rust Traits]
-    B --> D[Generated C++ Bridge]
-    C --> E[Your Rust Implementation]
-    E --> D
-    D --> F[Pure C++ TurboModule]
-    F --> G[React Native]
-```
-
-1. **Define**: Write your module specification in TypeScript using the TurboModule interface
-2. **Generate**: Run `crabygen` to automatically generate Rust traits and C++ bridging code
-3. **Implement**: Implement the generated Rust trait with your business logic
-4. **Build**: Run `craby build` to compile everything into native binaries for iOS and Android
 
 ## Key Features
 
@@ -78,30 +59,44 @@ impl CalculatorSpec for Calculator {
 }
 ```
 
-### Rich Type Support
+## How It Works
 
-Craby supports all common types:
-- **Primitives**: `number`, `string`, `boolean`
-- **Collections**: Arrays and objects
-- **Enums**: Both string and numeric enums
-- **Async**: Promise-based APIs
-- **Nullable**: Optional types with `null` support
-- **Signals**: Event emitters for native-to-JS communication
+```mermaid
+graph LR
+    A[Rust] <--> B[Rust Bindings]
+    B <.-> |C ABI| C[C++ Bindings]
+    C <--> D[C++]
+
+    subgraph cxx["via cxx"]
+        B
+        C
+    end
+```
+
+1. **Codegen from TypeScript**: Generate code based on TypeScript NativeModule specifications
+2. **Rust Code Generation**: Generate FFI code, user-defined types (structs/enums), and traits to ensure module interface contracts
+3. **C++ Code Generation**: Generate pure C++ TurboModule implementations and templates for efficient data interoperability
+4. **Integration**: When the React Native application builds, the C++ TurboModule is compiled and integrated into the app 
 
 ## When to Use Craby
 
 Craby is ideal for:
 
+<div class="tossface">
+
 - ✅ Building high-performance native modules in Rust
 - ✅ Projects requiring complex data processing on native side
-- ✅ Applications needing secure, type-safe native code
-- ✅ Teams wanting to leverage Rust's safety and performance in React Native
+
+</div>
 
 Craby might not be the best fit for:
 
+<div class="tossface">
+
 - ❌ Simple native modules with minimal logic (native JS modules may suffice)
-- ❌ Projects that can't include Rust toolchain in their build process
 - ❌ Modules requiring platform-specific APIs (use platform-specific modules instead)
+
+</div>
 
 ## Next Steps
 

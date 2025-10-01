@@ -3,6 +3,9 @@
 layout: home
 
 hero:
+  image:
+    src: /logo.svg
+    alt: Craby
   name: "Craby"
   text: "Type-safe Rust for React Native"
   tagline: Auto-generated, integrated with pure C++ TurboModule
@@ -15,11 +18,10 @@ hero:
       link: /guide/introduction
 
 features:
-  - title: ⚡️ Faster Than Standard TurboModules
-    details: Pure C++ integration with zero-cost FFI bridges Rust and C++ at compile-time using templates, eliminating platform-specific interop overhead (ObjCTurboModule, JavaTurboModule)
+  - title: ⚡️ High Performance
+    details: Pure C++ integration with zero-cost FFI eliminates platform-specific interop overhead
   - title: 🛡️ Type-Safe Code Generation
-    details: Define your API once in TypeScript—Craby automatically generates type-safe Rust traits, C++ bridges, and FFI layers with compile-time validation across the entire stack
-  - title: 🦀 Easy Rust + TurboModule Integration
-    details: Just implement the generated Rust trait with your business logic. Craby handles all the complex bridging, building, and platform configuration automatically
+    details: Define APIs in TypeScript—auto-generate type-safe Rust traits and C++ bridges
+  - title: ✅ Easy Rust + TurboModule Integration
+    details: Just implement Rust traits. Craby handles bridging and platform configuration
 ---
-
