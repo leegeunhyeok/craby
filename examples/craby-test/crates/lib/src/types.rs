@@ -49,10 +49,3 @@ impl<T> Nullable<T> {
         self.val
     }
 }
-
-#[macro_export]
-macro_rules! throw {
-    ($($arg:tt)*) => {
-        panic!($($arg)*)
-    };
-}

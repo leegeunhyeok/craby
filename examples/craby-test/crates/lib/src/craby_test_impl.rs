@@ -1,6 +1,5 @@
 use crate::ffi::bridging::*;
 use crate::generated::*;
-use crate::throw;
 use crate::types::*;
 
 pub struct CrabyTest {

@@ -23,6 +23,7 @@ pub struct RsBridgeType(pub String);
 #[derive(Debug)]
 pub struct RsImplType(pub String);
 
+/// Collection of Rust code for FFI.
 #[derive(Debug, Clone)]
 pub struct RsCxxBridge {
     /// The struct definition.
@@ -51,7 +52,7 @@ pub struct RsCxxBridge {
     ///
     /// ```rust,ignore
     /// #[cxx_name = "myFunc"]
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz;
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Result<Baz>;
     /// ```
     pub func_extern_sigs: Vec<String>,
     /// The implementation function of the extern function.
@@ -59,7 +60,7 @@ pub struct RsCxxBridge {
     /// **Example**
     ///
     /// ```rust,ignore
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Baz {
+    /// fn myFunc(arg1: Foo, arg2: Bar) -> Result<Baz> {
     ///   MyModule::my_func(arg1, arg2)
     /// }
     /// ```
@@ -259,130 +260,125 @@ impl Schema {
         let mut struct_defs = FxHashMap::default();
 
         // Collect extern function signatures and implementations
-        self.methods
-            .iter()
-            .try_for_each(|method_spec| -> Result<(), anyhow::Error> {
-                // Collect nullable parameters
-                method_spec
-                    .params
-                    .iter()
-                    .try_for_each(|param| -> Result<(), anyhow::Error> {
-                        if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
-                            &param.type_annotation
-                        {
-                            if struct_defs.contains_key(nullable_type) {
-                                return Ok(());
-                            }
+        for method_spec in &self.methods {
+            // Collect nullable parameters
+            for param in &method_spec.params {
+                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
+                    &param.type_annotation
+                {
+                    if struct_defs.contains_key(nullable_type) {
+                        continue;
+                    }
 
-                            let struct_type = nullable_type.as_rs_bridge_type()?.0;
-                            let base_type = type_annotation.as_rs_type()?.0;
-                            let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
-                            let default_val = type_annotation.as_rs_default_val()?;
+                    let struct_type = nullable_type.as_rs_bridge_type()?.0;
+                    let base_type = type_annotation.as_rs_type()?.0;
+                    let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                    let default_val = type_annotation.as_rs_default_val()?;
 
-                            struct_defs.insert(nullable_type.clone(), formatdoc! {
-                                r#"
-                                struct {struct_type} {{
-                                    null: bool,
-                                    val: {base_type},
-                                }}"#,
-                                struct_type = struct_type,
-                                base_type = base_type,
-                            });
+                    struct_defs.insert(
+                        nullable_type.clone(),
+                        formatdoc! {
+                            r#"
+                            struct {struct_type} {{
+                                null: bool,
+                                val: {base_type},
+                            }}"#,
+                            struct_type = struct_type,
+                            base_type = base_type,
+                        },
+                    );
 
-                            let nullable_impl = formatdoc! {
-                                r#"
-                                impl From<{struct_type}> for Nullable<{rs_impl_type}> {{
-                                    fn from(val: {struct_type}) -> Self {{
-                                        Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
-                                    }}
+                    let nullable_impl = formatdoc! {
+                        r#"
+                        impl From<{struct_type}> for Nullable<{rs_impl_type}> {{
+                            fn from(val: {struct_type}) -> Self {{
+                                Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                            }}
+                        }}
+
+                        impl From<Nullable<{rs_impl_type}>> for {struct_type} {{
+                            fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                                let val = val.into_value();
+                                let null = val.is_none();
+                                {struct_type} {{
+                                    val: val.unwrap_or({default_val}),
+                                    null,
                                 }}
+                            }}
+                        }}"#,
+                        struct_type = struct_type,
+                        rs_impl_type = rs_impl_type,
+                        default_val = default_val,
+                    };
 
-                                impl From<Nullable<{rs_impl_type}>> for {struct_type} {{
-                                    fn from(val: Nullable<{rs_impl_type}>) -> Self {{
-                                        let val = val.into_value();
-                                        let null = val.is_none();
-                                        {struct_type} {{
-                                            val: val.unwrap_or({default_val}),
-                                            null,
-                                        }}
-                                    }}
-                                }}"#,
-                                struct_type = struct_type,
-                                rs_impl_type = rs_impl_type,
-                                default_val = default_val,
-                            };
+                    type_impls.push(nullable_impl);
+                }
+            }
 
-                            type_impls.push(nullable_impl);
-                        }
+            let ret_type = method_spec.ret_type.as_rs_type()?.0;
+            let ret_type = match method_spec.ret_type {
+                TypeAnnotation::Promise(_) => ret_type,
+                _ => format!("Result<{}, anyhow::Error>", ret_type),
+            };
+            let ret_extern_type = method_spec.ret_type.as_rs_bridge_type()?.0;
+            let ret_extern_type = match method_spec.ret_type {
+                TypeAnnotation::Promise(_) => ret_extern_type,
+                _ => format!("Result<{}>", ret_extern_type),
+            };
 
-                        Ok(())
-                    })?;
+            let params_sig = method_spec
+                .params
+                .iter()
+                .map(|param| param.try_into_cxx_sig())
+                .collect::<Result<Vec<_>, _>>()
+                .map(|mut params| {
+                    params.insert(0, format!("{}: usize", RESERVED_ARG_NAME_ID));
+                    params.join(", ")
+                })?;
 
-                let ret_type = method_spec.ret_type.as_rs_type()?.0;
-                let ret_extern_type = method_spec.ret_type.as_rs_bridge_type()?.0;
+            let impl_name = pascal_case(&self.module_name);
+            let mod_name = snake_case(&self.module_name);
+            let fn_name = snake_case(&method_spec.name);
+            let fn_args = method_spec
+                .params
+                .iter()
+                .map(|param| {
+                    if let TypeAnnotation::Nullable(..) = &param.type_annotation {
+                        format!("{}.into()", param.name)
+                    } else {
+                        param.name.clone()
+                    }
+                })
+                .collect::<Vec<_>>();
+            let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
 
-                let params_sig = method_spec
-                    .params
-                    .iter()
-                    .map(|param| param.try_into_cxx_sig())
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(|mut params| {
-                        params.insert(0, format!("{}: usize", RESERVED_ARG_NAME_ID));
-                        params.join(", ")
-                    })?;
+            let ret_extern_annotation = format!(" -> {}", ret_extern_type);
+            let ret_annotation = format!(" -> {}", ret_type);
+            let extern_func = formatdoc! {
+                r#"
+                #[cxx_name = "{orig_fn_name}"]
+                fn {prefixed_fn_name}({params_sig}){ret};"#,
+                orig_fn_name = method_spec.name,
+                prefixed_fn_name = prefixed_fn_name,
+                params_sig = params_sig,
+                ret = ret_extern_annotation,
+            };
 
-                let impl_name = pascal_case(&self.module_name);
-                let mod_name = snake_case(&self.module_name);
-                let fn_name = snake_case(&method_spec.name);
-                let fn_args = method_spec
-                    .params
-                    .iter()
-                    .map(|param| {
-                        if let TypeAnnotation::Nullable(..) = &param.type_annotation {
-                            format!("{}.into()", param.name)
-                        } else {
-                            param.name.clone()
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
+            let ret = if let TypeAnnotation::Nullable(..) = &method_spec.ret_type {
+                "ret.into()"
+            } else {
+                "ret"
+            };
 
-                // If the return type is `void`, return an empty tuple.
-                // Otherwise, return the given return type.
-                let ret_extern_annotation = if ret_extern_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", ret_extern_type)
-                };
-
-                let ret_annotation = if ret_type == "()" {
-                    String::new()
-                } else {
-                    format!(" -> {}", ret_type)
-                };
-
-                let extern_func = formatdoc! {
-                    r#"
-                    #[cxx_name = "{orig_fn_name}"]
-                    fn {prefixed_fn_name}({params_sig}){ret};"#,
-                    orig_fn_name = method_spec.name,
-                    prefixed_fn_name = prefixed_fn_name,
-                    params_sig = params_sig,
-                    ret = ret_extern_annotation,
-                };
-
-                let ret = if let TypeAnnotation::Nullable(..) = &method_spec.ret_type {
-                    "ret.into()"
-                } else {
-                    "ret"
-                };
-
-                let impl_func = formatdoc! {
+            let impl_func = match method_spec.ret_type {
+                TypeAnnotation::Promise(_) => formatdoc! {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
-                        let it = {impl_name}::new({id});
-                        let ret = it.{fn_name}({fn_args});
-                        {ret}
+                        catch_panic!({{
+                            let it = {impl_name}::new({id});
+                            let ret = it.{fn_name}({fn_args});
+                            {ret}
+                        }}).and_then(|r| r)
                     }}"#,
                     params_sig = params_sig,
                     ret_type = ret_annotation,
@@ -391,13 +387,29 @@ impl Schema {
                     prefixed_fn_name = prefixed_fn_name,
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
-                };
+                },
+                _ => formatdoc! {
+                    r#"
+                    fn {prefixed_fn_name}({params_sig}){ret_type} {{
+                        catch_panic!({{
+                            let it = {impl_name}::new({id});
+                            let ret = it.{fn_name}({fn_args});
+                            {ret}
+                        }})
+                    }}"#,
+                    params_sig = params_sig,
+                    ret_type = ret_annotation,
+                    impl_name = impl_name,
+                    id = RESERVED_ARG_NAME_ID,
+                    prefixed_fn_name = prefixed_fn_name,
+                    fn_name = fn_name.to_string(),
+                    fn_args = fn_args.join(", "),
+                },
+            };
 
-                func_extern_sigs.push(extern_func);
-                func_impls.push(impl_func);
-
-                Ok(())
-            })?;
+            func_extern_sigs.push(extern_func);
+            func_impls.push(impl_func);
+        }
 
         // Collect alias types (struct)
         self.aliases

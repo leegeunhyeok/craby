@@ -81,7 +81,8 @@ android/generated
 
 # Craby
 target/
-.craby
+android/src/main/jni/libs/
+ios/framework/
 
 # JavaScript build output
 dist/

@@ -889,31 +889,31 @@ enum class SwitchState : ::std::uint8_t {
 };
 #endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
 
-double add(::std::size_t id_, double a, double b) noexcept;
+double add(::std::size_t id_, double a, double b);
 
-double subtract(::std::size_t id_, double a, double b) noexcept;
+double subtract(::std::size_t id_, double a, double b);
 
-double multiply(::std::size_t id_, double a, double b) noexcept;
+double multiply(::std::size_t id_, double a, double b);
 
-double divide(::std::size_t id_, double a, double b) noexcept;
+double divide(::std::size_t id_, double a, double b);
 
-double numericMethod(::std::size_t id_, double arg) noexcept;
+double numericMethod(::std::size_t id_, double arg);
 
-bool booleanMethod(::std::size_t id_, bool arg) noexcept;
+bool booleanMethod(::std::size_t id_, bool arg);
 
-::rust::String stringMethod(::std::size_t id_, ::rust::String arg) noexcept;
+::rust::String stringMethod(::std::size_t id_, ::rust::String arg);
 
-::craby::bridging::TestObject objectMethod(::std::size_t id_, ::craby::bridging::TestObject arg) noexcept;
+::craby::bridging::TestObject objectMethod(::std::size_t id_, ::craby::bridging::TestObject arg);
 
-::rust::Vec<double> arrayMethod(::std::size_t id_, ::rust::Vec<double> arg) noexcept;
+::rust::Vec<double> arrayMethod(::std::size_t id_, ::rust::Vec<double> arg);
 
-::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) noexcept;
+::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1);
 
-::craby::bridging::NullableNumber nullableMethod(::std::size_t id_, ::craby::bridging::NullableNumber arg) noexcept;
+::craby::bridging::NullableNumber nullableMethod(::std::size_t id_, ::craby::bridging::NullableNumber arg);
 
 double promiseMethod(::std::size_t id_, double arg);
 
-void triggerSignal(::std::size_t id_) noexcept;
+void triggerSignal(::std::size_t id_);
 } // namespace bridging
 } // namespace craby
 

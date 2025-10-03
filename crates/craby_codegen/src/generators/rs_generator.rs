@@ -26,6 +26,8 @@ pub enum RsFileType {
     Types,
     /// generated.rs
     Generated,
+    /// macros.rs
+    Macros,
 }
 
 impl RsTemplate {
@@ -35,6 +37,7 @@ impl RsTemplate {
             RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
             RsFileType::Generated => PathBuf::from("generated.rs"),
             RsFileType::Types => PathBuf::from("types.rs"),
+            RsFileType::Macros => PathBuf::from("macros.rs"),
         }
     }
 
@@ -55,22 +58,22 @@ impl RsTemplate {
     }
 
     fn rs_cxx_extern(&self, rs_cxx_bridges: &Vec<RsCxxBridge>, has_signals: bool) -> String {
-        let mut cxx_extern = vec![];
-        let mut struct_defs = vec![];
-        let mut enum_defs = vec![];
-
-        rs_cxx_bridges.iter().for_each(|bridge| {
-            cxx_extern.extend(bridge.func_extern_sigs.clone());
-            struct_defs.extend(bridge.struct_defs.clone());
-            enum_defs.extend(bridge.enum_defs.clone());
-        });
+        let (cxx_externs, struct_defs, enum_defs) = rs_cxx_bridges.iter().fold(
+            (vec![], vec![], vec![]),
+            |(mut externs, mut structs, mut enums), bridge| {
+                externs.extend(bridge.func_extern_sigs.clone());
+                structs.extend(bridge.struct_defs.clone());
+                enums.extend(bridge.enum_defs.clone());
+                (externs, structs, enums)
+            },
+        );
 
         let cxx_extern = formatdoc! {
             r#"
             extern "Rust" {{
             {cxx_extern}
             }}"#,
-            cxx_extern = indent_str(cxx_extern.join("\n\n"), 4),
+            cxx_extern = indent_str(cxx_externs.join("\n\n"), 4),
         };
 
         let cxx_signal_manager = if has_signals {
@@ -294,6 +297,10 @@ impl RsTemplate {
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
+
+            #[macro_use]
+            pub(crate) mod macros;
+
             pub(crate) mod ffi;
             pub(crate) mod generated;
             pub(crate) mod types;
@@ -408,12 +415,33 @@ impl RsTemplate {
                 pub fn into_value(self) -> Option<T> {{
                     self.val
                 }}
-            }}
+            }}"#
+        }
+    }
 
+    fn macros_rs(&self) -> String {
+        formatdoc! {
+            r#"
             #[macro_export]
             macro_rules! throw {{
                 ($($arg:tt)*) => {{
                     panic!($($arg)*)
+                }};
+            }}
+
+            #[macro_export]
+            macro_rules! catch_panic {{
+                ($expr:expr) => {{
+                    std::panic::catch_unwind(|| $expr).map_err(|e| {{
+                        let msg = if let Some(s) = e.downcast_ref::<&str>() {{
+                            (*s).to_string()
+                        }} else if let Some(s) = e.downcast_ref::<String>() {{
+                            s.clone()
+                        }} else {{
+                            "Unknown panic occurred".to_string()
+                        }};
+                        anyhow::anyhow!(msg)
+                    }})
                 }};
             }}"#
         }
@@ -472,6 +500,7 @@ impl Template for RsTemplate {
             RsFileType::FFIEntry => self.ffi_rs(&project.schemas),
             RsFileType::Generated => self.generated_rs(&project.schemas),
             RsFileType::Types => Ok(self.types_rs()),
+            RsFileType::Macros => Ok(self.macros_rs()),
         }?;
 
         Ok(vec![(path, content)])
@@ -497,6 +526,7 @@ impl Generator<RsTemplate> for RsGenerator {
             template.render(project, &RsFileType::FFIEntry)?,
             template.render(project, &RsFileType::Generated)?,
             template.render(project, &RsFileType::Types)?,
+            template.render(project, &RsFileType::Macros)?,
         ]
         .into_iter()
         .flatten()
