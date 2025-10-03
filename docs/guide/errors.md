@@ -11,18 +11,12 @@ Craby provides two ways to handle errors:
 
 ## Panics
 
-Use the `throw!` macro to throw exceptions that propagate to JavaScript. When you use `throw!`, the panic is handled by `panic::catch_unwind()` and the error is sent to C++ safely. In the C++ layer, a runtime exception is created and thrown to the JavaScript runtime via `jsi::JSError`.
-
-::: danger
-This feature is currently under development and will be released soon.
-
-Currently, this feature causes app crashes.
-:::
+Use the `throw!` macro(alias for `panic!`) to throw exceptions that propagate to JavaScript. The panic is handled by `panic::catch_unwind()` and the error is sent to C++ safely. In the C++ layer, a runtime exception is created and thrown to the JavaScript runtime via `jsi::JSError`.
 
 ### Exception Flow
 
 ```
-Rust `throw!` → `panic::catch_unwind()` → C++ Exception → jsi::JSError
+Panic occurred → `std::panic::catch_unwind()` → C++ Exception → `jsi::JSError`
 ```
 
 ### Throwing Exceptions for Synchronous Errors
