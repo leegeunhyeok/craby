@@ -6,6 +6,9 @@ export interface TestObject {
   bar: number;
   baz: boolean;
   sub: SubObject | null;
+  camelCase: number;
+  PascalCase: number;
+  snake_case: number;
 }
 
 export type SubObject = {
@@ -36,6 +39,9 @@ export interface Spec extends NativeModule {
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;
+  camelMethod(): void;
+  PascalMethod(): void;
+  snake_method(): void;
   // Signals
   onSignal: Signal;
   triggerSignal(): void;

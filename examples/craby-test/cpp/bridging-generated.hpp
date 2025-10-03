@@ -191,17 +191,26 @@ struct Bridging<craby::bridging::TestObject> {
     auto obj$bar = obj.getProperty(rt, "bar");
     auto obj$baz = obj.getProperty(rt, "baz");
     auto obj$sub = obj.getProperty(rt, "sub");
+    auto obj$camelCase = obj.getProperty(rt, "camelCase");
+    auto obj$pascalCase = obj.getProperty(rt, "PascalCase");
+    auto obj$snakeCase = obj.getProperty(rt, "snake_case");
 
     auto _obj$foo = react::bridging::fromJs<rust::String>(rt, obj$foo, callInvoker);
     auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
     auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
     auto _obj$sub = react::bridging::fromJs<craby::bridging::NullableSubObject>(rt, obj$sub, callInvoker);
+    auto _obj$camelCase = react::bridging::fromJs<double>(rt, obj$camelCase, callInvoker);
+    auto _obj$pascalCase = react::bridging::fromJs<double>(rt, obj$pascalCase, callInvoker);
+    auto _obj$snakeCase = react::bridging::fromJs<double>(rt, obj$snakeCase, callInvoker);
 
     craby::bridging::TestObject ret = {
       _obj$foo,
       _obj$bar,
       _obj$baz,
-      _obj$sub
+      _obj$sub,
+      _obj$camelCase,
+      _obj$pascalCase,
+      _obj$snakeCase
     };
 
     return ret;
@@ -213,11 +222,17 @@ struct Bridging<craby::bridging::TestObject> {
     auto _obj$bar = react::bridging::toJs(rt, value.bar);
     auto _obj$baz = react::bridging::toJs(rt, value.baz);
     auto _obj$sub = react::bridging::toJs(rt, value.sub);
+    auto _obj$camelCase = react::bridging::toJs(rt, value.camel_case);
+    auto _obj$pascalCase = react::bridging::toJs(rt, value.pascal_case);
+    auto _obj$snakeCase = react::bridging::toJs(rt, value.snake_case);
 
     obj.setProperty(rt, "foo", _obj$foo);
     obj.setProperty(rt, "bar", _obj$bar);
     obj.setProperty(rt, "baz", _obj$baz);
     obj.setProperty(rt, "sub", _obj$sub);
+    obj.setProperty(rt, "camelCase", _obj$camelCase);
+    obj.setProperty(rt, "PascalCase", _obj$pascalCase);
+    obj.setProperty(rt, "snake_case", _obj$snakeCase);
 
     return jsi::Value(rt, obj);
   }

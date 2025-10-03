@@ -867,6 +867,9 @@ struct TestObject final {
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
   ::craby::bridging::NullableSubObject sub;
+  double camel_case CXX_DEFAULT_VALUE(0);
+  double pascal_case CXX_DEFAULT_VALUE(0);
+  double snake_case CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
@@ -907,11 +910,17 @@ bool booleanMethod(::std::size_t id_, bool arg);
 
 ::rust::Vec<double> arrayMethod(::std::size_t id_, ::rust::Vec<double> arg);
 
-::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1);
+::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1);
 
 ::craby::bridging::NullableNumber nullableMethod(::std::size_t id_, ::craby::bridging::NullableNumber arg);
 
 double promiseMethod(::std::size_t id_, double arg);
+
+void camelMethod(::std::size_t id_);
+
+void pascalMethod(::std::size_t id_);
+
+void snakeMethod(::std::size_t id_);
 
 void triggerSignal(::std::size_t id_);
 } // namespace bridging

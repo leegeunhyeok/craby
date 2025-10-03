@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use craby_common::utils::string::{pascal_case, snake_case};
+use craby_common::utils::string::{camel_case, pascal_case, snake_case};
 use indoc::formatdoc;
 use rustc_hash::FxHashMap;
 
@@ -242,12 +242,12 @@ impl Method {
 impl Param {
     pub fn try_into_cxx_sig(&self) -> Result<String, anyhow::Error> {
         let param_type = self.type_annotation.as_rs_type()?.0;
-        Ok(format!("{}: {}", self.name, param_type))
+        Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
 
     pub fn try_into_impl_sig(&self) -> Result<String, anyhow::Error> {
         let param_type = self.type_annotation.as_rs_impl_type()?.0;
-        Ok(format!("{}: {}", self.name, param_type))
+        Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
 }
 
@@ -343,22 +343,22 @@ impl Schema {
                 .params
                 .iter()
                 .map(|param| {
+                    let name = snake_case(&param.name);
                     if let TypeAnnotation::Nullable(..) = &param.type_annotation {
-                        format!("{}.into()", param.name)
+                        format!("{}.into()", name)
                     } else {
-                        param.name.clone()
+                        name
                     }
                 })
                 .collect::<Vec<_>>();
             let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
-
             let ret_extern_annotation = format!(" -> {}", ret_extern_type);
             let ret_annotation = format!(" -> {}", ret_type);
             let extern_func = formatdoc! {
                 r#"
-                #[cxx_name = "{orig_fn_name}"]
+                #[cxx_name = "{cxx_extern_fn_name}"]
                 fn {prefixed_fn_name}({params_sig}){ret};"#,
-                orig_fn_name = method_spec.name,
+                cxx_extern_fn_name = camel_case(&method_spec.name),
                 prefixed_fn_name = prefixed_fn_name,
                 params_sig = params_sig,
                 ret = ret_extern_annotation,
@@ -606,6 +606,7 @@ impl Schema {
 }
 
 pub mod template {
+    use craby_common::utils::string::snake_case;
     use indoc::formatdoc;
 
     use crate::{
@@ -615,48 +616,38 @@ pub mod template {
 
     pub fn as_struct_def(obj: &ObjectTypeAnnotation) -> Result<String, anyhow::Error> {
         let mut struct_defs = vec![];
+        let mut props = Vec::with_capacity(obj.props.len());
 
-        // Example:
-        // ```
-        // foo: String,
-        // bar: f64,
-        // baz: bool,
-        // ```
-        let props = obj
-            .props
-            .iter()
-            .map(|prop| -> Result<String, anyhow::Error> {
-                Ok(format!(
-                    "{}: {},",
-                    prop.name,
-                    prop.type_annotation.as_rs_bridge_type()?.0
-                ))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        for prop in &obj.props {
+            // Example:
+            // ```
+            // foo: String,
+            // bar: f64,
+            // baz: bool,
+            // ```
+            props.push(format!(
+                "{}: {},",
+                snake_case(&prop.name),
+                prop.type_annotation.as_rs_bridge_type()?.0
+            ));
 
-        obj.props
-            .iter()
-            .try_for_each(|prop| -> Result<(), anyhow::Error> {
-                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
-                    &prop.type_annotation
-                {
-                    let name = nullable_type.as_rs_bridge_type()?.0;
-                    let rs_type = type_annotation.as_rs_bridge_type()?.0;
-                    let struct_def = formatdoc! {
-                        r#"
-                        struct {name} {{
-                            null: bool,
-                            val: {rs_type}
-                        }}"#,
-                        name = name,
-                        rs_type = rs_type,
-                    };
+            if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation
+            {
+                let name = nullable_type.as_rs_bridge_type()?.0;
+                let rs_type = type_annotation.as_rs_bridge_type()?.0;
+                let struct_def = formatdoc! {
+                    r#"
+                    struct {name} {{
+                        null: bool,
+                        val: {rs_type}
+                    }}"#,
+                    name = name,
+                    rs_type = rs_type,
+                };
 
-                    struct_defs.push(struct_def);
-                }
-
-                Ok(())
-            })?;
+                struct_defs.push(struct_def);
+            }
+        }
 
         let struct_def = formatdoc! {
             r#"
@@ -674,18 +665,62 @@ pub mod template {
 
     pub fn alias_default_impl(obj: &ObjectTypeAnnotation) -> Result<String, anyhow::Error> {
         let mut default_impls = vec![];
+        let mut props_with_default_val = Vec::with_capacity(obj.props.len());
 
-        let props_with_default_val = obj
-            .props
-            .iter()
-            .map(|prop| -> Result<String, anyhow::Error> {
-                Ok(format!(
-                    "{}: {}",
-                    prop.name,
-                    prop.type_annotation.as_rs_default_val()?
-                ))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        for prop in &obj.props {
+            props_with_default_val.push(format!(
+                "{}: {}",
+                snake_case(&prop.name),
+                prop.type_annotation.as_rs_default_val()?
+            ));
+
+            if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation
+            {
+                let nullable_type = nullable_type.as_rs_bridge_type()?.0;
+                let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                let default_val = type_annotation.as_rs_default_val()?;
+
+                let default_impl = formatdoc! {
+                    r#"
+                    impl Default for {nullable_type} {{
+                        fn default() -> Self {{
+                            {nullable_type} {{
+                                null: true,
+                                val: {default_val},
+                            }}
+                        }}
+                    }}"#,
+                    nullable_type = nullable_type,
+                    default_val = default_val,
+                };
+
+                let nullable_impl = formatdoc! {
+                    r#"
+                    impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
+                        fn from(val: {nullable_type}) -> Self {{
+                            Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                        }}
+                    }}
+
+                    impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
+                        fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                            let val = val.into_value();
+                            let null = val.is_none();
+                            {nullable_type} {{
+                                val: val.unwrap_or({default_val}),
+                                null,
+                            }}
+                        }}
+                    }}"#,
+                    rs_impl_type = rs_impl_type,
+                    nullable_type = nullable_type,
+                    default_val = default_val,
+                };
+
+                default_impls.push(default_impl);
+                default_impls.push(nullable_impl);
+            }
+        }
 
         let default_impl = formatdoc! {
             r#"
@@ -699,60 +734,6 @@ pub mod template {
             name = obj.name,
             props = indent_str(props_with_default_val.join(",\n"), 12),
         };
-
-        obj.props
-            .iter()
-            .try_for_each(|property| -> Result<(), anyhow::Error> {
-                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
-                    &property.type_annotation
-                {
-                    let nullable_type = nullable_type.as_rs_bridge_type()?.0;
-                    let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
-                    let default_val = type_annotation.as_rs_default_val()?;
-
-                    let default_impl = formatdoc! {
-                        r#"
-                        impl Default for {nullable_type} {{
-                            fn default() -> Self {{
-                                {nullable_type} {{
-                                    null: true,
-                                    val: {default_val},
-                                }}
-                            }}
-                        }}"#,
-                        nullable_type = nullable_type,
-                        default_val = default_val,
-                    };
-
-                    let nullable_impl = formatdoc! {
-                        r#"
-                        impl From<{nullable_type}> for Nullable<{rs_impl_type}> {{
-                            fn from(val: {nullable_type}) -> Self {{
-                                Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
-                            }}
-                        }}
-
-                        impl From<Nullable<{rs_impl_type}>> for {nullable_type} {{
-                            fn from(val: Nullable<{rs_impl_type}>) -> Self {{
-                                let val = val.into_value();
-                                let null = val.is_none();
-                                {nullable_type} {{
-                                    val: val.unwrap_or({default_val}),
-                                    null,
-                                }}
-                            }}
-                        }}"#,
-                        rs_impl_type = rs_impl_type,
-                        nullable_type = nullable_type,
-                        default_val = default_val,
-                    };
-
-                    default_impls.push(default_impl);
-                    default_impls.push(nullable_impl);
-                }
-
-                Ok(())
-            })?;
 
         default_impls.push(default_impl);
 

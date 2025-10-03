@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use craby_common::utils::string::camel_case;
 use indoc::formatdoc;
 use log::debug;
 use template::{cxx_arg_ref, cxx_arg_var};
@@ -255,7 +256,7 @@ impl Method {
                         craby::bridging::{fn_name}({fn_args});
                         promise.resolve();
                         "#,
-                        fn_name = self.name,
+                        fn_name = camel_case(&self.name),
                         fn_args = fn_args,
                     }
                 } else {
@@ -264,7 +265,7 @@ impl Method {
                         auto ret = craby::bridging::{fn_name}({fn_args});
                         promise.resolve(ret);
                         "#,
-                        fn_name = self.name,
+                        fn_name = camel_case(&self.name),
                         fn_args = fn_args,
                     }
                 };
@@ -318,13 +319,13 @@ impl Method {
                 let ret_stmts = if let TypeAnnotation::Void = &self.ret_type {
                     formatdoc! {
                         r#"craby::bridging::{fn_name}({fn_args});"#,
-                        fn_name = self.name,
+                        fn_name = camel_case(&self.name),
                         fn_args = args.join(", "),
                     }
                 } else {
                     formatdoc! {
                         r#"auto ret = craby::bridging::{fn_name}({fn_args});"#,
-                        fn_name = self.name,
+                        fn_name = camel_case(&self.name),
                         fn_args = args.join(", "),
                     }
                 };
@@ -350,7 +351,7 @@ impl Method {
         let metadata = formatdoc! {
             r#"
             MethodMetadata{{{args_count}, &{cxx_mod}::{fn_name}}}"#,
-            fn_name = self.name,
+            fn_name = camel_case(&self.name),
             cxx_mod = cxx_mod,
             args_count = args_count,
         };
@@ -377,7 +378,7 @@ impl Method {
                 throw jsi::JSError(rt, errorMessage(err));
               }}
             }}"#,
-            fn_name = self.name,
+            fn_name = camel_case(&self.name),
             cxx_mod = cxx_mod,
             args_count = args_count,
             args_decls = indent_str(args_decls, 4),
@@ -539,6 +540,7 @@ impl Schema {
 }
 
 pub mod template {
+    use craby_common::utils::string::{camel_case, snake_case};
     use indoc::formatdoc;
 
     use crate::{
@@ -560,47 +562,43 @@ pub mod template {
         let mut from_js_ident = vec![];
         let mut to_js_stmts = vec![];
 
-        obj.props
-            .iter()
-            .try_for_each(|prop| -> Result<(), anyhow::Error> {
-                let ident = format!("obj${}", prop.name);
-                let converted_ident = format!("_{}", ident);
-                let from_js = prop.type_annotation.as_cxx_from_js(&mod_name, &ident)?;
-                let to_js = prop
-                    .type_annotation
-                    .as_cxx_to_js(&format!("value.{}", prop.name))?;
+        for prop in &obj.props {
+            let ident = format!("obj${}", camel_case(&prop.name));
+            let converted_ident = format!("_{}", ident);
+            let from_js = prop.type_annotation.as_cxx_from_js(&mod_name, &ident)?;
+            let to_js = prop
+                .type_annotation
+                .as_cxx_to_js(&format!("value.{}", snake_case(&prop.name)))?;
 
-                // ```cpp
-                // auto obj$name = obj.getProperty(rt, "name");
-                // ```
-                let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
+            // ```cpp
+            // auto obj$name = obj.getProperty(rt, "name");
+            // ```
+            let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
 
-                // ```cpp
-                // obj.setProperty(rt, "name", _obj$name);
-                // ```
-                let set_prop = format!(
-                    "obj.setProperty(rt, \"{}\", {});",
-                    prop.name, converted_ident
-                );
+            // ```cpp
+            // obj.setProperty(rt, "name", _obj$name);
+            // ```
+            let set_prop = format!(
+                "obj.setProperty(rt, \"{}\", {});",
+                prop.name, converted_ident
+            );
 
-                // ```cpp
-                // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
-                // ```
-                let from_js_stmt = format!("auto {} = {};", converted_ident, from_js.expr);
+            // ```cpp
+            // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
+            // ```
+            let from_js_stmt = format!("auto {} = {};", converted_ident, from_js.expr);
 
-                // ```cpp
-                // auto _obj$name = react::bridging::toJs(rt, value.name);
-                // ```
-                let to_js_stmt = format!("auto {} = {};", converted_ident, to_js.expr);
+            // ```cpp
+            // auto _obj$name = react::bridging::toJs(rt, value.name);
+            // ```
+            let to_js_stmt = format!("auto {} = {};", converted_ident, to_js.expr);
 
-                get_props.push(get_prop);
-                from_js_stmts.push(from_js_stmt);
-                from_js_ident.push(converted_ident);
-                set_props.push(set_prop);
-                to_js_stmts.push(to_js_stmt);
-
-                Ok(())
-            })?;
+            get_props.push(get_prop);
+            from_js_stmts.push(from_js_stmt);
+            from_js_ident.push(converted_ident);
+            set_props.push(set_prop);
+            to_js_stmts.push(to_js_stmt);
+        }
 
         let from_js_impl = formatdoc! {
             r#"

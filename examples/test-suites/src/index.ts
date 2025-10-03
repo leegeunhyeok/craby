@@ -27,6 +27,9 @@ const TEST_SUITES: TestSuite[] = [
           b: 456,
           c: true,
         },
+        camelCase: 0,
+        PascalCase: 0,
+        snake_case: 0,
       }),
   },
   {
@@ -50,6 +53,9 @@ const TEST_SUITES: TestSuite[] = [
           bar: 456,
           baz: true,
           sub: null,
+          camelCase: 0,
+          PascalCase: 0,
+          snake_case: 0,
         });
       } catch (error: any) {
         return toErrorObject(error);
@@ -70,6 +76,9 @@ const TEST_SUITES: TestSuite[] = [
             b: 789,
             c: false,
           },
+          camelCase: 0,
+          PascalCase: 0,
+          snake_case: 0,
         });
       } catch (error: any) {
         return toErrorObject(error);
@@ -176,6 +185,44 @@ const TEST_SUITES: TestSuite[] = [
         subtract: Module.CalculatorModule.subtract(a, b),
         multiply: Module.CalculatorModule.multiply(a, b),
         divide: Module.CalculatorModule.divide(a, b),
+      };
+    },
+  },
+  {
+    label: 'Conventions',
+    action: () => {
+      let camelMethod = false;
+      let pascalMethod = false;
+      let snakeMethod = false;
+
+      try {
+        Module.CrabyTestModule.camelMethod();
+        camelMethod = true;
+      } catch {}
+
+      try {
+        Module.CrabyTestModule.PascalMethod();
+        pascalMethod = true;
+      } catch {}
+
+      try {
+        Module.CrabyTestModule.snake_method();
+        snakeMethod = true;
+      } catch {}
+
+      return {
+        camelMethod: {
+          typeof: typeof Module.CrabyTestModule.camelMethod,
+          invoked: camelMethod,
+        },
+        PascalMethod: {
+          typeof: typeof Module.CrabyTestModule.PascalMethod,
+          invoked: pascalMethod,
+        },
+        snake_method: {
+          typeof: typeof Module.CrabyTestModule.snake_method,
+          invoked: snakeMethod,
+        },
       };
     },
   },

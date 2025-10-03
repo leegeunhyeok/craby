@@ -137,26 +137,29 @@ impl MyModuleSpec for MyModule {
 
 ## Naming Conventions
 
-Craby automatically converts between naming conventions:
-
-| TypeScript | Rust |
-|------------|------|
-| `camelCase` | `snake_case` |
-| `myMethod()` | `my_method()` |
-| `userName` | `user_name` |
-| `isActive` | `is_active` |
+Method and field names are automatically converted as `snake_case`:
 
 ```typescript
 // TypeScript
+interface Profile {
+  name: string;
+  homeAddress: string;
+}
+
 export interface Spec extends NativeModule {
-  getUserName(userId: number): string;
+  setUser(userId: number, profile: Profile): boolean;
 }
 ```
 
 ```rust
 // Generated Rust
+struct Profile {
+    name: String,
+    home_address: String,
+}
+
 pub trait MyModuleSpec {
-    fn get_user_name(&self, user_id: Number) -> String;
+    fn get_user_name(&self, user_id: Number, profile: Profile) -> bool;
 }
 ```
 

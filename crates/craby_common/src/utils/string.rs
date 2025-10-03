@@ -41,6 +41,10 @@ pub fn pascal_case(value: &str) -> String {
     value.to_case(Case::Pascal)
 }
 
+pub fn camel_case(value: &str) -> String {
+    value.to_case(Case::Camel)
+}
+
 pub fn snake_case(value: &str) -> String {
     value.to_case(Case::Snake)
 }

@@ -34,6 +34,9 @@ pub mod bridging {
         bar: f64,
         baz: bool,
         sub: NullableSubObject,
+        camel_case: f64,
+        pascal_case: f64,
+        snake_case: f64,
     }
 
     enum MyEnum {
@@ -76,13 +79,22 @@ pub mod bridging {
         fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> Result<String>;
+        fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
 
         #[cxx_name = "nullableMethod"]
         fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> Result<NullableNumber>;
 
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64>;
+
+        #[cxx_name = "camelMethod"]
+        fn craby_test_camel_method(id_: usize) -> Result<()>;
+
+        #[cxx_name = "pascalMethod"]
+        fn craby_test_pascal_method(id_: usize) -> Result<()>;
+
+        #[cxx_name = "snakeMethod"]
+        fn craby_test_snake_method(id_: usize) -> Result<()>;
 
         #[cxx_name = "triggerSignal"]
         fn craby_test_trigger_signal(id_: usize) -> Result<()>;
@@ -172,10 +184,10 @@ fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>, anyhow
     })
 }
 
-fn craby_test_enum_method(id_: usize, arg0: MyEnum, arg1: SwitchState) -> Result<String, anyhow::Error> {
+fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
     catch_panic!({
         let it = CrabyTest::new(id_);
-        let ret = it.enum_method(arg0, arg1);
+        let ret = it.enum_method(arg_0, arg_1);
         ret
     })
 }
@@ -194,6 +206,30 @@ fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error>
         let ret = it.promise_method(arg);
         ret
     }).and_then(|r| r)
+}
+
+fn craby_test_camel_method(id_: usize) -> Result<(), anyhow::Error> {
+    catch_panic!({
+        let it = CrabyTest::new(id_);
+        let ret = it.camel_method();
+        ret
+    })
+}
+
+fn craby_test_pascal_method(id_: usize) -> Result<(), anyhow::Error> {
+    catch_panic!({
+        let it = CrabyTest::new(id_);
+        let ret = it.pascal_method();
+        ret
+    })
+}
+
+fn craby_test_snake_method(id_: usize) -> Result<(), anyhow::Error> {
+    catch_panic!({
+        let it = CrabyTest::new(id_);
+        let ret = it.snake_method();
+        ret
+    })
 }
 
 fn craby_test_trigger_signal(id_: usize) -> Result<(), anyhow::Error> {

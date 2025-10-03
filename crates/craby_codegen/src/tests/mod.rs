@@ -13,6 +13,9 @@ pub fn get_codegen_context() -> CodegenContext {
             bar: number;
             baz: boolean;
             sub: SubObject | null;
+            camelCase: number;
+            PascalCase: number;
+            snake_case: number;
         }
 
         export type SubObject = {
@@ -43,6 +46,9 @@ pub fn get_codegen_context() -> CodegenContext {
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;
             promiseMethod(arg: number): Promise<number>;
+            camelMethod(firstArg: number, secondArg: number): number;
+            PascalMethod(FirstArg: number, SecondArg: number): number;
+            snakeMethod(first_arg: number, second_arg: number): number;
             onSignal: Signal;
         }
 

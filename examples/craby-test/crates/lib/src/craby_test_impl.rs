@@ -31,6 +31,9 @@ impl CrabyTestSpec for CrabyTest {
         arg.foo = format!("From Rust: {}", arg.foo);
         arg.bar = arg.bar * 2.0;
         arg.baz = !arg.baz;
+        arg.camel_case = arg.camel_case + 1.0;
+        arg.pascal_case = arg.pascal_case + 1.0;
+        arg.snake_case = arg.snake_case + 1.0;
         arg
     }
 
@@ -85,5 +88,17 @@ impl CrabyTestSpec for CrabyTest {
 
     fn trigger_signal(&self) -> Void {
         self.emit(CrabyTestSignal::OnSignal);
+    }
+
+    fn camel_method(&self) -> Void {
+        // noop
+    }
+
+    fn pascal_method(&self) -> Void {
+        // noop
+    }
+
+    fn snake_method(&self) -> Void {
+        // noop
     }
 }

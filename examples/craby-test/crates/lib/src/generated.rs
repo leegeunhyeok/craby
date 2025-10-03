@@ -26,9 +26,12 @@ pub trait CrabyTestSpec {
     fn string_method(&self, arg: String) -> String;
     fn object_method(&self, arg: TestObject) -> TestObject;
     fn array_method(&self, arg: Array<Number>) -> Array<Number>;
-    fn enum_method(&self, arg0: MyEnum, arg1: SwitchState) -> String;
+    fn enum_method(&self, arg_0: MyEnum, arg_1: SwitchState) -> String;
     fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number>;
     fn promise_method(&self, arg: Number) -> Promise<Number>;
+    fn camel_method(&self) -> Void;
+    fn pascal_method(&self) -> Void;
+    fn snake_method(&self) -> Void;
     fn trigger_signal(&self) -> Void;
 }
 
@@ -116,7 +119,10 @@ impl Default for TestObject {
             foo: String::default(),
             bar: 0.0,
             baz: false,
-            sub: NullableSubObject::default()
+            sub: NullableSubObject::default(),
+            camel_case: 0.0,
+            pascal_case: 0.0,
+            snake_case: 0.0
         }
     }
 }

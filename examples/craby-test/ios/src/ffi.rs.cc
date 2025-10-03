@@ -938,6 +938,9 @@ struct TestObject final {
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
   ::craby::bridging::NullableSubObject sub;
+  double camel_case CXX_DEFAULT_VALUE(0);
+  double pascal_case CXX_DEFAULT_VALUE(0);
+  double snake_case CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
@@ -979,11 +982,17 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_array_method(::std::size_t id_, ::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_enum_method(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1, ::rust::String *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_enum_method(::std::size_t id_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1, ::rust::String *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_nullable_method(::std::size_t id_, ::craby::bridging::NullableNumber *arg, ::craby::bridging::NullableNumber *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_promise_method(::std::size_t id_, double arg, double *return$) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_camel_method(::std::size_t id_) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_pascal_method(::std::size_t id_) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_snake_method(::std::size_t id_) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_trigger_signal(::std::size_t id_) noexcept;
 } // extern "C"
@@ -1087,9 +1096,9 @@ bool booleanMethod(::std::size_t id_, bool arg) {
   return ::std::move(return$.value);
 }
 
-::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg0, ::craby::bridging::SwitchState arg1) {
+::rust::String enumMethod(::std::size_t id_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1) {
   ::rust::MaybeUninit<::rust::String> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_enum_method(id_, arg0, arg1, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_enum_method(id_, arg_0, arg_1, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
@@ -1113,6 +1122,27 @@ double promiseMethod(::std::size_t id_, double arg) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
   return ::std::move(return$.value);
+}
+
+void camelMethod(::std::size_t id_) {
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_camel_method(id_);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+}
+
+void pascalMethod(::std::size_t id_) {
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_pascal_method(id_);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+}
+
+void snakeMethod(::std::size_t id_) {
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_snake_method(id_);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
 }
 
 void triggerSignal(::std::size_t id_) {

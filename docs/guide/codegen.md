@@ -83,9 +83,9 @@ Here's how TypeScript types map to generated Rust code:
 | `enum E { A = 'a' }` | `enum E { A }` |
 | `void` | `Void` (alias for `()`) |
 
-### Method Name Conversion
+### Naming Conventions
 
-Method and field names are automatically converted:
+Method and field names are automatically converted to `snake_case`:
 
 | TypeScript | Rust |
 |------------|------|

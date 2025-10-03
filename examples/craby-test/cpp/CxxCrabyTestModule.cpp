@@ -20,9 +20,9 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   uintptr_t id = reinterpret_cast<uintptr_t>(this);
   auto& manager = craby::signals::SignalManager::getInstance();
   manager.registerDelegate(id,
-                            std::bind(&CxxCrabyTestModule::emit,
-                            this,
-                            std::placeholders::_1));
+                           std::bind(&CxxCrabyTestModule::emit,
+                           this,
+                           std::placeholders::_1));
   callInvoker_ = std::move(jsInvoker);
 
   methodMap_["numericMethod"] = MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
@@ -33,6 +33,9 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
   methodMap_["nullableMethod"] = MethodMetadata{1, &CxxCrabyTestModule::nullableMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
+  methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
+  methodMap_["PascalMethod"] = MethodMetadata{0, &CxxCrabyTestModule::pascalMethod};
+  methodMap_["snake_method"] = MethodMetadata{0, &CxxCrabyTestModule::snakeMethod};
   methodMap_["triggerSignal"] = MethodMetadata{0, &CxxCrabyTestModule::triggerSignal};
   methodMap_["onSignal"] = MethodMetadata{1, &CxxCrabyTestModule::onSignal};
 }
@@ -66,7 +69,6 @@ void CxxCrabyTestModule::emit(std::string name) {
     }
   }
 }
-
 
 jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
                                 react::TurboModule &turboModule,
@@ -272,6 +274,75 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
   }
 }
 
+jsi::Value CxxCrabyTestModule::camelMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (0 != count) {
+      throw jsi::JSError(rt, "Expected 0 argument");
+    }
+
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
+    craby::bridging::camelMethod(id_);
+
+    return jsi::Value::undefined();
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::pascalMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (0 != count) {
+      throw jsi::JSError(rt, "Expected 0 argument");
+    }
+
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
+    craby::bridging::pascalMethod(id_);
+
+    return jsi::Value::undefined();
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::snakeMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+
+  try {
+    if (0 != count) {
+      throw jsi::JSError(rt, "Expected 0 argument");
+    }
+
+    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
+    craby::bridging::snakeMethod(id_);
+
+    return jsi::Value::undefined();
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, errorMessage(err));
+  }
+}
+
 jsi::Value CxxCrabyTestModule::triggerSignal(jsi::Runtime &rt,
                                 react::TurboModule &turboModule,
                                 const jsi::Value args[],
@@ -319,27 +390,26 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
     listenersMap_[name].push_back(callbackRef);
 
     return jsi::Function::createFromHostFunction(
-        rt,
-        jsi::PropNameID::forAscii(rt, "cleanup"),
-        0,
-        [listenerId, callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {
-            std::lock_guard<std::mutex> lock(mutex_);
-            
-            auto& listeners = listenersMap_[name];
-            listeners.erase(
-                std::remove_if(listeners.begin(), listeners.end(),
-                    [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {
-                        return fn.get() == callbackRef.get();
-                    }),
-                listeners.end()
-            );
+      rt,
+      jsi::PropNameID::forAscii(rt, "cleanup"),
+      0,
+      [listenerId, callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto& listeners = listenersMap_[name];
+        listeners.erase(
+          std::remove_if(listeners.begin(), listeners.end(),
+          [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {
+            return fn.get() == callbackRef.get();
+          }),
+          listeners.end()
+        );
 
-            if (listeners.empty()) {
-                listenersMap_.erase(name);
-            }
-
-            return jsi::Value::undefined();
+        if (listeners.empty()) {
+          listenersMap_.erase(name);
         }
+
+        return jsi::Value::undefined();
+      }
     );
   } catch (const jsi::JSError &err) {
     throw err;

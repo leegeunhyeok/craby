@@ -2,7 +2,7 @@ use std::{fs, path::PathBuf};
 
 use craby_common::{
     constants::{cxx_bridge_include_dir, cxx_dir},
-    utils::string::flat_case,
+    utils::string::{camel_case, flat_case},
 };
 use indoc::formatdoc;
 
@@ -53,7 +53,7 @@ impl CxxTemplate {
             {name}(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);"#,
-            name = name,
+            name = camel_case(name),
         }
     }
 
@@ -105,9 +105,9 @@ impl CxxTemplate {
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
                 auto& manager = craby::signals::SignalManager::getInstance();
                 manager.registerDelegate(id,
-                                          std::bind(&{cxx_mod}::emit,
-                                          this,
-                                          std::placeholders::_1));"#,
+                                         std::bind(&{cxx_mod}::emit,
+                                         this,
+                                         std::placeholders::_1));"#,
                 cxx_mod = cxx_mod,
             };
 
@@ -118,10 +118,13 @@ impl CxxTemplate {
                 manager.unregisterDelegate(id);"#,
             };
 
-            schema.signals.iter().for_each(|signal| {
+            for signal in &schema.signals {
+                let cxx_signal_name = camel_case(&signal.name);
+
                 method_maps.push(formatdoc! {
-                    r#"methodMap_["{signal_name}"] = MethodMetadata{{1, &{cxx_mod}::{signal_name}}};"#,
+                    r#"methodMap_["{signal_name}"] = MethodMetadata{{1, &{cxx_mod}::{cxx_signal_name}}};"#,
                     signal_name = signal.name,
+                    cxx_signal_name = cxx_signal_name,
                     cxx_mod = cxx_mod,
                 });
 
@@ -136,7 +139,7 @@ impl CxxTemplate {
 
                 method_impls.push(formatdoc! {
                     r#"
-                    jsi::Value {cxx_mod}::{signal_name}(jsi::Runtime &rt,
+                    jsi::Value {cxx_mod}::{cxx_signal_name}(jsi::Runtime &rt,
                                           react::TurboModule &turboModule,
                                           const jsi::Value args[],
                                           size_t count) {{
@@ -160,27 +163,26 @@ impl CxxTemplate {
                         listenersMap_[name].push_back(callbackRef);
 
                         return jsi::Function::createFromHostFunction(
-                            rt,
-                            jsi::PropNameID::forAscii(rt, "cleanup"),
-                            0,
-                            [listenerId, callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {{
-                                std::lock_guard<std::mutex> lock(mutex_);
-                                
-                                auto& listeners = listenersMap_[name];
-                                listeners.erase(
-                                    std::remove_if(listeners.begin(), listeners.end(),
-                                        [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {{
-                                            return fn.get() == callbackRef.get();
-                                        }}),
-                                    listeners.end()
-                                );
+                          rt,
+                          jsi::PropNameID::forAscii(rt, "cleanup"),
+                          0,
+                          [listenerId, callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {{
+                            std::lock_guard<std::mutex> lock(mutex_);
+                            auto& listeners = listenersMap_[name];
+                            listeners.erase(
+                              std::remove_if(listeners.begin(), listeners.end(),
+                              [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {{
+                                return fn.get() == callbackRef.get();
+                              }}),
+                              listeners.end()
+                            );
 
-                                if (listeners.empty()) {{
-                                    listenersMap_.erase(name);
-                                }}
-
-                                return jsi::Value::undefined();
+                            if (listeners.empty()) {{
+                              listenersMap_.erase(name);
                             }}
+
+                            return jsi::Value::undefined();
+                          }}
                         );
                       }} catch (const jsi::JSError &err) {{
                         throw err;
@@ -190,8 +192,9 @@ impl CxxTemplate {
                     }}"#,
                     cxx_mod = cxx_mod,
                     signal_name = signal.name,
+                    cxx_signal_name = cxx_signal_name,
                 });
-            });
+            }
 
             mod_members.extend(vec![
               format!("inline static std::mutex mutex_;"),
@@ -204,31 +207,30 @@ impl CxxTemplate {
             method_impls.insert(
                 0,
                 formatdoc! {
-                r#"
-                void {cxx_mod}::emit(std::string name) {{
-                  std::vector<std::shared_ptr<facebook::jsi::Function>> listeners;
+                    r#"
+                    void {cxx_mod}::emit(std::string name) {{
+                      std::vector<std::shared_ptr<facebook::jsi::Function>> listeners;
 
-                  {{
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    auto it = listenersMap_.find(name);
-                    if (it != listenersMap_.end()) {{
-                      for (const auto& fn : it->second) {{
-                        listeners.push_back(fn);
+                      {{
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto it = listenersMap_.find(name);
+                        if (it != listenersMap_.end()) {{
+                          for (const auto& fn : it->second) {{
+                            listeners.push_back(fn);
+                          }}
+                        }}
                       }}
-                    }}
-                  }}
 
-                  for (auto& listener : listeners) {{
-                    try {{
-                      callInvoker_->invokeAsync([listener](jsi::Runtime &rt) {{
-                        listener->call(rt);
-                      }});
-                    }} catch (const std::exception& err) {{
-                      // Noop
-                    }}
-                  }}
-                }}
-                "#,
+                      for (auto& listener : listeners) {{
+                        try {{
+                          callInvoker_->invokeAsync([listener](jsi::Runtime &rt) {{
+                            listener->call(rt);
+                          }});
+                        }} catch (const std::exception& err) {{
+                          // Noop
+                        }}
+                      }}
+                    }}"#,
                 },
             );
 
