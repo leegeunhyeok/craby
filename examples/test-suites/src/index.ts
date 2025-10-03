@@ -131,6 +131,21 @@ const TEST_SUITES: TestSuite[] = [
     action: () => Module.CrabyTestModule.promiseMethod(-123).catch((error) => toErrorObject(error)),
   },
   {
+    label: 'Panics',
+    action: () => {
+      try {
+        return Module.CalculatorModule.divide(10, 0);
+      } catch (error: any) {
+        return toErrorObject(error);
+      }
+    },
+  },
+  {
+    label: 'Panics',
+    description: '(in Promise)',
+    action: () => Module.CrabyTestModule.promiseMethod(0).catch((error) => toErrorObject(error)),
+  },
+  {
     label: 'Signal',
     action: () => {
       const promise = new Promise<string>((resolve, reject) => {

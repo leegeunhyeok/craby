@@ -28,6 +28,9 @@ impl CalculatorSpec for Calculator {
     }
 
     fn divide(&self, a: Number, b: Number) -> Number {
+        if b == 0.0 {
+            throw!("Division by zero");
+        }
         a / b
     }
 }
