@@ -16,7 +16,7 @@
     "build": "./scripts/build.sh",
     "artifacts": "napi artifacts",
     "version": "napi version",
-    "test": "vitest --run"
+    "test:bindings": "vitest --run"
   },
   "files": [
     "index.js",
