@@ -9,7 +9,7 @@ use crate::{
     cxx::replace_cxx_header,
 };
 
-const ANDROID_TARGETS: [Target; 4] = [
+pub const ANDROID_TARGETS: [Target; 4] = [
     Target::Android(Abi::Arm64V8a),
     Target::Android(Abi::ArmeAbiV7a),
     Target::Android(Abi::X86_64),

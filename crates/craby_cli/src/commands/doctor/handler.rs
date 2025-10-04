@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use craby_build::{constants::toolchain::Target, platform::android::ANDROID_TARGETS};
 use craby_common::{
     constants::toolchain::TARGETS,
     env::get_installed_targets,
@@ -19,10 +20,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
         if std::env::consts::OS == "macos" {
             Ok(Status::Ok)
         } else {
-            Err(anyhow::anyhow!(
-                "Unsupported platform: {}",
-                std::env::consts::OS
-            ))
+            anyhow::bail!("Unsupported platform: {}", std::env::consts::OS);
         }
     });
 
@@ -36,7 +34,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
                 if installed_targets.contains(&target.to_string()) {
                     Ok(Status::Ok)
                 } else {
-                    Err(anyhow::anyhow!("Not installed"))
+                    anyhow::bail!("Not installed");
                 }
             },
         );
@@ -44,24 +42,39 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
 
     println!("\n{}", "Android".bold().dimmed());
     assert_with_status(
-        "Environment variable `ANDROID_NDK_HOME`",
+        format!("Environment variable: {}", "ANDROID_NDK_HOME".dimmed()).as_str(),
         || match std::env::var("ANDROID_NDK_HOME") {
             Ok(_) => Ok(Status::Ok),
-            Err(e) => Err(anyhow::anyhow!(
-                "`ANDROID_NDK_HOME` environment variable is not set: {}",
-                e
-            )),
+            Err(e) => anyhow::bail!("Environment variable is not set: {}", e),
         },
     );
+
+    for target in ANDROID_TARGETS {
+        match target {
+            Target::Android(abi) => {
+                assert_with_status(
+                    format!("Clang toolchain {}", format!("({})", abi.to_str()).dimmed()).as_str(),
+                    || {
+                        for (_, value) in abi.to_env()? {
+                            if !value.try_exists()? {
+                                anyhow::bail!("Clang toolchain not found: {}", abi.to_str());
+                            }
+                        }
+                        Ok(Status::Ok)
+                    },
+                );
+            }
+            _ => unreachable!(),
+        }
+    }
+
     assert_with_status(
         format!("Build configuration {}", "(build.gradle)".dimmed()).as_str(),
         || {
             if is_gradle_configured(&opts.project_root)? {
                 Ok(Status::Ok)
             } else {
-                Err(anyhow::anyhow!(
-                    "`android/build.gradle` is not configured correctly"
-                ))
+                anyhow::bail!("`android/build.gradle` is not configured correctly");
             }
         },
     );
@@ -73,9 +86,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             if is_podspec_configured(&opts.project_root)? {
                 Ok(Status::Ok)
             } else {
-                Err(anyhow::anyhow!(
-                    "`<LibraryName>.podspec` is not configured correctly"
-                ))
+                anyhow::bail!("`android/build.gradle` is not configured correctly");
             }
         },
     );

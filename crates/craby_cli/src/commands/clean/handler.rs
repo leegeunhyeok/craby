@@ -1,14 +1,42 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
-use log::info;
+use craby_common::{
+    config::load_config,
+    constants::{android_path, ios_base_path, jni_base_path},
+};
+use log::{debug, info};
 
 pub struct CleanOptions {
     pub project_root: PathBuf,
 }
 
-pub fn perform(_: CleanOptions) -> anyhow::Result<()> {
-    // TODO
-    info!("🧹 Cleaning up temporary files...");
+pub fn perform(opts: CleanOptions) -> anyhow::Result<()> {
+    match load_config(&opts.project_root) {
+        Err(e) => anyhow::bail!("Craby project is not initialized. reason: {}", e),
+        _ => {}
+    };
+
+    info!("🧹 Cleaning up files...");
+
+    let cargo_target_dir = opts.project_root.join("target");
+    let android_build_dir = android_path(&opts.project_root).join("build");
+    let android_cxx_dir = android_path(&opts.project_root).join(".cxx");
+    let android_libs_dir = jni_base_path(&opts.project_root).join("libs");
+    let ios_framework_dir = ios_base_path(&opts.project_root).join("framework");
+
+    for dir in [
+        cargo_target_dir,
+        android_build_dir,
+        android_cxx_dir,
+        android_libs_dir,
+        ios_framework_dir,
+    ] {
+        if dir.try_exists()? {
+            debug!("Removing directory: {}", dir.display());
+            fs::remove_dir_all(dir)?;
+        }
+    }
+
     info!("Done!");
 
     Ok(())

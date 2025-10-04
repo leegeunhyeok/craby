@@ -32,19 +32,15 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
 
     info!("Starting to build the Cargo project...");
     with_spinner("Building Cargo projects...", |pb| {
-        BUILD_TARGETS
-            .iter()
-            .enumerate()
-            .try_for_each(|(i, target)| -> anyhow::Result<()> {
-                pb.set_message(format!(
-                    "[{}/{}] Building for target: {}",
-                    i + 1,
-                    BUILD_TARGETS.len(),
-                    target.to_str().dimmed()
-                ));
-                craby_build::cargo::build::build_target(&opts.project_root, target)?;
-                Ok(())
-            })?;
+        for (i, target) in BUILD_TARGETS.iter().enumerate() {
+            pb.set_message(format!(
+                "[{}/{}] Building for target: {}",
+                i + 1,
+                BUILD_TARGETS.len(),
+                target.to_str().dimmed()
+            ));
+            craby_build::cargo::build::build_target(&opts.project_root, target)?;
+        }
         Ok(())
     })?;
     info!("Cargo project build completed successfully");
