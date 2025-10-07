@@ -1,79 +1,99 @@
 name: E2E Tests
 
 on:
-  pull_request:
-  push:
-    branches: [main, develop]
+  push: 
+    branches: '*'
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'crates/**'
+  #     - 'packages/**'
+  #     - 'examples/0.80/**'
+  # pull_request: null
 
 jobs:
   e2e-ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          
-      - name: Install dependencies
-        run: npm ci
-        
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+          toolchain: nightly-2025-08-04
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
-        
       - name: Add Maestro to PATH
         run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
-        
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.0'
           bundler-cache: true
-          
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Prepare CrabyModules
+        run: yarn prepare
       - name: Install CocoaPods dependencies
-        run: |
-          cd ios
-          pod install
-          
+        run: yarn pod:install
+        working-directory: examples/0.80
       - name: Build iOS app
         run: |
-          npx react-native run-ios --configuration Release --simulator="iPhone 15"
-          
+          xcodebuild -workspace Craby80.xcworkspace -scheme Craby80 -configuration Release -sdk iphonesimulator
+        working-directory: examples/0.80/ios
+      - name: Install app
+        run: |
+          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" | head -n 1)
+          xcrun simctl boot "iPhone 15" || true
+          xcrun simctl install booted "$APP_PATH"
       - name: Run Maestro tests
-        run: maestro test .maestro/
+        run: yarn e2e:ios
 
   e2e-android:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        api-level: [36]
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Install Maestro
-        run: curl -Ls "https://get.maestro.mobile.dev" | bash
-        
-      - name: Add Maestro to PATH
-        run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
-        
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+          toolchain: nightly-2025-08-04
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+      - name: Install Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Prepare CrabyModules
+        run: yarn prepare
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
@@ -81,25 +101,28 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-29
-          
-      - name: Create AVD and generate snapshot
+          key: avd-${{ matrix.api-level }}
+      - name: Starting AVD
+        run: |
+          adb kill-server
+          adb start-server
+      - name: create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
-          script: echo "Generated AVD snapshot"
-          
+          script: echo "Generated AVD snapshot for caching."
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            npx react-native run-android --variant=release
-            maestro test .maestro/
+            cd examples/0.80/android
+            ./gradlew installRelease --build-cache
+            yarn e2e:android

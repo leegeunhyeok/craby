@@ -6,6 +6,7 @@
     "shared"
   ],
   "scripts": {
+    "prepare": "yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run build",
     "lint:all": "biome check",
     "lint:fix": "biome check --write",
     "e2e:android": "MAESTRO_APP_ID=com.craby80 maestro test .maestro",

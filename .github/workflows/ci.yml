@@ -272,7 +272,7 @@ jobs:
       - name: Lint
         run: yarn lint:all
       - name: Build
-        run: yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run build
+        run: yarn prepare
       - name: Typecheck
         run: yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run typecheck
       - name: Test
