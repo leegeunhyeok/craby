@@ -1,0 +1,5 @@
+appId: ${MAESTRO_APP_ID}
+---
+- launchApp
+- tapOn: "Run All Tests"
+- assertVisible: "(All passed)"

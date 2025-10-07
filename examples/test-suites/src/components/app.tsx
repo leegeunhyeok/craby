@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ENCODED_LOGO } from '../assets/logo';
 import { TEST_SUITES } from '../test-suites';
@@ -13,6 +13,7 @@ export function App() {
       error?: string;
     }>
   >([]);
+  const errorResults = useMemo(() => testResults.filter((testResult) => Boolean(testResult.error)), [testResults]);
   const [isRunning, setIsRunning] = useState(false);
 
   const runAllTests = async () => {
@@ -42,6 +43,20 @@ export function App() {
     setIsRunning(false);
   };
 
+  const renderResult = () => {
+    if (testResults.length === 0) {
+      return null;
+    }
+
+    const passed = errorResults.length === 0;
+
+    return (
+      <Text style={{ color: passed ? '#10B981' : '#EF4444', fontWeight: '500' }}>
+        ({passed ? 'All passed' : 'Failed'})
+      </Text>
+    );
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {/* Logo */}
@@ -68,10 +83,11 @@ export function App() {
         </TouchableOpacity>
       </View>
 
-      <View>
+      <View style={styles.testResultContainer}>
         <Text style={styles.testCountText}>
-          Test suite passed: {testResults.filter((testResult) => !testResult.error).length} of {testResults.length}
+          Test suite passed: {testResults.length - errorResults.length} of {testResults.length}
         </Text>
+        <View style={styles.textResultText}>{renderResult()}</View>
       </View>
 
       {/* Test Results */}
@@ -142,9 +158,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  testResultContainer: {
+    flexDirection: 'row',
+  },
   testCountText: {
     fontSize: 14,
     color: '#6B7280',
-    marginBottom: 8,
+  },
+  textResultText: {
+    marginLeft: 4,
   },
 });
