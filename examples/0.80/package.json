@@ -14,6 +14,7 @@
     "craby-test": "workspace:*",
     "react": "19.1.0",
     "react-native": "0.80.1",
+    "shared": "workspace:*",
     "test-suites": "workspace:*"
   },
   "devDependencies": {

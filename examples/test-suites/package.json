@@ -8,14 +8,9 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.cts",
+      "react-native": "./src/index.ts",
+      "default": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -28,11 +23,16 @@
     "build": "tsdown"
   },
   "devDependencies": {
+    "@types/react": "^19.1.0",
     "craby-test": "workspace:*",
+    "react": "^19.1.1",
+    "react-native": "^0.81.4",
     "tsdown": "^0.15.2",
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "craby-test": "*"
+    "craby-test": "*",
+    "react": "*",
+    "react-native": "*"
   }
 }
