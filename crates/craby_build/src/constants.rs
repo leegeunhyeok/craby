@@ -18,10 +18,21 @@ pub mod toolchain {
                 Target::Ios(identifier) => match identifier {
                     Identifier::Arm64 => "aarch64-apple-ios",
                     Identifier::Arm64Simulator => "aarch64-apple-ios-sim",
+                    Identifier::X86_64Simulator => "x86_64-apple-ios",
                 },
             }
         }
     }
+
+    pub const BUILD_TARGETS: [Target; 7] = [
+        Target::Android(Abi::Arm64V8a),
+        Target::Android(Abi::ArmeAbiV7a),
+        Target::Android(Abi::X86_64),
+        Target::Android(Abi::X86),
+        Target::Ios(Identifier::Arm64),
+        Target::Ios(Identifier::Arm64Simulator),
+        Target::Ios(Identifier::X86_64Simulator),
+    ];
 }
 
 pub mod android {
@@ -95,6 +106,7 @@ pub mod ios {
     pub enum Identifier {
         Arm64,
         Arm64Simulator,
+        X86_64Simulator,
     }
 
     impl Identifier {
@@ -102,6 +114,7 @@ pub mod ios {
             match self {
                 Identifier::Arm64 => "ios-arm64",
                 Identifier::Arm64Simulator => "ios-arm64-simulator",
+                Identifier::X86_64Simulator => "ios-x86_64-simulator",
             }
         }
     }

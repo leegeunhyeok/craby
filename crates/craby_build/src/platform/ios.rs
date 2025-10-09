@@ -13,9 +13,10 @@ use craby_common::{
 };
 use indoc::formatdoc;
 
-const IOS_TARGETS: [Target; 2] = [
+const IOS_TARGETS: [Target; 3] = [
     Target::Ios(Identifier::Arm64),
     Target::Ios(Identifier::Arm64Simulator),
+    Target::Ios(Identifier::X86_64Simulator),
 ];
 
 pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
@@ -109,6 +110,22 @@ pub fn info_plist(name: &String) -> String {
                     <key>SupportedPlatformVariant</key>
                     <string>simulator</string>
                 </dict>
+                <dict>
+                    <key>BinaryPath</key>
+                    <string>{lib_name}</string>
+                    <key>LibraryIdentifier</key>
+                    <string>{lib_sim_x86_identifier}</string>
+                    <key>LibraryPath</key>
+                    <string>{lib_name}</string>
+                    <key>SupportedArchitectures</key>
+                    <array>
+                        <string>arm64</string>
+                    </array>
+                    <key>SupportedPlatform</key>
+                    <string>ios</string>
+                    <key>SupportedPlatformVariant</key>
+                    <string>simulator</string>
+                </dict>
             </array>
             <key>CFBundlePackageType</key>
             <string>XFWK</string>
@@ -119,5 +136,6 @@ pub fn info_plist(name: &String) -> String {
         lib_name = lib_name,
         lib_identifier = Identifier::Arm64.to_str(),
         lib_sim_identifier = Identifier::Arm64Simulator.to_str(),
+        lib_sim_x86_identifier = Identifier::X86_64Simulator.to_str(),
     }
 }

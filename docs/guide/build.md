@@ -20,7 +20,7 @@ This command:
 3. Packages them for use in React Native
 
 By default, this builds for:
-- **iOS**: `aarch64-apple-ios`, `aarch64-apple-ios-sim`
+- **iOS**: `aarch64-apple-ios`, `aarch64-apple-ios-sim`, `x86_64-apple-ios`
 - **Android**: `aarch64-linux-android`, `armv7-linux-androideabi`, `i686-linux-android`, `x86_64-linux-android`
 
 ## Setup scripts for publishing Craby modules
@@ -47,10 +47,7 @@ Modify the build script according to your package manager and build tools.
 |-------------|--------|-------------|
 | Device (arm64) | `aarch64-apple-ios` | Physical iOS devices (iPhone, iPad) |
 | Simulator (arm64) | `aarch64-apple-ios-sim` | iOS Simulator on Apple Silicon Macs |
-
-::: tip
-Intel-based iOS Simulator (`x86_64-apple-ios`) is supported but not built by default.
-:::
+| Simulator (x86_64) | `x86_64-apple-ios` | iOS Simulator on Intel Macs |
 
 ### Android Architectures
 
@@ -72,7 +69,9 @@ ios/framework/libmodule.xcframework/
 ├── Info.plist
 ├── ios-arm64/
 │   └── libmodule-prebuilt.a
-└── ios-arm64-simulator/
+├── ios-arm64-simulator/
+│   └── libmodule-prebuilt.a
+└── ios-x86_64-simulator/
     └── libmodule-prebuilt.a
 ```
 

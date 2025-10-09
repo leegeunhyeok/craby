@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use craby_build::{
-    constants::{android::Abi, ios::Identifier, toolchain::Target},
+    constants::toolchain::BUILD_TARGETS,
     platform::{android as android_build, ios as ios_build},
 };
 use craby_common::{config::load_config, env::is_initialized};
@@ -9,15 +9,6 @@ use log::info;
 use owo_colors::OwoColorize;
 
 use crate::{commands::build::guide, utils::terminal::with_spinner};
-
-const BUILD_TARGETS: [Target; 6] = [
-    Target::Android(Abi::Arm64V8a),
-    Target::Android(Abi::ArmeAbiV7a),
-    Target::Android(Abi::X86_64),
-    Target::Android(Abi::X86),
-    Target::Ios(Identifier::Arm64),
-    Target::Ios(Identifier::Arm64Simulator),
-];
 
 pub struct BuildOptions {
     pub project_root: PathBuf,
