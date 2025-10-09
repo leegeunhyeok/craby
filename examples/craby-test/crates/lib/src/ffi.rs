@@ -51,53 +51,69 @@ pub mod bridging {
     }
 
     extern "Rust" {
+        type Calculator;
+
+        type CrabyTest;
+
+        #[cxx_name = "createCalculator"]
+        fn create_calculator(id: usize) -> Box<Calculator>;
+
         #[cxx_name = "add"]
-        fn calculator_add(id_: usize, a: f64, b: f64) -> Result<f64>;
+        fn calculator_add(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
 
         #[cxx_name = "subtract"]
-        fn calculator_subtract(id_: usize, a: f64, b: f64) -> Result<f64>;
+        fn calculator_subtract(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
 
         #[cxx_name = "multiply"]
-        fn calculator_multiply(id_: usize, a: f64, b: f64) -> Result<f64>;
+        fn calculator_multiply(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
 
         #[cxx_name = "divide"]
-        fn calculator_divide(id_: usize, a: f64, b: f64) -> Result<f64>;
+        fn calculator_divide(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
+
+        #[cxx_name = "createCrabyTest"]
+        fn create_craby_test(id: usize) -> Box<CrabyTest>;
 
         #[cxx_name = "numericMethod"]
-        fn craby_test_numeric_method(id_: usize, arg: f64) -> Result<f64>;
+        fn craby_test_numeric_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
         #[cxx_name = "booleanMethod"]
-        fn craby_test_boolean_method(id_: usize, arg: bool) -> Result<bool>;
+        fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool>;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(id_: usize, arg: String) -> Result<String>;
+        fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String>;
 
         #[cxx_name = "objectMethod"]
-        fn craby_test_object_method(id_: usize, arg: TestObject) -> Result<TestObject>;
+        fn craby_test_object_method(it_: &mut CrabyTest, arg: TestObject) -> Result<TestObject>;
 
         #[cxx_name = "arrayMethod"]
-        fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>>;
+        fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
+        fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
 
         #[cxx_name = "nullableMethod"]
-        fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> Result<NullableNumber>;
+        fn craby_test_nullable_method(it_: &mut CrabyTest, arg: NullableNumber) -> Result<NullableNumber>;
 
         #[cxx_name = "promiseMethod"]
-        fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64>;
+        fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
+
+        #[cxx_name = "setState"]
+        fn craby_test_set_state(it_: &mut CrabyTest, arg: f64) -> Result<()>;
+
+        #[cxx_name = "getState"]
+        fn craby_test_get_state(it_: &mut CrabyTest) -> Result<f64>;
 
         #[cxx_name = "camelMethod"]
-        fn craby_test_camel_method(id_: usize) -> Result<()>;
+        fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<()>;
 
         #[cxx_name = "pascalMethod"]
-        fn craby_test_pascal_method(id_: usize) -> Result<()>;
+        fn craby_test_pascal_method(it_: &mut CrabyTest) -> Result<()>;
 
         #[cxx_name = "snakeMethod"]
-        fn craby_test_snake_method(id_: usize) -> Result<()>;
+        fn craby_test_snake_method(it_: &mut CrabyTest) -> Result<()>;
 
         #[cxx_name = "triggerSignal"]
-        fn craby_test_trigger_signal(id_: usize) -> Result<()>;
+        fn craby_test_trigger_signal(it_: &mut CrabyTest) -> Result<()>;
     }
 
     #[namespace = "craby::signals"]
@@ -112,130 +128,136 @@ pub mod bridging {
     }
 }
 
-fn calculator_add(id_: usize, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn create_calculator(id: usize) -> Box<Calculator> {
+    Box::new(Calculator::new(id))
+}
+
+fn calculator_add(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = Calculator::new(id_);
-        let ret = it.add(a, b);
+        let ret = it_.add(a, b);
         ret
     })
 }
 
-fn calculator_subtract(id_: usize, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn calculator_subtract(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = Calculator::new(id_);
-        let ret = it.subtract(a, b);
+        let ret = it_.subtract(a, b);
         ret
     })
 }
 
-fn calculator_multiply(id_: usize, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn calculator_multiply(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = Calculator::new(id_);
-        let ret = it.multiply(a, b);
+        let ret = it_.multiply(a, b);
         ret
     })
 }
 
-fn calculator_divide(id_: usize, a: f64, b: f64) -> Result<f64, anyhow::Error> {
+fn calculator_divide(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = Calculator::new(id_);
-        let ret = it.divide(a, b);
+        let ret = it_.divide(a, b);
         ret
     })
 }
 
-fn craby_test_numeric_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+fn create_craby_test(id: usize) -> Box<CrabyTest> {
+    Box::new(CrabyTest::new(id))
+}
+
+fn craby_test_numeric_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.numeric_method(arg);
+        let ret = it_.numeric_method(arg);
         ret
     })
 }
 
-fn craby_test_boolean_method(id_: usize, arg: bool) -> Result<bool, anyhow::Error> {
+fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.boolean_method(arg);
+        let ret = it_.boolean_method(arg);
         ret
     })
 }
 
-fn craby_test_string_method(id_: usize, arg: String) -> Result<String, anyhow::Error> {
+fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.string_method(arg);
+        let ret = it_.string_method(arg);
         ret
     })
 }
 
-fn craby_test_object_method(id_: usize, arg: TestObject) -> Result<TestObject, anyhow::Error> {
+fn craby_test_object_method(it_: &mut CrabyTest, arg: TestObject) -> Result<TestObject, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.object_method(arg);
+        let ret = it_.object_method(arg);
         ret
     })
 }
 
-fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
+fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.array_method(arg);
+        let ret = it_.array_method(arg);
         ret
     })
 }
 
-fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
+fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.enum_method(arg_0, arg_1);
+        let ret = it_.enum_method(arg_0, arg_1);
         ret
     })
 }
 
-fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> Result<NullableNumber, anyhow::Error> {
+fn craby_test_nullable_method(it_: &mut CrabyTest, arg: NullableNumber) -> Result<NullableNumber, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.nullable_method(arg.into());
+        let ret = it_.nullable_method(arg.into());
         ret.into()
     })
 }
 
-fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.promise_method(arg);
+        let ret = it_.promise_method(arg);
         ret
     }).and_then(|r| r)
 }
 
-fn craby_test_camel_method(id_: usize) -> Result<(), anyhow::Error> {
+fn craby_test_set_state(it_: &mut CrabyTest, arg: f64) -> Result<(), anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.camel_method();
+        let ret = it_.set_state(arg);
         ret
     })
 }
 
-fn craby_test_pascal_method(id_: usize) -> Result<(), anyhow::Error> {
+fn craby_test_get_state(it_: &mut CrabyTest) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.pascal_method();
+        let ret = it_.get_state();
         ret
     })
 }
 
-fn craby_test_snake_method(id_: usize) -> Result<(), anyhow::Error> {
+fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.snake_method();
+        let ret = it_.camel_method();
         ret
     })
 }
 
-fn craby_test_trigger_signal(id_: usize) -> Result<(), anyhow::Error> {
+fn craby_test_pascal_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.trigger_signal();
+        let ret = it_.pascal_method();
+        ret
+    })
+}
+
+fn craby_test_snake_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
+    catch_panic!({
+        let ret = it_.snake_method();
+        ret
+    })
+}
+
+fn craby_test_trigger_signal(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
+    catch_panic!({
+        let ret = it_.trigger_signal();
         ret
     })
 }

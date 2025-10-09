@@ -6,7 +6,7 @@ use log::debug;
 use template::{cxx_arg_ref, cxx_arg_var};
 
 use crate::{
-    constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_ID},
+    constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
     parser::types::{EnumTypeAnnotation, Method, ObjectTypeAnnotation, TypeAnnotation},
     platform::cxx::template::{
         cxx_enum_bridging_template, cxx_nullable_bridging_template, cxx_struct_bridging_template,
@@ -223,17 +223,10 @@ impl TypeAnnotation {
 
 impl Method {
     pub fn as_cxx_method(&self, mod_name: &String) -> Result<CxxMethod, anyhow::Error> {
-        let vec_size = self.params.len() + 1;
         // ["arg0", "arg1", "arg2"]
-        let mut args = Vec::with_capacity(vec_size);
+        let mut args = Vec::with_capacity(self.params.len() + 1);
         // ["auto arg0 = facebook::react::bridging::fromJs<T>(rt, value, callInvoker)", "..."]
-        let mut args_decls = Vec::with_capacity(vec_size);
-
-        args.push(RESERVED_ARG_NAME_ID.to_string());
-        args_decls.push(format!(
-            "uintptr_t {} = reinterpret_cast<uintptr_t>(&thisModule);",
-            RESERVED_ARG_NAME_ID
-        ));
+        let mut args_decls = Vec::with_capacity(self.params.len());
 
         for (idx, param) in self.params.iter().enumerate() {
             let arg_ref = cxx_arg_ref(idx);
@@ -245,10 +238,13 @@ impl Method {
 
         let invoke_stmts = match &self.ret_type {
             TypeAnnotation::Promise(resolve_type) => {
-                let fn_args = args.join(", ");
                 let mut bind_args = Vec::with_capacity(args.len() + 2);
-                bind_args.extend(args);
+                bind_args.push(RESERVED_ARG_NAME_MODULE.to_string());
                 bind_args.push("promise".to_string());
+                bind_args.extend(args.clone());
+
+                args.insert(0, format!("*{}", RESERVED_ARG_NAME_MODULE));
+                let fn_args = args.join(", ");
 
                 let ret_stmts = if let TypeAnnotation::Void = &**resolve_type {
                     formatdoc! {
@@ -277,7 +273,7 @@ impl Method {
                 //
                 // std::thread([promise, arg0, arg1, arg2]() mutable {{
                 //   try {{
-                //     auto ret = craby::mymodule::myFunc(arg0, arg1, arg2);
+                //     auto ret = craby::mymodule::myFunc(*it_, arg0, arg1, arg2);
                 //     promise.resolve(ret);
                 //   }} catch (const jsi::JSError &err) {{
                 //     promise.reject(err.getMessage());
@@ -316,6 +312,7 @@ impl Method {
                 // auto ret = craby::bridging::myFunc(arg0, arg1, arg2);
                 // return ret;
                 // ```
+                args.insert(0, format!("*{}", RESERVED_ARG_NAME_MODULE));
                 let ret_stmts = if let TypeAnnotation::Void = &self.ret_type {
                     formatdoc! {
                         r#"craby::bridging::{fn_name}({fn_args});"#,
@@ -356,6 +353,8 @@ impl Method {
             args_count = args_count,
         };
 
+        let invoke_stmts = [args_decls, invoke_stmts].join("\n");
+
         let impl_func = formatdoc! {
             r#"
             jsi::Value {cxx_mod}::{fn_name}(jsi::Runtime &rt,
@@ -364,13 +363,13 @@ impl Method {
                                             size_t count) {{
               auto &thisModule = static_cast<{cxx_mod} &>(turboModule);
               auto callInvoker = thisModule.callInvoker_;
+              auto it_ = thisModule.module_;
 
               try {{
                 if ({args_count} != count) {{
                   throw jsi::JSError(rt, "Expected {args_count} argument{plural}");
                 }}
 
-            {args_decls}
             {invoke_stmts}
               }} catch (const jsi::JSError &err) {{
                 throw err;
@@ -381,7 +380,6 @@ impl Method {
             fn_name = camel_case(&self.name),
             cxx_mod = cxx_mod,
             args_count = args_count,
-            args_decls = indent_str(args_decls, 4),
             invoke_stmts = indent_str(invoke_stmts, 4),
             plural = if args_count > 1 { "s" } else { "" },
         };

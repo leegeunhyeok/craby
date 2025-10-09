@@ -66,7 +66,7 @@ With Craby, you focus on what matters—your implementation:
 
 ```rust
 impl CalculatorSpec for Calculator {
-    fn add(&self, a: Number, b: Number) -> Number {
+    fn add(&mut self, a: Number, b: Number) -> Number {
         a + b  // Just implement your logic!
     }
 }

@@ -51,11 +51,11 @@ impl CalculatorSpec for Calculator {
         self.id
     }
 
-    fn add(&self, a: Number, b: Number) -> Number {
+    fn add(&mut self, a: Number, b: Number) -> Number {
         unimplemented!() // TODO: Implement your logic here
     }
 
-    fn greet(&self, name: String) -> String {
+    fn greet(&mut self, name: String) -> String {
         unimplemented!() // TODO: Implement your logic here
     }
 }
@@ -114,7 +114,7 @@ pub enum MyModuleSignal {
 
 // In your impl:
 impl MyModuleSpec for MyModule {
-    fn some_method(&self) {
+    fn some_method(&mut self) {
         self.emit(MyModuleSignal::OnData);
     }
 }

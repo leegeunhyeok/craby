@@ -27,7 +27,7 @@ const INVALID_UNION_TYPE: &str = "Union types only allow nullable type (eg. `T |
 const INVALID_MIXED_ENUM_MEMBER: &str =
     "Enum member type must be single type (eg. only `number` or `string`)";
 const INVALID_REGISTRY_METHOD: &str = "Invalid NativeModuleRegistry method";
-const INVALID_RESERVED_ARG_NAME_ID: &str = "Reserved argument name `id_` is not allowed";
+const INVALID_RESERVED_ARG_NAME_ID: &str = "Reserved argument name `it_` is not allowed";
 
 pub struct NativeModuleAnalyzer<'a> {
     pub diagnostics: Vec<OxcDiagnostic>,
@@ -334,7 +334,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     Err(e) => return Err(error(&e.to_string(), prop_sig.span)),
                 };
 
-                if prop_name == RESERVED_ARG_NAME_ID {
+                if prop_name == RESERVED_ARG_NAME_MODULE {
                     return Err(error(INVALID_RESERVED_ARG_NAME_ID, prop_sig.span));
                 }
 

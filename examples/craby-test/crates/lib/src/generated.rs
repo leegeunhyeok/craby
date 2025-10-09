@@ -6,10 +6,10 @@ use crate::types::*;
 pub trait CalculatorSpec {
     fn new(id: usize) -> Self;
     fn id(&self) -> usize;
-    fn add(&self, a: Number, b: Number) -> Number;
-    fn subtract(&self, a: Number, b: Number) -> Number;
-    fn multiply(&self, a: Number, b: Number) -> Number;
-    fn divide(&self, a: Number, b: Number) -> Number;
+    fn add(&mut self, a: Number, b: Number) -> Number;
+    fn subtract(&mut self, a: Number, b: Number) -> Number;
+    fn multiply(&mut self, a: Number, b: Number) -> Number;
+    fn divide(&mut self, a: Number, b: Number) -> Number;
 }
 
 pub trait CrabyTestSpec {
@@ -21,18 +21,20 @@ pub trait CrabyTestSpec {
             CrabyTestSignal::OnSignal => manager.emit(self.id(), "onSignal"),
         }
     }
-    fn numeric_method(&self, arg: Number) -> Number;
-    fn boolean_method(&self, arg: Boolean) -> Boolean;
-    fn string_method(&self, arg: String) -> String;
-    fn object_method(&self, arg: TestObject) -> TestObject;
-    fn array_method(&self, arg: Array<Number>) -> Array<Number>;
-    fn enum_method(&self, arg_0: MyEnum, arg_1: SwitchState) -> String;
-    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number>;
-    fn promise_method(&self, arg: Number) -> Promise<Number>;
-    fn camel_method(&self) -> Void;
-    fn pascal_method(&self) -> Void;
-    fn snake_method(&self) -> Void;
-    fn trigger_signal(&self) -> Void;
+    fn numeric_method(&mut self, arg: Number) -> Number;
+    fn boolean_method(&mut self, arg: Boolean) -> Boolean;
+    fn string_method(&mut self, arg: String) -> String;
+    fn object_method(&mut self, arg: TestObject) -> TestObject;
+    fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
+    fn enum_method(&mut self, arg_0: MyEnum, arg_1: SwitchState) -> String;
+    fn nullable_method(&mut self, arg: Nullable<Number>) -> Nullable<Number>;
+    fn promise_method(&mut self, arg: Number) -> Promise<Number>;
+    fn set_state(&mut self, arg: Number) -> Void;
+    fn get_state(&mut self) -> Number;
+    fn camel_method(&mut self) -> Void;
+    fn pascal_method(&mut self) -> Void;
+    fn snake_method(&mut self) -> Void;
+    fn trigger_signal(&mut self) -> Void;
 }
 
 pub enum CrabyTestSignal {

@@ -14,7 +14,7 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
       return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
     });
-    return JNI_VERSION_1_6;
+  return JNI_VERSION_1_6;
 }
 
 ./android/CMakeLists.txt

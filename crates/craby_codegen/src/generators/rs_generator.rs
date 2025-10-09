@@ -58,13 +58,14 @@ impl RsTemplate {
     }
 
     fn rs_cxx_extern(&self, rs_cxx_bridges: &Vec<RsCxxBridge>, has_signals: bool) -> String {
-        let (cxx_externs, struct_defs, enum_defs) = rs_cxx_bridges.iter().fold(
-            (vec![], vec![], vec![]),
-            |(mut externs, mut structs, mut enums), bridge| {
+        let (impl_types, cxx_externs, struct_defs, enum_defs) = rs_cxx_bridges.iter().fold(
+            (vec![], vec![], vec![], vec![]),
+            |(mut impl_types, mut externs, mut structs, mut enums), bridge| {
+                impl_types.push(bridge.impl_type.clone());
                 externs.extend(bridge.func_extern_sigs.clone());
                 structs.extend(bridge.struct_defs.clone());
                 enums.extend(bridge.enum_defs.clone());
-                (externs, structs, enums)
+                (impl_types, externs, structs, enums)
             },
         );
 
@@ -73,7 +74,7 @@ impl RsTemplate {
             extern "Rust" {{
             {cxx_extern}
             }}"#,
-            cxx_extern = indent_str(cxx_externs.join("\n\n"), 4),
+            cxx_extern = indent_str([impl_types, cxx_externs].concat().join("\n\n"), 4),
         };
 
         let cxx_signal_manager = if has_signals {
@@ -123,7 +124,7 @@ impl RsTemplate {
     ///
     /// ```rust,ignore
     /// pub trait MyModuleSpec {
-    ///     fn multiply(&self, a: f64, b: f64) -> f64;
+    ///     fn multiply(&mut self, a: f64, b: f64) -> f64;
     /// }
     /// ```
     fn rs_spec(&self, schema: &Schema) -> Result<String, anyhow::Error> {
@@ -432,7 +433,7 @@ impl RsTemplate {
             #[macro_export]
             macro_rules! catch_panic {{
                 ($expr:expr) => {{
-                    std::panic::catch_unwind(|| $expr).map_err(|e| {{
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {{
                         let msg = if let Some(s) = e.downcast_ref::<&str>() {{
                             (*s).to_string()
                         }} else if let Some(s) = e.downcast_ref::<String>() {{
@@ -454,7 +455,7 @@ impl RsTemplate {
     /// use crate::types::*;
     ///
     /// pub trait MyModuleSpec {
-    ///     fn multiply(a: f64, b: f64) -> f64;
+    ///     fn multiply(&mut self, a: f64, b: f64) -> f64;
     /// }
     /// ```
     pub fn generated_rs(&self, schemas: &Vec<Schema>) -> Result<String, anyhow::Error> {

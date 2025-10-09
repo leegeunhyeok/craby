@@ -86,11 +86,11 @@ When you run `crabygen`, Craby generates Rust code from your TypeScript spec:
 ```rust
 // Auto-generated from TypeScript spec
 pub trait MyModuleSpec {
-    fn square(&self, n: Number) -> Number;
-    fn calculate_prime(&self, n: Number) -> Promise<Number>;
-    fn noop(&self) -> Void;
-    fn create_user(&self, name: String, age: Number, email: String) -> User;
-    fn update_user(&self, user: User) -> User;
+    fn square(&mut self, n: Number) -> Number;
+    fn calculate_prime(&mut self, n: Number) -> Promise<Number>;
+    fn noop(&mut self) -> Void;
+    fn create_user(&mut self, name: String, age: Number, email: String) -> User;
+    fn update_user(&mut self, user: User) -> User;
 }
 ```
 
@@ -111,24 +111,24 @@ You implement the generated trait:
 
 ```rust
 impl MyModuleSpec for MyModule {
-    fn square(&self, n: Number) -> Number {
+    fn square(&mut self, n: Number) -> Number {
         n * n
     }
 
-    fn calculate_prime(&self, n: Number) -> Promise<Number> {
+    fn calculate_prime(&mut self, n: Number) -> Promise<Number> {
         let prime = nth_prime(n as i64);
         promise::resolve(prime as f64)
     }
 
-    fn noop(&self) -> Void {
+    fn noop(&mut self) -> Void {
         ()
     }
 
-    fn create_user(&self, name: String, age: Number, email: String) -> User {
+    fn create_user(&mut self, name: String, age: Number, email: String) -> User {
         User { name, age, email }
     }
 
-    fn update_user(&self, mut user: User) -> User {
+    fn update_user(&mut self, mut user: User) -> User {
         user.name = user.name.to_uppercase();
         user
     }
@@ -159,7 +159,7 @@ struct Profile {
 }
 
 pub trait MyModuleSpec {
-    fn get_user_name(&self, user_id: Number, profile: Profile) -> bool;
+    fn get_user_name(&mut self, user_id: Number, profile: Profile) -> bool;
 }
 ```
 
@@ -175,6 +175,32 @@ Craby supports various TypeScript types. See the [Types](/guide/types) guide for
 - **Promises**: `Promise<T>`
 - **Signals**: `Signal`
 
+## Stateful Modules
+
+Modules can maintain state across method calls. Each module instance preserves its internal Rust state between invocations:
+
+```rust
+struct Storage {
+    id: usize,
+    data: Option<Number>,
+}
+
+impl StorageSpec for Storage {
+    fn set_data(&mut self, data: Number) -> Void {
+        self.data = Some(data);
+    }
+
+    fn get_data(&mut self) -> Number {
+        self.data.unwrap_or(0.0)
+    }
+}
+```
+
+```typescript
+Storage.setData(123);
+Storage.getData(); // 123
+```
+
 ## Limitations
 
 ### Unsupported Types
@@ -189,40 +215,3 @@ Some TypeScript types are not supported:
 - ❌ Generic types (except `Promise` and `Signal`)
 
 </div>
-
-### Stateless Modules
-
-Craby modules are **stateless** - you cannot store and maintain state between method calls.
-
-```rust
-// Not supported - stateful module
-struct Counter {
-    count: i32,  // Cannot maintain state
-}
-
-impl CounterSpec for Counter {
-    fn increment(&self) -> Number {
-        self.count += 1;  // Won't work! (It will always be the initial value)
-        self.count as f64
-    }
-}
-
-// Supported - stateless operations
-impl CalculatorSpec for Calculator {
-    fn add(&self, a: Number, b: Number) -> Number {
-        a + b  // Pure function, no state
-    }
-}
-```
-
-If you need to maintain state, manage it on the JavaScript side:
-
-```typescript
-// Manage state in JavaScript
-let count = 0;
-
-function increment() {
-  count++;
-  return Calculator.square(count);
-}
-```

@@ -140,6 +140,17 @@ const TEST_SUITES: TestSuite[] = [
     action: () => Module.CrabyTestModule.promiseMethod(-123).catch((error) => toErrorObject(error)),
   },
   {
+    label: 'State',
+    action: () => {
+      const data = Date.now();
+      Module.CrabyTestModule.setState(data);
+      return {
+        data,
+        state: Module.CrabyTestModule.getState(),
+      };
+    },
+  },
+  {
     label: 'Panics',
     action: () => {
       try {

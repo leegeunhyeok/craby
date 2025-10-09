@@ -2,12 +2,12 @@ use std::{fs, path::PathBuf};
 
 use craby_common::{
     constants::{cxx_bridge_include_dir, cxx_dir},
-    utils::string::{camel_case, flat_case},
+    utils::string::{camel_case, flat_case, pascal_case},
 };
 use indoc::formatdoc;
 
 use crate::{
-    constants::cxx_mod_cls_name,
+    constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
     platform::cxx::CxxMethod,
     types::{CodegenContext, Schema},
     utils::indent_str,
@@ -145,6 +145,7 @@ impl CxxTemplate {
                                           size_t count) {{
                       auto &thisModule = static_cast<{cxx_mod} &>(turboModule);
                       auto callInvoker = thisModule.callInvoker_;
+                      auto {it} = thisModule.module_;
 
                       try {{
                         if (1 != count) {{
@@ -191,6 +192,7 @@ impl CxxTemplate {
                       }}
                     }}"#,
                     cxx_mod = cxx_mod,
+                    it = RESERVED_ARG_NAME_MODULE,
                     signal_name = signal.name,
                     cxx_signal_name = cxx_signal_name,
                 });
@@ -246,6 +248,7 @@ impl CxxTemplate {
         //     std::shared_ptr<react::CallInvoker> jsInvoker)
         //     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
         //   callInvoker_ = std::move(jsInvoker);
+        //   module_ = std::shared_ptr(...);
         //
         //   // Method maps
         // }
@@ -263,6 +266,10 @@ impl CxxTemplate {
                 : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
             {register_stmt}
               callInvoker_ = std::move(jsInvoker);
+              module_ = std::shared_ptr<craby::bridging::{module_name}>(
+                craby::bridging::create{module_name}(reinterpret_cast<uintptr_t>(this)).into_raw(),
+                [](craby::bridging::{module_name} *ptr) {{ rust::Box<craby::bridging::{module_name}>::from_raw(ptr); }}
+              );
             
             {method_maps}
             }}
@@ -274,6 +281,7 @@ impl CxxTemplate {
             {method_impls}
             
             }} // namespace {flat_name}"#,
+            module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
             register_stmt = indent_str(register_stmt, 2),
@@ -297,9 +305,11 @@ impl CxxTemplate {
 
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
+              std::shared_ptr<craby::bridging::{module_name}> module_;
             }};
 
             }} // namespace {flat_name}"#,
+            module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
             mod_members = indent_str(mod_members.join("\n"), 2),
@@ -309,13 +319,12 @@ impl CxxTemplate {
         // ```cpp
         // #include "my_module.hpp"
         //
-        // #include <thread>
-        // #include <react/bridging/Bridging.h>
-        //
         // #include "cxx.h"
-        // #include "ffi.rs.h"
         // #include "bridging-generated.hpp"
         // #include "utils.hpp"
+        //
+        // #include <thread>
+        // #include <react/bridging/Bridging.h>
         //
         // using namespace facebook;
         //
@@ -327,13 +336,12 @@ impl CxxTemplate {
             r#"
             {include_stmt}
 
-            #include <thread>
-            #include <react/bridging/Bridging.h>
-
             #include "cxx.h"
-            #include "ffi.rs.h"
             #include "bridging-generated.hpp"
             #include "utils.hpp"
+
+            #include <thread>
+            #include <react/bridging/Bridging.h>
 
             using namespace facebook;
 
@@ -347,6 +355,8 @@ impl CxxTemplate {
         let hpp_content = formatdoc! {
             r#"
             #pragma once
+
+            #include "ffi.rs.h"
 
             #include <memory>
             #include <ReactCommon/TurboModule.h>
@@ -372,9 +382,10 @@ impl CxxTemplate {
             r#"
             #pragma once
 
-            #include <react/bridging/Bridging.h>
             #include "cxx.h"
             #include "ffi.rs.h"
+
+            #include <react/bridging/Bridging.h>
 
             using namespace facebook;
 
@@ -435,6 +446,7 @@ impl CxxTemplate {
             #pragma once
 
             #include "rust/cxx.h"
+
             #include <functional>
             #include <memory>
             #include <unordered_map>

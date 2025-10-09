@@ -244,19 +244,19 @@ impl CalculatorSpec for Calculator {
         self.id
     }
 
-    fn add(&self, a: Number, b: Number) -> Number {
+    fn add(&mut self, a: Number, b: Number) -> Number {
         a + b
     }
 
-    fn subtract(&self, a: Number, b: Number) -> Number {
+    fn subtract(&mut self, a: Number, b: Number) -> Number {
         a - b
     }
 
-    fn multiply(&self, a: Number, b: Number) -> Number {
+    fn multiply(&mut self, a: Number, b: Number) -> Number {
         a * b
     }
 
-    fn divide(&self, a: Number, b: Number) -> Number {
+    fn divide(&mut self, a: Number, b: Number) -> Number {
         a / b
     }
 }

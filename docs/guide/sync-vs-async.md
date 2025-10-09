@@ -27,15 +27,15 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl CalculatorSpec for Calculator {
-    fn add(&self, a: Number, b: Number) -> Number {
+    fn add(&mut self, a: Number, b: Number) -> Number {
         a + b  // Returns immediately
     }
 
-    fn format_string(&self, text: String) -> String {
+    fn format_string(&mut self, text: String) -> String {
         text.to_uppercase()  // Returns immediately
     }
 
-    fn is_valid(&self, value: Boolean) -> Boolean {
+    fn is_valid(&mut self, value: Boolean) -> Boolean {
         !value  // Returns immediately
     }
 }
@@ -89,7 +89,7 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl HeavyComputeSpec for HeavyCompute {
-    fn calculate_prime(&self, n: Number) -> Promise<Number> {
+    fn calculate_prime(&mut self, n: Number) -> Promise<Number> {
         if n <= 0.0 {
             return promise::reject("Invalid input");
         }
@@ -99,13 +99,13 @@ impl HeavyComputeSpec for HeavyCompute {
         promise::resolve(prime as f64)
     }
 
-    fn sort_large_array(&self, mut numbers: Array<Number>) -> Promise<Array<Number>> {
+    fn sort_large_array(&mut self, mut numbers: Array<Number>) -> Promise<Array<Number>> {
         // Heavy sorting operation - runs in separate thread
         numbers.sort_by(|a, b| a.partial_cmp(b).unwrap());
         promise::resolve(numbers)
     }
 
-    fn compute_hash(&self, data: String) -> Promise<String> {
+    fn compute_hash(&mut self, data: String) -> Promise<String> {
         // CPU-intensive hashing - safe here in separate thread
         let hash = expensive_hash_algorithm(&data);
         promise::resolve(hash)
@@ -159,7 +159,7 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl BadExampleSpec for BadExample {
-    fn slow_calculation(&self) -> Number {
+    fn slow_calculation(&mut self) -> Number {
         // This will FREEZE the UI for `expensive_job` durations!
         let res = expensive_job();
         res
@@ -184,7 +184,7 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl GoodExampleSpec for GoodExample {
-    fn slow_calculation(&self) -> Promise<Number> {
+    fn slow_calculation(&mut self) -> Promise<Number> {
         let res = expensive_job();
         promise::resolve(res)
     }
@@ -202,14 +202,14 @@ console.log('Done:', result);
 When implementing Promise methods, your Rust code runs in a **separate thread** (spawned by C++ layer):
 
 ```rust
-fn process_data(&self, value: Number) -> Promise<Number> {
+fn process_data(&mut self, value: Number) -> Promise<Number> {
     // This runs in a separate thread automatically
     // Safe to do heavy computations here
     let result = expensive_calculation(value);
     promise::resolve(result)
 }
 
-fn compute_fibonacci(&self, n: Number) -> Promise<Number> {
+fn compute_fibonacci(&mut self, n: Number) -> Promise<Number> {
     // CPU-intensive recursive calculation
     let result = fibonacci(n as u64);
     promise::resolve(result as f64)
@@ -223,7 +223,7 @@ fn compute_fibonacci(&self, n: Number) -> Promise<Number> {
 Sync methods typically use **panics** for errors (which crash the app):
 
 ```rust
-fn divide(&self, a: Number, b: Number) -> Number {
+fn divide(&mut self, a: Number, b: Number) -> Number {
     if b == 0.0 {
         throw!("Division by zero");  // throw as JavaScript Error
     }
@@ -245,7 +245,7 @@ try {
 Async methods use **Promise rejections** for errors:
 
 ```rust
-fn get_user(&self, id: Number) -> Promise<User> {
+fn get_user(&mut self, id: Number) -> Promise<User> {
     if id <= 0.0 {
         return promise::reject("Invalid user ID");
     }

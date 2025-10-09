@@ -7,14 +7,14 @@
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   facebook::react::registerCxxModuleToGlobalModuleMap(
-      craby::calculator::CxxCalculatorModule::kModuleName,
-      [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::calculator::CxxCalculatorModule>(jsInvoker);
-      });
+    craby::calculator::CxxCalculatorModule::kModuleName,
+    [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
+      return std::make_shared<craby::calculator::CxxCalculatorModule>(jsInvoker);
+    });
   facebook::react::registerCxxModuleToGlobalModuleMap(
-      craby::crabytest::CxxCrabyTestModule::kModuleName,
-      [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
-      });
+    craby::crabytest::CxxCrabyTestModule::kModuleName,
+    [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
+      return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+    });
   return JNI_VERSION_1_6;
 }

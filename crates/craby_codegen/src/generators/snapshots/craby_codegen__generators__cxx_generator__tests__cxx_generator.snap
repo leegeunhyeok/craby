@@ -5,13 +5,12 @@ expression: result
 ./cpp/CxxCrabyTestModule.cpp
 #include "CxxCrabyTestModule.hpp"
 
-#include <thread>
-#include <react/bridging/Bridging.h>
-
 #include "cxx.h"
-#include "ffi.rs.h"
 #include "bridging-generated.hpp"
 #include "utils.hpp"
+
+#include <thread>
+#include <react/bridging/Bridging.h>
 
 using namespace facebook;
 
@@ -28,6 +27,10 @@ CxxCrabyTestModule::CxxCrabyTestModule(
                            this,
                            std::placeholders::_1));
   callInvoker_ = std::move(jsInvoker);
+  module_ = std::shared_ptr<craby::bridging::CrabyTest>(
+    craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
+    [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
+  );
 
   methodMap_["numericMethod"] = MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
@@ -79,15 +82,15 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::numericMethod(id_, arg0);
+    auto ret = craby::bridging::numericMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -103,15 +106,15 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<bool>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::booleanMethod(id_, arg0);
+    auto ret = craby::bridging::booleanMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -127,15 +130,15 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<rust::String>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::stringMethod(id_, arg0);
+    auto ret = craby::bridging::stringMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -151,15 +154,15 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::TestObject>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::objectMethod(id_, arg0);
+    auto ret = craby::bridging::objectMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -175,15 +178,15 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<rust::Vec<double>>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::arrayMethod(id_, arg0);
+    auto ret = craby::bridging::arrayMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -199,16 +202,16 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (2 != count) {
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::MyEnum>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<craby::bridging::SwitchState>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::enumMethod(id_, arg0, arg1);
+    auto ret = craby::bridging::enumMethod(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -224,15 +227,15 @@ jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<craby::bridging::NullableNumber>(rt, args[0], callInvoker);
-    auto ret = craby::bridging::nullableMethod(id_, arg0);
+    auto ret = craby::bridging::nullableMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -248,19 +251,19 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     react::AsyncPromise<double> promise(rt, callInvoker);
 
-    std::thread([id_, arg0, promise]() mutable {
+    std::thread([it_, promise, arg0]() mutable {
       try {
-        auto ret = craby::bridging::promiseMethod(id_, arg0);
+        auto ret = craby::bridging::promiseMethod(*it_, arg0);
         promise.resolve(ret);
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
@@ -283,16 +286,16 @@ jsi::Value CxxCrabyTestModule::camelMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (2 != count) {
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::camelMethod(id_, arg0, arg1);
+    auto ret = craby::bridging::camelMethod(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -308,16 +311,16 @@ jsi::Value CxxCrabyTestModule::pascalMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (2 != count) {
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::pascalMethod(id_, arg0, arg1);
+    auto ret = craby::bridging::pascalMethod(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -333,16 +336,16 @@ jsi::Value CxxCrabyTestModule::snakeMethod(jsi::Runtime &rt,
                                 size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (2 != count) {
       throw jsi::JSError(rt, "Expected 2 arguments");
     }
 
-    uintptr_t id_ = reinterpret_cast<uintptr_t>(&thisModule);
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::snakeMethod(id_, arg0, arg1);
+    auto ret = craby::bridging::snakeMethod(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -358,6 +361,7 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
                       size_t count) {
   auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
   auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
 
   try {
     if (1 != count) {
@@ -409,6 +413,8 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
 
 ./cpp/CxxCrabyTestModule.hpp
 #pragma once
+
+#include "ffi.rs.h"
 
 #include <memory>
 #include <ReactCommon/TurboModule.h>
@@ -491,6 +497,7 @@ public:
 
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
+  std::shared_ptr<craby::bridging::CrabyTest> module_;
 };
 
 } // namespace crabytest
@@ -499,9 +506,10 @@ protected:
 ./cpp/bridging-generated.hpp
 #pragma once
 
-#include <react/bridging/Bridging.h>
 #include "cxx.h"
 #include "ffi.rs.h"
+
+#include <react/bridging/Bridging.h>
 
 using namespace facebook;
 
@@ -765,6 +773,7 @@ struct Bridging<craby::bridging::NullableNumber> {
 #pragma once
 
 #include "rust/cxx.h"
+
 #include <functional>
 #include <memory>
 #include <unordered_map>

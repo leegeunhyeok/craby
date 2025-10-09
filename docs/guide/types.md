@@ -34,7 +34,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl CalculatorSpec for Calculator {
-    fn add(&self, a: Number, b: Number) -> Number {
+    fn add(&mut self, a: Number, b: Number) -> Number {
         a + b
     }
 }
@@ -54,7 +54,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl GreeterSpec for Greeter {
-    fn greet(&self, name: String) -> String {
+    fn greet(&mut self, name: String) -> String {
         format!("Hello, {}!", name)
     }
 }
@@ -72,7 +72,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl ValidatorSpec for Validator {
-    fn is_valid(&self, value: Boolean) -> Boolean {
+    fn is_valid(&mut self, value: Boolean) -> Boolean {
         !value  // Negate the boolean
     }
 }
@@ -104,7 +104,7 @@ pub struct User {
 }
 
 impl UserManagerSpec for UserManager {
-    fn create_user(&self, name: String, age: Number, email: String) -> User {
+    fn create_user(&mut self, name: String, age: Number, email: String) -> User {
         User {
             name,
             age,
@@ -159,11 +159,11 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl ArrayProcessorSpec for ArrayProcessor {
-    fn sum(&self, numbers: Array<Number>) -> Number {
+    fn sum(&mut self, numbers: Array<Number>) -> Number {
         numbers.iter().sum()
     }
 
-    fn reverse(&self, mut items: Array<String>) -> Array<String> {
+    fn reverse(&mut self, mut items: Array<String>) -> Array<String> {
         items.reverse();
         items
     }
@@ -174,20 +174,20 @@ impl ArrayProcessorSpec for ArrayProcessor {
 
 ```rust
 // Iterate over array
-fn process(&self, items: Array<String>) -> Void {
+fn process(&mut self, items: Array<String>) -> Void {
     for item in items.iter() {
         println!("{}", item);
     }
 }
 
 // Modify in place
-fn double(&self, mut numbers: Array<Number>) -> Array<Number> {
+fn double(&mut self, mut numbers: Array<Number>) -> Array<Number> {
     numbers.iter_mut().for_each(|x| *x *= 2.0);
     numbers
 }
 
 // Create new array
-fn generate(&self, count: Number) -> Array<Number> {
+fn generate(&mut self, count: Number) -> Array<Number> {
     (0..count as i32).map(|x| x as f64).collect()
 }
 ```
@@ -207,7 +207,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl UserServiceSpec for UserService {
-    fn find_user(&self, id: Number) -> Nullable<User> {
+    fn find_user(&mut self, id: Number) -> Nullable<User> {
         if id > 0.0 {
             Nullable::<User>::some(User { name: "John".to_string() })
         } else {
@@ -215,7 +215,7 @@ impl UserServiceSpec for UserService {
         }
     }
 
-    fn format_name(&self, name: Nullable<String>) -> String {
+    fn format_name(&mut self, name: Nullable<String>) -> String {
         match name.value_of() {
             Some(n) => format!("Hello, {}!", n),
             None => "Hello, Guest!".to_string(),
@@ -274,7 +274,7 @@ pub enum Status {
 }
 
 impl StatusCheckerSpec for StatusChecker {
-    fn get_status(&self, status: Status) -> String {
+    fn get_status(&mut self, status: Status) -> String {
         match status {
             Status::Active => "Currently active".to_string(),
             Status::Inactive => "Not active".to_string(),
@@ -309,7 +309,7 @@ pub enum Priority {
 }
 
 impl TaskManagerSpec for TaskManager {
-    fn set_priority(&self, priority: Priority) -> Void {
+    fn set_priority(&mut self, priority: Priority) -> Void {
         match priority {
             Priority::Low => println!("Low priority"),
             Priority::Medium => println!("Medium priority"),
@@ -334,7 +334,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl AsyncServiceSpec for AsyncService {
-    fn process_async(&self, value: Number) -> Promise<Number> {
+    fn process_async(&mut self, value: Number) -> Promise<Number> {
         // Runs in separate thread (managed by C++ layer)
         // Safe to do heavy work here
         if value >= 0.0 {

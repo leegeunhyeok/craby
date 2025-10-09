@@ -4,30 +4,31 @@ use crate::types::*;
 
 pub struct CrabyTest {
     id: usize,
+    state: Option<Number>,
 }
 
 impl CrabyTestSpec for CrabyTest {
     fn new(id: usize) -> Self {
-        CrabyTest { id }
+        CrabyTest { id, state: None }
     }
 
     fn id(&self) -> usize {
         self.id
     }
 
-    fn numeric_method(&self, arg: Number) -> Number {
+    fn numeric_method(&mut self, arg: Number) -> Number {
         arg * 2.0
     }
 
-    fn boolean_method(&self, arg: Boolean) -> Boolean {
+    fn boolean_method(&mut self, arg: Boolean) -> Boolean {
         !arg
     }
 
-    fn string_method(&self, arg: String) -> String {
+    fn string_method(&mut self, arg: String) -> String {
         format!("From Rust: {}", arg)
     }
 
-    fn object_method(&self, mut arg: TestObject) -> TestObject {
+    fn object_method(&mut self, mut arg: TestObject) -> TestObject {
         arg.foo = format!("From Rust: {}", arg.foo);
         arg.bar = arg.bar * 2.0;
         arg.baz = !arg.baz;
@@ -37,13 +38,13 @@ impl CrabyTestSpec for CrabyTest {
         arg
     }
 
-    fn array_method(&self, mut arg: Array<Number>) -> Array<Number> {
+    fn array_method(&mut self, mut arg: Array<Number>) -> Array<Number> {
         arg.extend(vec![1.0, 2.0, 3.0]);
         arg.iter_mut().for_each(|x| *x *= 2.0);
         arg
     }
 
-    fn enum_method(&self, arg0: MyEnum, arg1: SwitchState) -> String {
+    fn enum_method(&mut self, arg0: MyEnum, arg1: SwitchState) -> String {
         let arg0 = match arg0 {
             MyEnum::Foo => "Enum Foo!",
             MyEnum::Bar => "Enum Bar!",
@@ -60,7 +61,7 @@ impl CrabyTestSpec for CrabyTest {
         format!("Enum {} / {}", arg0, arg1)
     }
 
-    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number> {
+    fn nullable_method(&mut self, arg: Nullable<Number>) -> Nullable<Number> {
         match arg.value_of() {
             Some(val) => {
                 if *val < 0.0 {
@@ -74,7 +75,7 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
-    fn promise_method(&self, arg: Number) -> Promise<Number> {
+    fn promise_method(&mut self, arg: Number) -> Promise<Number> {
         if arg == 0.0 {
             throw!("Zero is not allowed");
         }
@@ -86,19 +87,27 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
-    fn trigger_signal(&self) -> Void {
+    fn set_state(&mut self, arg: Number) -> Void {
+        self.state = Some(arg);
+    }
+
+    fn get_state(&mut self) -> Number {
+        self.state.unwrap_or(0.0)
+    }
+
+    fn trigger_signal(&mut self) -> Void {
         self.emit(CrabyTestSignal::OnSignal);
     }
 
-    fn camel_method(&self) -> Void {
+    fn camel_method(&mut self) -> Void {
         // noop
     }
 
-    fn pascal_method(&self) -> Void {
+    fn pascal_method(&mut self) -> Void {
         // noop
     }
 
-    fn snake_method(&self) -> Void {
+    fn snake_method(&mut self) -> Void {
         // noop
     }
 }

@@ -75,7 +75,7 @@ impl AndroidTemplate {
 
             jint JNI_OnLoad(JavaVM *vm, void *reserved) {{
             {cxx_registers}
-                return JNI_VERSION_1_6;
+              return JNI_VERSION_1_6;
             }}"#,
             cxx_includes = cxx_includes.join("\n"),
             cxx_registers = indent_str(cxx_registers.join("\n"), 2),

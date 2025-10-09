@@ -42,7 +42,7 @@ In your Rust implementation, emit signals using the `emit()` method:
 
 ```rust
 impl MyModuleSpec for MyModule {
-    fn start_process(&self) -> Void {
+    fn start_process(&mut self) -> Void {
         // Emit a signal to notify JavaScript
         self.emit(MyModuleSignal::OnProgress);
 

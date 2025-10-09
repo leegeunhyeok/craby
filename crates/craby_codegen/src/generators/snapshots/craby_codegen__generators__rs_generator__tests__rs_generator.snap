@@ -66,38 +66,43 @@ pub mod bridging {
     }
 
     extern "Rust" {
+        type CrabyTest;
+
+        #[cxx_name = "createCrabyTest"]
+        fn create_craby_test(id: usize) -> Box<CrabyTest>;
+
         #[cxx_name = "numericMethod"]
-        fn craby_test_numeric_method(id_: usize, arg: f64) -> Result<f64>;
+        fn craby_test_numeric_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
         #[cxx_name = "booleanMethod"]
-        fn craby_test_boolean_method(id_: usize, arg: bool) -> Result<bool>;
+        fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool>;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(id_: usize, arg: String) -> Result<String>;
+        fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String>;
 
         #[cxx_name = "objectMethod"]
-        fn craby_test_object_method(id_: usize, arg: TestObject) -> Result<TestObject>;
+        fn craby_test_object_method(it_: &mut CrabyTest, arg: TestObject) -> Result<TestObject>;
 
         #[cxx_name = "arrayMethod"]
-        fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>>;
+        fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
 
         #[cxx_name = "enumMethod"]
-        fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
+        fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
 
         #[cxx_name = "nullableMethod"]
-        fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> Result<NullableNumber>;
+        fn craby_test_nullable_method(it_: &mut CrabyTest, arg: NullableNumber) -> Result<NullableNumber>;
 
         #[cxx_name = "promiseMethod"]
-        fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64>;
+        fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
         #[cxx_name = "camelMethod"]
-        fn craby_test_camel_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64>;
+        fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
 
         #[cxx_name = "pascalMethod"]
-        fn craby_test_pascal_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64>;
+        fn craby_test_pascal_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
 
         #[cxx_name = "snakeMethod"]
-        fn craby_test_snake_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64>;
+        fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
     }
 
     #[namespace = "craby::signals"]
@@ -112,90 +117,83 @@ pub mod bridging {
     }
 }
 
-fn craby_test_numeric_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+fn create_craby_test(id: usize) -> Box<CrabyTest> {
+    Box::new(CrabyTest::new(id))
+}
+
+fn craby_test_numeric_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.numeric_method(arg);
+        let ret = it_.numeric_method(arg);
         ret
     })
 }
 
-fn craby_test_boolean_method(id_: usize, arg: bool) -> Result<bool, anyhow::Error> {
+fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.boolean_method(arg);
+        let ret = it_.boolean_method(arg);
         ret
     })
 }
 
-fn craby_test_string_method(id_: usize, arg: String) -> Result<String, anyhow::Error> {
+fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.string_method(arg);
+        let ret = it_.string_method(arg);
         ret
     })
 }
 
-fn craby_test_object_method(id_: usize, arg: TestObject) -> Result<TestObject, anyhow::Error> {
+fn craby_test_object_method(it_: &mut CrabyTest, arg: TestObject) -> Result<TestObject, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.object_method(arg);
+        let ret = it_.object_method(arg);
         ret
     })
 }
 
-fn craby_test_array_method(id_: usize, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
+fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.array_method(arg);
+        let ret = it_.array_method(arg);
         ret
     })
 }
 
-fn craby_test_enum_method(id_: usize, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
+fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.enum_method(arg_0, arg_1);
+        let ret = it_.enum_method(arg_0, arg_1);
         ret
     })
 }
 
-fn craby_test_nullable_method(id_: usize, arg: NullableNumber) -> Result<NullableNumber, anyhow::Error> {
+fn craby_test_nullable_method(it_: &mut CrabyTest, arg: NullableNumber) -> Result<NullableNumber, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.nullable_method(arg.into());
+        let ret = it_.nullable_method(arg.into());
         ret.into()
     })
 }
 
-fn craby_test_promise_method(id_: usize, arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.promise_method(arg);
+        let ret = it_.promise_method(arg);
         ret
     }).and_then(|r| r)
 }
 
-fn craby_test_camel_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.camel_method(first_arg, second_arg);
+        let ret = it_.camel_method(first_arg, second_arg);
         ret
     })
 }
 
-fn craby_test_pascal_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_pascal_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.pascal_method(first_arg, second_arg);
+        let ret = it_.pascal_method(first_arg, second_arg);
         ret
     })
 }
 
-fn craby_test_snake_method(id_: usize, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
+fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
     catch_panic!({
-        let it = CrabyTest::new(id_);
-        let ret = it.snake_method(first_arg, second_arg);
+        let ret = it_.snake_method(first_arg, second_arg);
         ret
     })
 }
@@ -214,17 +212,17 @@ pub trait CrabyTestSpec {
             CrabyTestSignal::OnSignal => manager.emit(self.id(), "onSignal"),
         }
     }
-    fn numeric_method(&self, arg: Number) -> Number;
-    fn boolean_method(&self, arg: Boolean) -> Boolean;
-    fn string_method(&self, arg: String) -> String;
-    fn object_method(&self, arg: TestObject) -> TestObject;
-    fn array_method(&self, arg: Array<Number>) -> Array<Number>;
-    fn enum_method(&self, arg_0: MyEnum, arg_1: SwitchState) -> String;
-    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number>;
-    fn promise_method(&self, arg: Number) -> Promise<Number>;
-    fn camel_method(&self, first_arg: Number, second_arg: Number) -> Number;
-    fn pascal_method(&self, first_arg: Number, second_arg: Number) -> Number;
-    fn snake_method(&self, first_arg: Number, second_arg: Number) -> Number;
+    fn numeric_method(&mut self, arg: Number) -> Number;
+    fn boolean_method(&mut self, arg: Boolean) -> Boolean;
+    fn string_method(&mut self, arg: String) -> String;
+    fn object_method(&mut self, arg: TestObject) -> TestObject;
+    fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
+    fn enum_method(&mut self, arg_0: MyEnum, arg_1: SwitchState) -> String;
+    fn nullable_method(&mut self, arg: Nullable<Number>) -> Nullable<Number>;
+    fn promise_method(&mut self, arg: Number) -> Promise<Number>;
+    fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
+    fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
+    fn snake_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
 }
 
 pub enum CrabyTestSignal {
@@ -408,7 +406,7 @@ macro_rules! throw {
 #[macro_export]
 macro_rules! catch_panic {
     ($expr:expr) => {
-        std::panic::catch_unwind(|| $expr).map_err(|e| {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {
             let msg = if let Some(s) = e.downcast_ref::<&str>() {
                 (*s).to_string()
             } else if let Some(s) = e.downcast_ref::<String>() {
@@ -439,47 +437,47 @@ impl CrabyTestSpec for CrabyTest {
         self.id
     }
 
-    fn numeric_method(&self, arg: Number) -> Number {
+    fn numeric_method(&mut self, arg: Number) -> Number {
         unimplemented!();
     }
 
-    fn boolean_method(&self, arg: Boolean) -> Boolean {
+    fn boolean_method(&mut self, arg: Boolean) -> Boolean {
         unimplemented!();
     }
 
-    fn string_method(&self, arg: String) -> String {
+    fn string_method(&mut self, arg: String) -> String {
         unimplemented!();
     }
 
-    fn object_method(&self, arg: TestObject) -> TestObject {
+    fn object_method(&mut self, arg: TestObject) -> TestObject {
         unimplemented!();
     }
 
-    fn array_method(&self, arg: Array<Number>) -> Array<Number> {
+    fn array_method(&mut self, arg: Array<Number>) -> Array<Number> {
         unimplemented!();
     }
 
-    fn enum_method(&self, arg_0: MyEnum, arg_1: SwitchState) -> String {
+    fn enum_method(&mut self, arg_0: MyEnum, arg_1: SwitchState) -> String {
         unimplemented!();
     }
 
-    fn nullable_method(&self, arg: Nullable<Number>) -> Nullable<Number> {
+    fn nullable_method(&mut self, arg: Nullable<Number>) -> Nullable<Number> {
         unimplemented!();
     }
 
-    fn promise_method(&self, arg: Number) -> Promise<Number> {
+    fn promise_method(&mut self, arg: Number) -> Promise<Number> {
         unimplemented!();
     }
 
-    fn camel_method(&self, first_arg: Number, second_arg: Number) -> Number {
+    fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
         unimplemented!();
     }
 
-    fn pascal_method(&self, first_arg: Number, second_arg: Number) -> Number {
+    fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
         unimplemented!();
     }
 
-    fn snake_method(&self, first_arg: Number, second_arg: Number) -> Number {
+    fn snake_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
         unimplemented!();
     }
 }

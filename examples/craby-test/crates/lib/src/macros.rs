@@ -9,7 +9,7 @@ macro_rules! throw {
 #[macro_export]
 macro_rules! catch_panic {
     ($expr:expr) => {
-        std::panic::catch_unwind(|| $expr).map_err(|e| {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {
             let msg = if let Some(s) = e.downcast_ref::<&str>() {
                 (*s).to_string()
             } else if let Some(s) = e.downcast_ref::<String>() {

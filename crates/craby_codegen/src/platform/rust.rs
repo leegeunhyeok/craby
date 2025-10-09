@@ -5,7 +5,7 @@ use indoc::formatdoc;
 use rustc_hash::FxHashMap;
 
 use crate::{
-    constants::specs::RESERVED_ARG_NAME_ID,
+    constants::specs::RESERVED_ARG_NAME_MODULE,
     parser::types::{
         EnumTypeAnnotation, Method, ObjectTypeAnnotation, Param, RefTypeAnnotation, TypeAnnotation,
     },
@@ -26,6 +26,12 @@ pub struct RsImplType(pub String);
 /// Collection of Rust code for FFI.
 #[derive(Debug, Clone)]
 pub struct RsCxxBridge {
+    /// The impl struct type name.
+    ///
+    /// ```rust,ignore
+    /// type MyModule;
+    /// ```
+    pub impl_type: String,
     /// The struct definition.
     ///
     /// ```rust,ignore
@@ -212,7 +218,7 @@ impl TypeAnnotation {
 impl Method {
     pub fn try_into_impl_sig(&self) -> Result<String, anyhow::Error> {
         let return_type = self.ret_type.as_rs_impl_type()?.0;
-        let params_sig = std::iter::once("&self".to_string())
+        let params_sig = std::iter::once("&mut self".to_string())
             .chain(
                 self.params
                     .iter()
@@ -254,10 +260,27 @@ impl Param {
 impl Schema {
     /// Returns the Rust cxx bridging function declaration and implementation for the `FunctionSpec`.
     pub fn as_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error> {
-        let mut func_extern_sigs = vec![];
-        let mut func_impls = vec![];
+        let mut func_extern_sigs = Vec::with_capacity(self.methods.len() + 1);
+        let mut func_impls = Vec::with_capacity(self.methods.len() + 1);
         let mut type_impls = vec![];
         let mut struct_defs = FxHashMap::default();
+
+        func_extern_sigs.push(formatdoc! {
+            r#"
+            #[cxx_name = "create{module_name}"]
+            fn create_{snake_cake}(id: usize) -> Box<{module_name}>;"#,
+            module_name = pascal_case(&self.module_name),
+            snake_cake = snake_case(&self.module_name),
+        });
+
+        func_impls.push(formatdoc! {
+            r#"
+            fn create_{snake_cake}(id: usize) -> Box<{module_name}> {{
+                Box::new({module_name}::new(id))
+            }}"#,
+            module_name = pascal_case(&self.module_name),
+            snake_cake = snake_case(&self.module_name),
+        });
 
         // Collect extern function signatures and implementations
         for method_spec in &self.methods {
@@ -332,11 +355,17 @@ impl Schema {
                 .map(|param| param.try_into_cxx_sig())
                 .collect::<Result<Vec<_>, _>>()
                 .map(|mut params| {
-                    params.insert(0, format!("{}: usize", RESERVED_ARG_NAME_ID));
+                    params.insert(
+                        0,
+                        format!(
+                            "{}: &mut {}",
+                            RESERVED_ARG_NAME_MODULE,
+                            pascal_case(&self.module_name)
+                        ),
+                    );
                     params.join(", ")
                 })?;
 
-            let impl_name = pascal_case(&self.module_name);
             let mod_name = snake_case(&self.module_name);
             let fn_name = snake_case(&method_spec.name);
             let fn_args = method_spec
@@ -375,15 +404,14 @@ impl Schema {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
                         catch_panic!({{
-                            let it = {impl_name}::new({id});
-                            let ret = it.{fn_name}({fn_args});
+                            let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }}).and_then(|r| r)
                     }}"#,
                     params_sig = params_sig,
+                    it = RESERVED_ARG_NAME_MODULE,
                     ret_type = ret_annotation,
-                    impl_name = impl_name,
-                    id = RESERVED_ARG_NAME_ID,
+                    ret = ret,
                     prefixed_fn_name = prefixed_fn_name,
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
@@ -392,15 +420,14 @@ impl Schema {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
                         catch_panic!({{
-                            let it = {impl_name}::new({id});
-                            let ret = it.{fn_name}({fn_args});
+                            let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }})
                     }}"#,
                     params_sig = params_sig,
+                    it = RESERVED_ARG_NAME_MODULE,
                     ret_type = ret_annotation,
-                    impl_name = impl_name,
-                    id = RESERVED_ARG_NAME_ID,
+                    ret = ret,
                     prefixed_fn_name = prefixed_fn_name,
                     fn_name = fn_name.to_string(),
                     fn_args = fn_args.join(", "),
@@ -445,6 +472,7 @@ impl Schema {
             .collect();
 
         Ok(RsCxxBridge {
+            impl_type: format!("type {};", pascal_case(&self.module_name)),
             struct_defs: struct_defs.into_values().collect(),
             enum_defs,
             func_extern_sigs,

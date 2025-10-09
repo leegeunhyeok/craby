@@ -21,5 +21,5 @@ pub mod specs {
     pub const REGISTRY_GET_ENFORCING: &str = "getEnforcing";
 
     pub const RESERVED_TYPE_PROMISE: &str = "Promise";
-    pub const RESERVED_ARG_NAME_ID: &str = "id_";
+    pub const RESERVED_ARG_NAME_MODULE: &str = "it_";
 }

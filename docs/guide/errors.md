@@ -23,7 +23,7 @@ Panic occurred → `std::panic::catch_unwind()` → C++ Exception → `jsi::JSEr
 
 ```rust
 impl CalculatorSpec for Calculator {
-    fn divide(&self, a: Number, b: Number) -> Number {
+    fn divide(&mut self, a: Number, b: Number) -> Number {
         if b == 0.0 {
             throw!("Division by zero");  // Throws to JavaScript!
         }
@@ -56,7 +56,7 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl DataParserSpec for DataParser {
-    fn parse_large_data(&self, data: String) -> Promise<Void> {
+    fn parse_large_data(&mut self, data: String) -> Promise<Void> {
         if data.is_empty() {
             return promise::reject("Data cannot be empty");
         }
