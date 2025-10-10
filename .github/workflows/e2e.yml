@@ -13,8 +13,9 @@ on:
   # pull_request: null
 
 jobs:
-  e2e-ios:
+  build:
     runs-on: macos-latest
+    name: Build
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node.js
@@ -40,24 +41,22 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Prepare CrabyModules
-        run: yarn prepare
-      - name: Install CocoaPods dependencies
-        run: yarn pod:install
-        working-directory: examples/0.80
-      - name: Build iOS app
-        run: |
-          xcodebuild -workspace Craby80.xcworkspace -scheme Craby80 -configuration Release -sdk iphonesimulator
-        working-directory: examples/0.80/ios
-      - name: Install app
-        run: |
-          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" | head -n 1)
-          xcrun simctl boot "iPhone 15" || true
-          xcrun simctl install booted "$APP_PATH"
-      - name: Run Maestro tests
-        run: yarn e2e:ios
+        run: cargo xtask prepare
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuilt-module
+          path: |
+            examples/craby-test
+            !examples/craby-test/node_modules
+            !examples/craby-test/target
+          if-no-files-found: error
 
   e2e-android:
     runs-on: ubuntu-latest
+    name: E2E Android
+    needs:
+      - build
     steps:
       - uses: actions/checkout@v4
       - name: Enable KVM
@@ -87,8 +86,11 @@ jobs:
         run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Prepare CrabyModules
-        run: yarn prepare
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: prebuilt-module
+          path: examples/craby-test
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
@@ -116,6 +118,66 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            cd examples/0.80/android
+            cd $HOME/examples/0.80/android
             ./gradlew installRelease --build-cache
             yarn e2e:android
+
+  e2e-ios:
+    runs-on: macos-latest
+    name: E2E iOS
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+          toolchain: nightly-2025-08-04
+      - name: Install Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+      - name: Add Maestro to PATH
+        run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: prebuilt-module
+          path: examples/craby-test
+      - name: Install CocoaPods dependencies
+        run: yarn pod:install
+        working-directory: examples/0.80
+      - name: Build iOS app
+        run: |
+          xcodebuild \
+            -workspace Craby80.xcworkspace \
+            -scheme Craby80 \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath "$HOME/DerivedData"
+        working-directory: examples/0.80/ios
+      - name: Install app
+        run: |
+          APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Error: App not found at $APP_PATH"
+            echo "Contents of Release-iphonesimulator:"
+            ls -la "$HOME/DerivedData/Build/Products/Release-iphonesimulator/" || true
+            exit 1
+          fi
+          xcrun simctl boot "iPhone 15" || true
+          xcrun simctl install booted "$APP_PATH"
+      - name: Run Maestro tests
+        run: yarn e2e:ios

@@ -24,12 +24,19 @@ pub fn run_command(command: &str, args: &[&str], cwd: Option<&str>) -> Result<()
         cmd.current_dir(cwd);
     }
 
-    let output = cmd.args(args).output()?;
+    let output = cmd
+        .args(args)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .output()?;
 
-    if output.status.code() != Some(0) {
-        anyhow::bail!(String::from_utf8_lossy(&output.stderr).to_string());
+    match output.status.code() {
+        Some(0) => Ok(()),
+        _ => anyhow::bail!(
+            "Command exited with code {}",
+            output.status.code().unwrap_or(-1)
+        ),
     }
-    Ok(())
 }
 
 pub fn is_valid_version(version: &str) -> bool {
