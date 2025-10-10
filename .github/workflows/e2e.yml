@@ -165,6 +165,13 @@ jobs:
         with:
           name: prebuilt-module
           path: examples/craby-test
+      - name: Debug
+        run: |
+          pwd
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "HOME: $HOME"
+          ls -al examples/craby-test
+          ls -al $GITHUB_WORKSPACE/examples/craby-test
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios
