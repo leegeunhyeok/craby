@@ -110,7 +110,10 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
-      - name: Run tests
+      - name: Build Android app
+        run: ./gradlew assembleRelease
+        working-directory: examples/0.80/android
+      - name: Run E2E tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
@@ -118,8 +121,14 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            cd $HOME/examples/0.80/android
-            ./gradlew installRelease --build-cache
+            cd "$GITHUB_WORKSPACE/examples/0.80/android"
+            APK_PATH=$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)
+            if [ ! -d "$APK_PATH" ]; then
+              echo "Error: App not found at $APK_PATH"
+              exit 1
+            fi
+            adb install -r "$APK_PATH"
+            cd "$GITHUB_WORKSPACE/examples/0.80"
             yarn e2e:android
 
   e2e-ios:
@@ -157,8 +166,8 @@ jobs:
           name: prebuilt-module
           path: examples/craby-test
       - name: Install CocoaPods dependencies
-        run: yarn pod:install
-        working-directory: examples/0.80
+        run: pod install
+        working-directory: examples/0.80/ios
       - name: Build iOS app
         run: |
           xcodebuild \
@@ -179,5 +188,6 @@ jobs:
           fi
           xcrun simctl boot "iPhone 15" || true
           xcrun simctl install booted "$APP_PATH"
-      - name: Run Maestro tests
+      - name: Run E2E tests
         run: yarn e2e:ios
+        working-directory: examples/0.80
