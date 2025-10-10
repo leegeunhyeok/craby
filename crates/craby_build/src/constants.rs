@@ -19,6 +19,7 @@ pub mod toolchain {
                     Identifier::Arm64 => "aarch64-apple-ios",
                     Identifier::Arm64Simulator => "aarch64-apple-ios-sim",
                     Identifier::X86_64Simulator => "x86_64-apple-ios",
+                    _ => unreachable!(),
                 },
             }
         }
@@ -104,18 +105,24 @@ pub mod android {
 
 pub mod ios {
     pub enum Identifier {
+        /// For device
         Arm64,
+        /// For simulator (arm64)
         Arm64Simulator,
+        /// For simulator (x86_64)
         X86_64Simulator,
+        /// For XCFramework identifier (arm64 + x86_64 architecture for simulator)
+        /// Each libraries are combined into a single library by `lipo`
+        Simulator,
     }
 
     impl Identifier {
-        pub fn to_str(&self) -> &str {
-            match self {
+        pub fn try_into_str(&self) -> Result<&str, anyhow::Error> {
+            Ok(match self {
                 Identifier::Arm64 => "ios-arm64",
-                Identifier::Arm64Simulator => "ios-arm64-simulator",
-                Identifier::X86_64Simulator => "ios-x86_64-simulator",
-            }
+                Identifier::Simulator => "ios-arm64_x86_64-simulator",
+                _ => anyhow::bail!("Invalid identifier"),
+            })
         }
     }
 }

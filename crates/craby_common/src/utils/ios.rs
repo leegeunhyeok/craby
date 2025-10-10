@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, process::Command};
 
 use regex::Regex;
 
@@ -17,6 +17,11 @@ pub fn get_podspec_path(project_root: &PathBuf) -> Result<Option<String>, anyhow
     }
 
     Ok(None)
+}
+
+pub fn is_xcode_cli_tools_installed() -> Result<bool, anyhow::Error> {
+    let res = Command::new("xcode-select").args(["--version"]).output()?;
+    Ok(res.status.success())
 }
 
 pub fn is_podspec_configured(project_root: &PathBuf) -> Result<bool, anyhow::Error> {

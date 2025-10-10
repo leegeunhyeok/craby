@@ -9,7 +9,9 @@ use log::debug;
 
 use crate::constants::toolchain::Target;
 
+#[derive(Clone)]
 pub struct Artifacts {
+    pub identifier: String,
     pub srcs: Vec<PathBuf>,
     pub headers: Vec<PathBuf>,
     pub libs: Vec<PathBuf>,
@@ -59,6 +61,7 @@ impl Artifacts {
         debug!("lib: {:?}", lib);
 
         Ok(Artifacts {
+            identifier: target.to_str().to_string(),
             srcs: cxx_srcs,
             headers: [cxx_headers, cxx_bridge_headers].concat(),
             libs: vec![lib],
