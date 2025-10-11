@@ -93,7 +93,8 @@ jobs:
           name: prebuilt-module
           path: examples/0.80
       - name: Install package
-        run: yarn workspace craby-0.80 add ./package.tgz
+        run: yarn add ./package.tgz
+        working-directory: examples/0.80
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
@@ -171,7 +172,8 @@ jobs:
           name: prebuilt-module
           path: examples/0.80
       - name: Install package
-        run: yarn workspace craby-0.80 add ./package.tgz
+        run: yarn add ./package.tgz
+        working-directory: examples/0.80
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios
@@ -182,7 +184,8 @@ jobs:
             -scheme Craby80 \
             -configuration Release \
             -sdk iphonesimulator \
-            -derivedDataPath "$HOME/DerivedData"
+            -derivedDataPath "$HOME/DerivedData" \
+            -quiet
         working-directory: examples/0.80/ios
       - name: Install app
         run: |
