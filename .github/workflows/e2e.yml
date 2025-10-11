@@ -42,14 +42,13 @@ jobs:
         run: yarn install --immutable
       - name: Prepare CrabyModules
         run: cargo xtask prepare
+      - name: Packing
+        run: yarn workspace craby-test pack --out package.tgz
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: prebuilt-module
-          path: |
-            examples/craby-test
-            !examples/craby-test/node_modules
-            !examples/craby-test/target
+          path: examples/craby-test/package.tgz
           if-no-files-found: error
 
   e2e-android:
@@ -92,7 +91,9 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: prebuilt-module
-          path: examples/craby-test
+          path: examples/0.80
+      - name: Install package
+        run: yarn workspace craby-0.80 add ./package.tgz
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
@@ -168,7 +169,9 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: prebuilt-module
-          path: examples/craby-test
+          path: examples/0.80
+      - name: Install package
+        run: yarn workspace craby-0.80 add ./package.tgz
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios
