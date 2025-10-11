@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@react-native-community/cli-types": "^20.0.2",
     "@types/react": "^19.0.0",
     "crabygen": "workspace:*",
     "react": "19.1.1",

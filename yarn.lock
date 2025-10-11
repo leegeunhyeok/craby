@@ -4135,6 +4135,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-community/cli-types@npm:^20.0.2":
+  version: 20.0.2
+  resolution: "@react-native-community/cli-types@npm:20.0.2"
+  dependencies:
+    joi: "npm:^17.2.1"
+  checksum: 10/b4e708fe759ef995b99bdbe89f0e83a00cba680c01a119d317f445528e8321d89a842e0641ad2a08f4c3793ddb9e02b0045d2e82da66d279cb21ee42961ba9ce
+  languageName: node
+  linkType: hard
+
 "@react-native-community/cli@npm:19.0.0":
   version: 19.0.0
   resolution: "@react-native-community/cli@npm:19.0.0"
@@ -7061,6 +7070,7 @@ __metadata:
   resolution: "craby-test@workspace:examples/craby-test"
   dependencies:
     "@biomejs/biome": "npm:2.2.4"
+    "@react-native-community/cli-types": "npm:^20.0.2"
     "@types/react": "npm:^19.0.0"
     craby-modules: "workspace:*"
     crabygen: "workspace:*"

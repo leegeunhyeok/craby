@@ -136,6 +136,6 @@ dependencies {
 
 react {
   jsRootDir = file("../src/")
-  libraryName = "Basic"
+  libraryName = "CrabyTest_stub"
   codegenJavaPackageName = "com.basic"
 }
