@@ -5,7 +5,7 @@ def reactNativeArchitectures() {
 
 buildscript {
   ext.getExtOrDefault = {name ->
-    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['Basic_' + name]
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['CrabyTest_' + name]
   }
 
   repositories {
@@ -26,7 +26,7 @@ apply plugin: "kotlin-android"
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
-  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["Basic_" + name]).toInteger()
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["CrabyTest_" + name]).toInteger()
 }
 
 android {

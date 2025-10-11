@@ -117,6 +117,8 @@ jobs:
       - name: Build Android app
         run: ./gradlew assembleRelease
         working-directory: examples/0.80/android
+        env:
+          E2E: '1'
       - name: Run E2E tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -187,6 +189,8 @@ jobs:
             -derivedDataPath "$HOME/DerivedData" \
             -quiet
         working-directory: examples/0.80/ios
+        env:
+          E2E: '1'
       - name: Install app
         run: |
           APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
