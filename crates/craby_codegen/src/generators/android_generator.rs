@@ -107,10 +107,10 @@ impl AndroidTemplate {
             # Import the pre-built Craby library
             add_library({kebab_name}-lib STATIC IMPORTED)
             set_target_properties({kebab_name}-lib PROPERTIES
-              IMPORTED_LOCATION "${{CMAKE_SOURCE_DIR}}/src/main/jni/libs/${{ANDROID_ABI}}/{lib_name}"
+              IMPORTED_LOCATION "${{CMAKE_CURRENT_SOURCE_DIR}}/src/main/jni/libs/${{ANDROID_ABI}}/{lib_name}"
             )
             target_include_directories({kebab_name}-lib INTERFACE
-              "${{CMAKE_SOURCE_DIR}}/src/main/jni/include"
+              "${{CMAKE_CURRENT_SOURCE_DIR}}/src/main/jni/include"
             )
 
             # Generated C++ source files by Craby

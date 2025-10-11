@@ -11,10 +11,10 @@ find_package(ReactAndroid REQUIRED CONFIG)
 # Import the pre-built Craby library
 add_library(craby-test-lib STATIC IMPORTED)
 set_target_properties(craby-test-lib PROPERTIES
-  IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/src/main/jni/libs/${ANDROID_ABI}/libcrabytest-prebuilt.a"
+  IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/src/main/jni/libs/${ANDROID_ABI}/libcrabytest-prebuilt.a"
 )
 target_include_directories(craby-test-lib INTERFACE
-  "${CMAKE_SOURCE_DIR}/src/main/jni/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/main/jni/include"
 )
 
 # Generated C++ source files by Craby
