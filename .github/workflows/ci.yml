@@ -294,7 +294,9 @@ jobs:
           targets: aarch64-apple-darwin
           toolchain: nightly-2025-08-04
       - name: Lint
-        run: cargo fmt --check
+        run: |
+          rustup component add rustfmt
+          cargo fmt --check
       - name: Test
         run: cargo test --all
 
