@@ -1,16 +1,14 @@
 name: E2E Tests
 
 on:
-  push: 
-    branches: '*'
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'crates/**'
-  #     - 'packages/**'
-  #     - 'examples/0.80/**'
-  # pull_request: null
+  push:
+    branches:
+      - main
+    paths:
+      - 'crates/**'
+      - 'packages/**'
+      - 'examples/**'
+  pull_request: null
 
 jobs:
   build:
