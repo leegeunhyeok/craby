@@ -91,6 +91,8 @@ jobs:
         with:
           name: prebuilt-module
           path: examples/craby-test
+      - name: Debug
+        run: ls -R examples/craby-test/dist
       - name: Install dependencies
         run: yarn install --immutable
       - name: Prepare shared
@@ -114,11 +116,11 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+      - name: Debug 2
+        run: ls -R examples/craby-test/dist
       - name: Build Android app
         run: ./gradlew assembleRelease
         working-directory: examples/0.80/android
-        env:
-          E2E: '1'
       - name: Run E2E tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -186,8 +188,6 @@ jobs:
             -derivedDataPath "$HOME/DerivedData" \
             -quiet
         working-directory: examples/0.80/ios
-        env:
-          E2E: '1'
       - name: Install app
         run: |
           APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
