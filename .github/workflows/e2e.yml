@@ -61,6 +61,24 @@ jobs:
       - build
     steps:
       - uses: actions/checkout@v4
+      - name: Free Disk Space
+        run: |
+          df -h
+          echo "Removing large packages"
+          sudo apt-get remove -y '^dotnet-.*'
+          sudo apt-get remove -y 'php.*'
+          sudo apt-get remove -y '^mongodb-.*'
+          sudo apt-get remove -y '^mysql-.*'
+          sudo apt-get remove -y azure-cli google-cloud-sdk hhvm google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          echo "Removing large directories"
+          sudo rm -rf /usr/share/dotnet/
+          sudo rm -rf /usr/local/graalvm/
+          sudo rm -rf /usr/local/.ghcup/
+          sudo rm -rf /usr/local/share/powershell
+          sudo rm -rf /usr/local/share/chromium
+          df -h
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -96,7 +114,7 @@ jobs:
       - name: Prepare dependencies
         run: yarn workspaces foreach --all --topological-dev --include "{craby-modules,shared,test-suites}" run build
       - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
