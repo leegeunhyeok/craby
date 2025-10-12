@@ -182,12 +182,6 @@ jobs:
       - name: Install app
         run: |
           APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
-          if [ ! -f "$APP_PATH" ]; then
-            echo "Error: App not found at $APP_PATH"
-            echo "Contents of Release-iphonesimulator:"
-            ls -la "$HOME/DerivedData/Build/Products/Release-iphonesimulator/" || true
-            exit 1
-          fi
           DEVICE_UDID=$(xcrun simctl list devices iPhone available --json | jq -r '.devices | to_entries[] | .value[] | select(.name | contains("iPhone")) | .udid' | head -n 1)
           echo "Booting simulator: $DEVICE_UDID"
           xcrun simctl boot "$DEVICE_UDID" || true
