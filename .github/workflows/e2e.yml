@@ -105,6 +105,10 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
           key: avd-29
+      - name: Setup ADB
+        run: |
+          /usr/local/lib/android/sdk/platform-tools/adb kill-server
+          /usr/local/lib/android/sdk/platform-tools/adb start-server
       - name: create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
