@@ -96,7 +96,10 @@ fn create_sim_lib(
     }
     fs::create_dir_all(&dest_dir)?;
 
-    debug!("Creating simulator library from artifacts (dest: {:?})", dest_path);
+    debug!(
+        "Creating simulator library from artifacts (dest: {:?})",
+        dest_path
+    );
 
     let res = Command::new("lipo")
         .arg("-create")
