@@ -91,12 +91,10 @@ jobs:
         with:
           name: prebuilt-module
           path: examples/craby-test
-      - name: Debug
-        run: ls -R examples/craby-test/dist
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Prepare shared
-        run: yarn workspace shared build
+      - name: Prepare dependencies
+        run: yarn workspaces foreach --all --topological-dev --include "{craby-modules,shared,test-suites}" run build
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
@@ -116,8 +114,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
-      - name: Debug 2
-        run: ls -R examples/craby-test/dist
       - name: Build Android app
         run: ./gradlew assembleRelease
         working-directory: examples/0.80/android
@@ -173,8 +169,8 @@ jobs:
           path: examples/craby-test
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Prepare shared
-        run: yarn workspace shared build
+      - name: Prepare dependencies
+        run: yarn workspaces foreach --all --topological-dev --include "{craby-modules,shared,test-suites}" run build
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios
