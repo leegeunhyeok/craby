@@ -126,12 +126,7 @@ jobs:
           disable-animations: true
           script: |
             cd "$GITHUB_WORKSPACE/examples/0.80/android"
-            APK_PATH=$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)
-            if [ ! -f "$APK_PATH" ]; then
-              echo "Error: App not found at $APK_PATH"
-              exit 1
-            fi
-            adb install -r "$APK_PATH"
+            adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
             cd "$GITHUB_WORKSPACE/examples/0.80"
             yarn e2e:android
 
