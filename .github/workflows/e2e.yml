@@ -48,7 +48,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: prebuilt-module
-          path: examples/craby-test/package.tgz
+          path: |
+            examples/craby-test
+            !examples/craby-test/node_modules
+            !examples/craby-test/target
           if-no-files-found: error
 
   e2e-android:
@@ -83,18 +86,15 @@ jobs:
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
       - name: Add Maestro to PATH
         run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
-      - name: Install dependencies
-        run: yarn install --immutable
-      - name: Prepare shared
-        run: yarn workspace shared build
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
           name: prebuilt-module
-          path: examples/0.80
-      - name: Install package
-        run: yarn add ./package.tgz
-        working-directory: examples/0.80
+          path: examples/craby-test
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Prepare shared
+        run: yarn workspace shared build
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
       - name: AVD cache
@@ -164,18 +164,15 @@ jobs:
         with:
           ruby-version: '3.0'
           bundler-cache: true
-      - name: Install dependencies
-        run: yarn install --immutable
-      - name: Prepare shared
-        run: yarn workspace shared build
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
           name: prebuilt-module
-          path: examples/0.80
-      - name: Install package
-        run: yarn add ./package.tgz
-        working-directory: examples/0.80
+          path: examples/craby-test
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Prepare shared
+        run: yarn workspace shared build
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios
