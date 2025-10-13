@@ -1,5 +1,5 @@
 {
-  "name": "craby-0.80",
+  "name": "craby-0.76",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "craby-test": "workspace:*",
-    "react": "19.1.0",
-    "react-native": "0.80.1",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
     "shared": "workspace:*",
     "test-suites": "workspace:*"
   },
@@ -18,13 +18,13 @@
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
-    "@react-native-community/cli": "19.0.0",
-    "@react-native-community/cli-platform-android": "19.0.0",
-    "@react-native-community/cli-platform-ios": "19.0.0",
-    "@react-native/babel-preset": "0.80.1",
-    "@react-native/metro-config": "0.80.1",
-    "@react-native/typescript-config": "0.80.1",
-    "@types/react": "^19.1.0",
+    "@react-native-community/cli": "15.0.0-alpha.2",
+    "@react-native-community/cli-platform-android": "15.0.0-alpha.2",
+    "@react-native-community/cli-platform-ios": "15.0.0-alpha.2",
+    "@react-native/babel-preset": "0.76.0",
+    "@react-native/metro-config": "0.76.0",
+    "@react-native/typescript-config": "0.76.0",
+    "@types/react": "^18.2.6",
     "typescript": "5.0.4"
   },
   "engines": {

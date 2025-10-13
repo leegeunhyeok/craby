@@ -70,8 +70,8 @@ export function createResolver(options: CreateResolverOptions): CustomResolver {
     }
 
     function resolve(context: CustomResolutionContext, request: string) {
-      for (const nativeModule of singletonModules) {
-        if (request === nativeModule) {
+      for (const target of singletonModules) {
+        if (request === target || request.startsWith(`${target}/`)) {
           return {
             type: 'sourceFile',
             filePath: resolveSync(rootPath, request),
