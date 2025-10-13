@@ -43,7 +43,7 @@ pub mod android {
 
     use crate::platform::android::{get_ndk_clang_path, get_ndk_llvm_ar_path};
 
-    /// See https://github.com/facebook/react-native/blob/v0.74.0/packages/react-native/gradle/libs.versions.toml
+    /// See https://github.com/facebook/react-native/blob/v0.76.0/packages/react-native/gradle/libs.versions.toml
     pub const MIN_SDK_VERSION: u8 = 23;
 
     pub enum Abi {

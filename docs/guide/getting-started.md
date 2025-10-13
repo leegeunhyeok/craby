@@ -6,6 +6,12 @@ This project is currently under development and is in early alpha. For more info
 
 This guide will walk you through creating your first Craby module from scratch.
 
+## Compatibility
+
+Craby-built modules require a minimum React Native version of:
+
+- `>= 0.76.0` (**with New Architecture enabled**)
+
 ## Prerequisites
 
 ::: warning macOS Required

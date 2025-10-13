@@ -449,6 +449,7 @@ impl CxxTemplate {
 
             #include <functional>
             #include <memory>
+            #include <mutex>
             #include <unordered_map>
 
             namespace craby {{

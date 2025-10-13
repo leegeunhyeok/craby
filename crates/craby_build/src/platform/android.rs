@@ -6,7 +6,7 @@ use log::debug;
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{android::Abi, toolchain::Target},
-    cxx::replace_cxx_header,
+    cxx::{replace_cxx_header, replace_cxx_iter_template},
 };
 
 pub const ANDROID_TARGETS: [Target; 4] = [
@@ -40,8 +40,15 @@ pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Err
     }
 
     let signal_path = jni_base_path.join("include").join("signals.h");
+    debug!("Post-processing signals.h: {:?}", signal_path);
     if signal_path.try_exists()? {
         replace_cxx_header(&signal_path)?;
+    }
+
+    let cxx_path = jni_base_path.join("include").join("cxx.h");
+    debug!("Post-processing cxx.h: {:?}", cxx_path);
+    if cxx_path.try_exists()? {
+        replace_cxx_iter_template(&cxx_path)?;
     }
 
     Ok(())
