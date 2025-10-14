@@ -58,7 +58,10 @@ pub fn codegen<'a>(opts: CodegenOptions<'a>) -> Result<Vec<Schema>, anyhow::Erro
         })
         .collect::<Result<Vec<Vec<Schema>>, anyhow::Error>>()?;
 
-    let schemas = collected_schemas.into_iter().flatten().collect::<Vec<_>>();
+    let mut schemas = collected_schemas.into_iter().flatten().collect::<Vec<_>>();
+    schemas.sort_by_key(|v| v.module_name.to_lowercase());
+
+    debug!("Collected schemas: {:?}", schemas);
 
     Ok(schemas)
 }

@@ -767,8 +767,6 @@ impl<'a> NativeModuleAnalyzer<'a> {
             });
         }
 
-        schemas.sort_by(|a, b| a.module_name.cmp(&b.module_name));
-
         Ok(schemas)
     }
 }
@@ -883,7 +881,6 @@ pub fn try_parse_schema(src: &str) -> Result<Vec<Schema>, ParseError> {
     debug!("Collected decls: {:?}", analyzer.decls);
 
     let schemas = analyzer.try_into_schema()?;
-    debug!("Collected schemas: {:?}", schemas);
 
     Ok(schemas)
 }
