@@ -199,7 +199,7 @@ fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String, 
 }
 
 ./crates/lib/src/generated.rs
-// Hash: 3719e33c31f340d1
+// Hash: 6d9e25a4f7ff959d
 #[rustfmt::skip]
 use crate::ffi::bridging::*;
 use crate::types::*;
