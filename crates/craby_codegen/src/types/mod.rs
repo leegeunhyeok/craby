@@ -1,6 +1,7 @@
 use std::{hash::Hasher, path::PathBuf};
 
 use crate::parser::types::{Method, Signal, TypeAnnotation};
+use log::debug;
 use serde::Serialize;
 use xxhash_rust::xxh3::Xxh3;
 
@@ -24,6 +25,7 @@ pub struct Schema {
 impl Schema {
     pub fn to_hash(schemas: &Vec<Schema>) -> String {
         let serialized = serde_json::to_string(schemas).unwrap();
+        debug!("Serialized schemas: {}", serialized);
         let mut hasher = Xxh3::new();
         hasher.write(serialized.as_bytes());
         format!("{:016x}", hasher.finish())

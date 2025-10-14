@@ -701,10 +701,8 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
     fn try_into_schema(self) -> Result<Vec<Schema>, anyhow::Error> {
         let mut schemas = Vec::with_capacity(self.specs.len());
-        let mut specs = self.specs.into_iter().collect::<Vec<_>>();
-        specs.sort_by_key(|(_, spec)| spec.name.to_lowercase());
 
-        for (id, mut spec) in specs {
+        for (id, mut spec) in self.specs {
             let mut types = FxHashSet::default();
             let mut enums = FxHashSet::default();
             let module_name = self
@@ -768,6 +766,8 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 signals: spec.signals,
             });
         }
+
+        schemas.sort_by(|a, b| a.module_name.cmp(&b.module_name));
 
         Ok(schemas)
     }

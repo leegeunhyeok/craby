@@ -4,7 +4,7 @@ expression: schemas
 ---
 [
     Schema {
-        module_name: "FooModule",
+        module_name: "BarModule",
         aliases: [
             Object(
                 ObjectTypeAnnotation {
@@ -21,7 +21,7 @@ expression: schemas
         enums: [],
         methods: [
             Method {
-                name: "foo",
+                name: "bar",
                 params: [
                     Param {
                         name: "arg",
@@ -44,7 +44,7 @@ expression: schemas
         signals: [],
     },
     Schema {
-        module_name: "BarModule",
+        module_name: "FooModule",
         aliases: [
             Object(
                 ObjectTypeAnnotation {
@@ -61,7 +61,7 @@ expression: schemas
         enums: [],
         methods: [
             Method {
-                name: "bar",
+                name: "foo",
                 params: [
                     Param {
                         name: "arg",
