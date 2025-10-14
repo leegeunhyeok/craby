@@ -3,7 +3,7 @@ use craby_build::constants::toolchain::BUILD_TARGETS;
 
 use crate::utils::run_command;
 
-const EXAMPLE_APP_NAME: [&str; 1] = ["craby-0.80"];
+const EXAMPLE_APP_NAMES: [&str; 2] = ["craby-0.76", "craby-0.80"];
 
 pub fn run() -> Result<()> {
     println!("Preparing...");
@@ -22,7 +22,7 @@ pub fn run() -> Result<()> {
             "--all",
             "--topological-dev",
             "--exclude",
-            EXAMPLE_APP_NAME.join(",").as_str(),
+            format!("{{{}}}", EXAMPLE_APP_NAMES.join(",")).as_str(),
             "run",
             "build",
         ],

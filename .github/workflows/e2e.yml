@@ -40,8 +40,6 @@ jobs:
         run: yarn install --immutable
       - name: Prepare CrabyModules
         run: cargo xtask prepare
-      - name: Packing
-        run: yarn workspace craby-test pack --out package.tgz
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
