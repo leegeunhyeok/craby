@@ -41,7 +41,7 @@ jobs:
       - name: Prepare packages
         run: cargo xtask prepare
       - name: Build Craby
-        run: yarn workspace craby-test build
+        run: cargo xtask build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

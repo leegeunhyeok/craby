@@ -10,6 +10,7 @@ fn main() -> Result<()> {
         Some("version") => tasks::version::run(),
         Some("publish") => tasks::publish::run(),
         Some("prepare") => tasks::prepare::run(),
+        Some("build") => tasks::build::run(),
         _ => {
             eprintln!("Usage: cargo xtask [version|publish]");
             std::process::exit(1);
