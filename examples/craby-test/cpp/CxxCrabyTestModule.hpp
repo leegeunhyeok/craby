@@ -2,7 +2,6 @@
 #pragma once
 
 #include "ffi.rs.h"
-
 #include <memory>
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
@@ -14,7 +13,6 @@ class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
   static constexpr const char *kModuleName = "CrabyTest";
   inline static std::mutex mutex_;
-  inline static std::atomic<uint64_t> nextListenerId_;
   inline static std::unordered_map<std::string, std::vector<std::shared_ptr<facebook::jsi::Function>>> listenersMap_;
 
   CxxCrabyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
@@ -23,7 +21,7 @@ public:
   void emit(std::string name);
 
   static facebook::jsi::Value
-  numericMethod(facebook::jsi::Runtime &rt,
+  arrayMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
@@ -33,17 +31,7 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  stringMethod(facebook::jsi::Runtime &rt,
-      facebook::react::TurboModule &turboModule,
-      const facebook::jsi::Value args[], size_t count);
-
-  static facebook::jsi::Value
-  objectMethod(facebook::jsi::Runtime &rt,
-      facebook::react::TurboModule &turboModule,
-      const facebook::jsi::Value args[], size_t count);
-
-  static facebook::jsi::Value
-  arrayMethod(facebook::jsi::Runtime &rt,
+  camelMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
@@ -53,7 +41,27 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
+  getState(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
   nullableMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  numericMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  objectMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  pascalMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
@@ -68,22 +76,12 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  getState(facebook::jsi::Runtime &rt,
-      facebook::react::TurboModule &turboModule,
-      const facebook::jsi::Value args[], size_t count);
-
-  static facebook::jsi::Value
-  camelMethod(facebook::jsi::Runtime &rt,
-      facebook::react::TurboModule &turboModule,
-      const facebook::jsi::Value args[], size_t count);
-
-  static facebook::jsi::Value
-  pascalMethod(facebook::jsi::Runtime &rt,
-      facebook::react::TurboModule &turboModule,
-      const facebook::jsi::Value args[], size_t count);
-
-  static facebook::jsi::Value
   snakeMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  stringMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 

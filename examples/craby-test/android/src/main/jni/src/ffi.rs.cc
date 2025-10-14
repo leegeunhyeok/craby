@@ -1167,39 +1167,39 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_add(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_subtract(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_divide(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_multiply(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_divide(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_subtract(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
 ::craby::bridging::CrabyTest *craby$bridging$cxxbridge1$create_craby_test(::std::size_t id) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_numeric_method(::craby::bridging::CrabyTest &it_, double arg, double *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_array_method(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_boolean_method(::craby::bridging::CrabyTest &it_, bool arg, bool *return$) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_string_method(::craby::bridging::CrabyTest &it_, ::rust::String *arg, ::rust::String *return$) noexcept;
-
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_object_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::TestObject *arg, ::craby::bridging::TestObject *return$) noexcept;
-
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_array_method(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_camel_method(::craby::bridging::CrabyTest &it_) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_enum_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1, ::rust::String *return$) noexcept;
 
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_get_state(::craby::bridging::CrabyTest &it_, double *return$) noexcept;
+
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_nullable_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber *arg, ::craby::bridging::NullableNumber *return$) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_numeric_method(::craby::bridging::CrabyTest &it_, double arg, double *return$) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_object_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::TestObject *arg, ::craby::bridging::TestObject *return$) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_pascal_method(::craby::bridging::CrabyTest &it_) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_promise_method(::craby::bridging::CrabyTest &it_, double arg, double *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_set_state(::craby::bridging::CrabyTest &it_, double arg) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_get_state(::craby::bridging::CrabyTest &it_, double *return$) noexcept;
-
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_camel_method(::craby::bridging::CrabyTest &it_) noexcept;
-
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_pascal_method(::craby::bridging::CrabyTest &it_) noexcept;
-
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_snake_method(::craby::bridging::CrabyTest &it_) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_string_method(::craby::bridging::CrabyTest &it_, ::rust::String *arg, ::rust::String *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_trigger_signal(::craby::bridging::CrabyTest &it_) noexcept;
 } // extern "C"
@@ -1249,9 +1249,9 @@ double add(::craby::bridging::Calculator &it_, double a, double b) {
   return ::std::move(return$.value);
 }
 
-double subtract(::craby::bridging::Calculator &it_, double a, double b) {
+double divide(::craby::bridging::Calculator &it_, double a, double b) {
   ::rust::MaybeUninit<double> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$calculator_subtract(it_, a, b, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$calculator_divide(it_, a, b, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
@@ -1267,9 +1267,9 @@ double multiply(::craby::bridging::Calculator &it_, double a, double b) {
   return ::std::move(return$.value);
 }
 
-double divide(::craby::bridging::Calculator &it_, double a, double b) {
+double subtract(::craby::bridging::Calculator &it_, double a, double b) {
   ::rust::MaybeUninit<double> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$calculator_divide(it_, a, b, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$calculator_subtract(it_, a, b, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
@@ -1280,9 +1280,10 @@ double divide(::craby::bridging::Calculator &it_, double a, double b) {
   return ::rust::Box<::craby::bridging::CrabyTest>::from_raw(craby$bridging$cxxbridge1$create_craby_test(id));
 }
 
-double numericMethod(::craby::bridging::CrabyTest &it_, double arg) {
-  ::rust::MaybeUninit<double> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_numeric_method(it_, arg, &return$.value);
+::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg) {
+  ::rust::ManuallyDrop<::rust::Vec<double>> arg$(::std::move(arg));
+  ::rust::MaybeUninit<::rust::Vec<double>> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_array_method(it_, &arg$.value, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
@@ -1298,9 +1299,44 @@ bool booleanMethod(::craby::bridging::CrabyTest &it_, bool arg) {
   return ::std::move(return$.value);
 }
 
-::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg) {
+void camelMethod(::craby::bridging::CrabyTest &it_) {
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_camel_method(it_);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+}
+
+::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1) {
   ::rust::MaybeUninit<::rust::String> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_string_method(it_, &arg, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_enum_method(it_, arg_0, arg_1, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+double getState(::craby::bridging::CrabyTest &it_) {
+  ::rust::MaybeUninit<double> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_get_state(it_, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+::craby::bridging::NullableNumber nullableMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber arg) {
+  ::rust::ManuallyDrop<::craby::bridging::NullableNumber> arg$(::std::move(arg));
+  ::rust::MaybeUninit<::craby::bridging::NullableNumber> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_nullable_method(it_, &arg$.value, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+double numericMethod(::craby::bridging::CrabyTest &it_, double arg) {
+  ::rust::MaybeUninit<double> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_numeric_method(it_, arg, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
@@ -1317,33 +1353,11 @@ bool booleanMethod(::craby::bridging::CrabyTest &it_, bool arg) {
   return ::std::move(return$.value);
 }
 
-::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg) {
-  ::rust::ManuallyDrop<::rust::Vec<double>> arg$(::std::move(arg));
-  ::rust::MaybeUninit<::rust::Vec<double>> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_array_method(it_, &arg$.value, &return$.value);
+void pascalMethod(::craby::bridging::CrabyTest &it_) {
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_pascal_method(it_);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
-  return ::std::move(return$.value);
-}
-
-::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1) {
-  ::rust::MaybeUninit<::rust::String> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_enum_method(it_, arg_0, arg_1, &return$.value);
-  if (error$.ptr) {
-    throw ::rust::impl<::rust::Error>::error(error$);
-  }
-  return ::std::move(return$.value);
-}
-
-::craby::bridging::NullableNumber nullableMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber arg) {
-  ::rust::ManuallyDrop<::craby::bridging::NullableNumber> arg$(::std::move(arg));
-  ::rust::MaybeUninit<::craby::bridging::NullableNumber> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_nullable_method(it_, &arg$.value, &return$.value);
-  if (error$.ptr) {
-    throw ::rust::impl<::rust::Error>::error(error$);
-  }
-  return ::std::move(return$.value);
 }
 
 double promiseMethod(::craby::bridging::CrabyTest &it_, double arg) {
@@ -1362,34 +1376,20 @@ void setState(::craby::bridging::CrabyTest &it_, double arg) {
   }
 }
 
-double getState(::craby::bridging::CrabyTest &it_) {
-  ::rust::MaybeUninit<double> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_get_state(it_, &return$.value);
-  if (error$.ptr) {
-    throw ::rust::impl<::rust::Error>::error(error$);
-  }
-  return ::std::move(return$.value);
-}
-
-void camelMethod(::craby::bridging::CrabyTest &it_) {
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_camel_method(it_);
-  if (error$.ptr) {
-    throw ::rust::impl<::rust::Error>::error(error$);
-  }
-}
-
-void pascalMethod(::craby::bridging::CrabyTest &it_) {
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_pascal_method(it_);
-  if (error$.ptr) {
-    throw ::rust::impl<::rust::Error>::error(error$);
-  }
-}
-
 void snakeMethod(::craby::bridging::CrabyTest &it_) {
   ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_snake_method(it_);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
+}
+
+::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg) {
+  ::rust::MaybeUninit<::rust::String> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_string_method(it_, &arg, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
 }
 
 void triggerSignal(::craby::bridging::CrabyTest &it_) {

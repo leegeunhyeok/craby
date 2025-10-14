@@ -3,7 +3,6 @@
 
 #include "cxx.h"
 #include "ffi.rs.h"
-
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;

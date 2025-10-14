@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use crate::utils::string::{flat_case, snake_case, SanitizedString};
 
+pub const HASH_COMMAND_PREFIX: &str = "// Hash:";
+
 pub mod toolchain {
     pub const TARGETS: &[&str] = &[
         // Android

@@ -17,14 +17,14 @@ pub struct Spec {
     pub signals: Vec<Signal>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Method {
     pub name: String,
     pub params: Vec<Param>,
     pub ret_type: TypeAnnotation,
 }
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Param {
     pub name: String,
     pub type_annotation: TypeAnnotation,

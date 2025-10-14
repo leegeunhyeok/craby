@@ -19,6 +19,7 @@ serde_derive = { workspace = true }
 indoc        = "2.0.6"
 thiserror    = "2.0.16"
 rustc-hash   = "2.1.1"
+xxhash-rust  = { version = "0.8.15", features = ["xxh3"] }
 
 [dev-dependencies]
 insta = "1.43.2"

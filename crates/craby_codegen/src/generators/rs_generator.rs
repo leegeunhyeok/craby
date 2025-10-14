@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
 use craby_common::{
-    constants::{crate_dir, impl_mod_name},
+    constants::{crate_dir, impl_mod_name, HASH_COMMAND_PREFIX},
     utils::string::pascal_case,
 };
 use indoc::formatdoc;
@@ -608,14 +608,17 @@ impl RsTemplate {
             spec_codes.push(self.rs_spec(schema)?);
         }
 
+        let hash = Schema::to_hash(schemas);
         let type_impls = type_aliases.into_values().collect::<Vec<_>>();
 
         let content = [
             vec![formatdoc! {
                 r#"
+                {hash}
                 #[rustfmt::skip]
                 use crate::ffi::bridging::*;
                 use crate::types::*;"#,
+                hash = format!("{} {}", HASH_COMMAND_PREFIX, hash),
             }],
             spec_codes,
             type_impls,

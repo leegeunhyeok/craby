@@ -1,0 +1,7 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: "[hash_1, hash_2, hash_3].join(\"\\n\")"
+---
+a263f7c30395cffb
+a263f7c30395cffb
+f4cb280d86920585

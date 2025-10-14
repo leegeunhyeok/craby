@@ -121,14 +121,18 @@ expression: result
         ],
         methods: [
             Method {
-                name: "numericMethod",
+                name: "arrayMethod",
                 params: [
                     Param {
                         name: "arg",
-                        type_annotation: Number,
+                        type_annotation: Array(
+                            Number,
+                        ),
                     },
                 ],
-                ret_type: Number,
+                ret_type: Array(
+                    Number,
+                ),
             },
             Method {
                 name: "booleanMethod",
@@ -141,14 +145,84 @@ expression: result
                 ret_type: Boolean,
             },
             Method {
-                name: "stringMethod",
+                name: "enumMethod",
                 params: [
                     Param {
-                        name: "arg",
-                        type_annotation: String,
+                        name: "arg0",
+                        type_annotation: Enum(
+                            EnumTypeAnnotation {
+                                name: "MyEnum",
+                                members: [
+                                    EnumMember {
+                                        name: "Foo",
+                                        value: String(
+                                            "foo",
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "Bar",
+                                        value: String(
+                                            "bar",
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "Baz",
+                                        value: String(
+                                            "baz",
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
+                    },
+                    Param {
+                        name: "arg1",
+                        type_annotation: Enum(
+                            EnumTypeAnnotation {
+                                name: "SwitchState",
+                                members: [
+                                    EnumMember {
+                                        name: "Off",
+                                        value: Number(
+                                            0,
+                                        ),
+                                    },
+                                    EnumMember {
+                                        name: "On",
+                                        value: Number(
+                                            1,
+                                        ),
+                                    },
+                                ],
+                            },
+                        ),
                     },
                 ],
                 ret_type: String,
+            },
+            Method {
+                name: "nullableMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Nullable(
+                            Number,
+                        ),
+                    },
+                ],
+                ret_type: Nullable(
+                    Number,
+                ),
+            },
+            Method {
+                name: "numericMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: Number,
+                    },
+                ],
+                ret_type: Number,
             },
             Method {
                 name: "objectMethod",
@@ -249,90 +323,6 @@ expression: result
                 ),
             },
             Method {
-                name: "arrayMethod",
-                params: [
-                    Param {
-                        name: "arg",
-                        type_annotation: Array(
-                            Number,
-                        ),
-                    },
-                ],
-                ret_type: Array(
-                    Number,
-                ),
-            },
-            Method {
-                name: "enumMethod",
-                params: [
-                    Param {
-                        name: "arg0",
-                        type_annotation: Enum(
-                            EnumTypeAnnotation {
-                                name: "MyEnum",
-                                members: [
-                                    EnumMember {
-                                        name: "Foo",
-                                        value: String(
-                                            "foo",
-                                        ),
-                                    },
-                                    EnumMember {
-                                        name: "Bar",
-                                        value: String(
-                                            "bar",
-                                        ),
-                                    },
-                                    EnumMember {
-                                        name: "Baz",
-                                        value: String(
-                                            "baz",
-                                        ),
-                                    },
-                                ],
-                            },
-                        ),
-                    },
-                    Param {
-                        name: "arg1",
-                        type_annotation: Enum(
-                            EnumTypeAnnotation {
-                                name: "SwitchState",
-                                members: [
-                                    EnumMember {
-                                        name: "Off",
-                                        value: Number(
-                                            0,
-                                        ),
-                                    },
-                                    EnumMember {
-                                        name: "On",
-                                        value: Number(
-                                            1,
-                                        ),
-                                    },
-                                ],
-                            },
-                        ),
-                    },
-                ],
-                ret_type: String,
-            },
-            Method {
-                name: "nullableMethod",
-                params: [
-                    Param {
-                        name: "arg",
-                        type_annotation: Nullable(
-                            Number,
-                        ),
-                    },
-                ],
-                ret_type: Nullable(
-                    Number,
-                ),
-            },
-            Method {
                 name: "promiseMethod",
                 params: [
                     Param {
@@ -343,6 +333,16 @@ expression: result
                 ret_type: Promise(
                     Number,
                 ),
+            },
+            Method {
+                name: "stringMethod",
+                params: [
+                    Param {
+                        name: "arg",
+                        type_annotation: String,
+                    },
+                ],
+                ret_type: String,
             },
         ],
         signals: [

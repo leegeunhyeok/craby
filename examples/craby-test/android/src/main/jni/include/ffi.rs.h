@@ -1090,39 +1090,39 @@ private:
 
 double add(::craby::bridging::Calculator &it_, double a, double b);
 
-double subtract(::craby::bridging::Calculator &it_, double a, double b);
+double divide(::craby::bridging::Calculator &it_, double a, double b);
 
 double multiply(::craby::bridging::Calculator &it_, double a, double b);
 
-double divide(::craby::bridging::Calculator &it_, double a, double b);
+double subtract(::craby::bridging::Calculator &it_, double a, double b);
 
 ::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id) noexcept;
 
-double numericMethod(::craby::bridging::CrabyTest &it_, double arg);
+::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
 
 bool booleanMethod(::craby::bridging::CrabyTest &it_, bool arg);
 
-::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg);
-
-::craby::bridging::TestObject objectMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::TestObject arg);
-
-::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
+void camelMethod(::craby::bridging::CrabyTest &it_);
 
 ::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1);
 
+double getState(::craby::bridging::CrabyTest &it_);
+
 ::craby::bridging::NullableNumber nullableMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber arg);
+
+double numericMethod(::craby::bridging::CrabyTest &it_, double arg);
+
+::craby::bridging::TestObject objectMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::TestObject arg);
+
+void pascalMethod(::craby::bridging::CrabyTest &it_);
 
 double promiseMethod(::craby::bridging::CrabyTest &it_, double arg);
 
 void setState(::craby::bridging::CrabyTest &it_, double arg);
 
-double getState(::craby::bridging::CrabyTest &it_);
-
-void camelMethod(::craby::bridging::CrabyTest &it_);
-
-void pascalMethod(::craby::bridging::CrabyTest &it_);
-
 void snakeMethod(::craby::bridging::CrabyTest &it_);
+
+::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg);
 
 void triggerSignal(::craby::bridging::CrabyTest &it_);
 } // namespace bridging

@@ -56,14 +56,12 @@ pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::codegen::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
-    };
-
-    Ok(())
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 #[napi(object)]
@@ -78,14 +76,12 @@ pub fn build(opts: BuildOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::build::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
-    };
-
-    Ok(())
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 #[napi(object)]
@@ -100,14 +96,12 @@ pub fn show(opts: ShowOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::show::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
-    };
-
-    Ok(())
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 #[napi(object)]
@@ -122,14 +116,12 @@ pub fn doctor(opts: DoctorOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::doctor::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
-    };
-
-    Ok(())
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 #[napi(object)]
@@ -144,14 +136,12 @@ pub fn clean(opts: CleanOptions) -> napi::Result<()> {
     };
 
     match craby_cli::commands::clean::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
-    };
-
-    Ok(())
+        Err(e) => Err(napi::Error::new(
+            napi::Status::GenericFailure,
+            e.to_string(),
+        )),
+        _ => Ok(()),
+    }
 }
 
 #[napi]

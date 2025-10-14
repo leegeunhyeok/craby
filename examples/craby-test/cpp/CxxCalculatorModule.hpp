@@ -2,7 +2,6 @@
 #pragma once
 
 #include "ffi.rs.h"
-
 #include <memory>
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
@@ -23,7 +22,7 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  subtract(facebook::jsi::Runtime &rt,
+  divide(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 
@@ -33,7 +32,7 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
-  divide(facebook::jsi::Runtime &rt,
+  subtract(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 

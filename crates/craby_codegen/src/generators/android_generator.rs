@@ -31,7 +31,7 @@ impl AndroidTemplate {
     }
 
     /// Returns `JNI_OnLoad` function implementation
-    /// 
+    ///
     /// # Generated Code
     ///
     /// ```cpp
@@ -126,7 +126,7 @@ impl AndroidTemplate {
     ///   # my-app-lib
     ///   my-app-lib
     /// )
-    /// 
+    ///
     /// # From ReactAndroid/cmake-utils/folly-flags.cmake
     /// target_compile_definitions(cxx-craby-test PRIVATE
     ///   -DFOLLY_NO_CONFIG=1

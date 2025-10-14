@@ -4,11 +4,15 @@ use craby_build::{
     constants::toolchain::BUILD_TARGETS,
     platform::{android as android_build, ios as ios_build},
 };
+use craby_codegen::codegen;
 use craby_common::{config::load_config, env::is_initialized};
-use log::info;
+use log::{debug, info};
 use owo_colors::OwoColorize;
 
-use crate::{commands::build::guide, utils::terminal::with_spinner};
+use crate::{
+    commands::build::{guide, validate_schema},
+    utils::terminal::with_spinner,
+};
 
 pub struct BuildOptions {
     pub project_root: PathBuf,
@@ -20,6 +24,19 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     if !is_initialized(&opts.project_root) {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
     }
+
+    debug!(
+        "Collecting source files to validate schema(s)... ({})",
+        config.source_dir.display()
+    );
+    let schemas = codegen(craby_codegen::CodegenOptions {
+        project_root: &opts.project_root,
+        source_dir: &config.source_dir,
+    })?;
+    let total_schemas = schemas.len();
+    debug!("{} module schema(s) found", total_schemas);
+
+    validate_schema(&opts.project_root, &schemas)?;
 
     info!("Starting to build the Cargo project...");
     with_spinner("Building Cargo projects...", |pb| {
