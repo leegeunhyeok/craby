@@ -40,6 +40,8 @@ jobs:
         run: yarn install --immutable
       - name: Prepare CrabyModules
         run: cargo xtask prepare
+      - name: Build Craby
+        run: yarn workspace craby-test build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

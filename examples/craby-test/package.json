@@ -42,7 +42,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "clean": "craby clean",
-    "build": "craby build && tsdown"
+    "build": "craby build && yarn build:js",
+    "build:js": "tsdown"
   },
   "keywords": [
     "react-native",

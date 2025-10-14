@@ -276,10 +276,8 @@ jobs:
           toolchain: nightly-2025-08-04
       - name: Lint
         run: yarn lint:all
-      - name: Build
+      - name: Prepare packages
         run: cargo xtask prepare
-        env:
-          RUST_LOG: debug
       - name: Typecheck
         run: yarn workspaces foreach --all --topological-dev --exclude "{craby-0.76,craby-0.80}" run typecheck
       - name: Test
