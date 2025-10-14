@@ -278,6 +278,8 @@ jobs:
         run: yarn lint:all
       - name: Build
         run: cargo xtask prepare
+      - name: Print schemas
+        run: yarn workspace craby-test craby show
       - name: Typecheck
         run: yarn workspaces foreach --all --topological-dev --exclude "{craby-0.76,craby-0.80}" run typecheck
       - name: Test

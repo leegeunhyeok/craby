@@ -12,6 +12,8 @@ pub enum ParseError {
 
 #[derive(Debug)]
 pub struct Spec {
+    /// Spec name
+    pub name: String,
     /// Module methods
     pub methods: Vec<Method>,
     /// Module signals

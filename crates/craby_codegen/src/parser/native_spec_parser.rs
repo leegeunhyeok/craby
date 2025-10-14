@@ -101,8 +101,15 @@ impl<'a> NativeModuleAnalyzer<'a> {
             };
         }
 
-        self.specs
-            .insert(it.id.symbol_id(), Spec { methods, signals });
+        let name = it.id.name.to_string();
+        self.specs.insert(
+            it.id.symbol_id(),
+            Spec {
+                name,
+                methods,
+                signals,
+            },
+        );
     }
 
     fn collect_interface_type(&mut self, it: &TSInterfaceDeclaration<'a>) {
@@ -694,8 +701,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
     fn try_into_schema(self) -> Result<Vec<Schema>, anyhow::Error> {
         let mut schemas = Vec::with_capacity(self.specs.len());
+        let mut specs = self.specs.into_iter().collect::<Vec<_>>();
+        specs.sort_by_key(|(_, spec)| spec.name.to_lowercase());
 
-        for (id, mut spec) in self.specs {
+        for (id, mut spec) in specs {
             let mut types = FxHashSet::default();
             let mut enums = FxHashSet::default();
             let module_name = self
