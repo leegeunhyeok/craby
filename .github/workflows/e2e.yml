@@ -38,7 +38,7 @@ jobs:
           bundler-cache: true
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Prepare CrabyModules
+      - name: Prepare packages
         run: cargo xtask prepare
       - name: Build Craby
         run: yarn workspace craby-test build

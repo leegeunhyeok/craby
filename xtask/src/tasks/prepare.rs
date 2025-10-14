@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
 use craby_build::constants::toolchain::BUILD_TARGETS;
 
@@ -8,9 +10,18 @@ const EXCLUDE_PACKAGE_NAMES: [&str; 3] = ["craby-test", "craby-0.76", "craby-0.8
 pub fn run() -> Result<()> {
     println!("Preparing...");
 
+    let craby_test_path = PathBuf::from(".").join("examples").join("craby-test");
+    let craby_test_path = craby_test_path.to_str().unwrap();
+
+    run_command("cargo", &["--version"], Some(craby_test_path))?;
+
     for target in BUILD_TARGETS {
         println!("Installing target: {}", target.to_str());
-        run_command("rustup", &["target", "install", target.to_str()], None)?;
+        run_command(
+            "rustup",
+            &["target", "install", target.to_str()],
+            Some(craby_test_path),
+        )?;
     }
 
     println!("Building packages...");
