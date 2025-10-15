@@ -15,7 +15,7 @@ use craby_codegen::{
     },
     types::CodegenContext,
 };
-use craby_common::{config::load_config, env::is_initialized};
+use craby_common::{config::load_config, constants::craby_tmp_dir, env::is_initialized};
 use log::{debug, info};
 use owo_colors::OwoColorize;
 
@@ -30,6 +30,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
     }
 
+    let tmp_dir = craby_tmp_dir(&opts.project_root);
     let config = load_config(&opts.project_root)?;
     let start_time = Instant::now();
 
@@ -81,25 +82,28 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         generate_res.extend(generator.invoke_generate(&ctx)?);
     }
 
-    let mut wrote_cnt = 0;
+    let mut generated_cnt = 0;
     for res in generate_res {
         let content = if res.overwrite {
             with_generated_comment(&res.path, &res.content)
         } else {
             without_generated_comment(&res.content)
         };
-        let write = write_file(&res.path, &content, res.overwrite)?;
 
-        if write {
-            wrote_cnt += 1;
+        if write_file(&res.path, &content, res.overwrite)? {
+            generated_cnt += 1;
             debug!("File generated: {}", res.path.display());
         } else {
-            debug!("Skipped writing to {}", res.path.display());
+            // Save the content to a temporary directory if it's not written
+            let file_name = res.path.file_name().unwrap();
+            let dest = tmp_dir.join(file_name);
+            debug!("Saving to temporary directory: {}", dest.display());
+            write_file(&dest, &content, true)?;
         }
     }
 
     let elapsed = start_time.elapsed().as_millis();
-    info!("{} files generated", wrote_cnt);
+    info!("{} files generated", generated_cnt);
     info!(
         "Codegen completed successfully 🎉 {}",
         format!("({}ms)", elapsed).dimmed()

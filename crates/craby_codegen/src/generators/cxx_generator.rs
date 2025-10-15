@@ -722,11 +722,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
         if cxx_dir.try_exists()? {
             fs::read_dir(cxx_dir)?.try_for_each(|entry| -> Result<(), anyhow::Error> {
                 let path = entry?.path();
-                let file_name = path
-                    .file_name()
-                    .unwrap_or_default()
-                    .to_string_lossy()
-                    .to_string();
+                let file_name = path.file_name().unwrap().to_string_lossy().to_string();
 
                 if file_name.starts_with("Cxx")
                     && (file_name.ends_with("Module.cpp") || file_name.ends_with("Module.hpp"))

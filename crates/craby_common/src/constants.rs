@@ -51,6 +51,10 @@ pub fn impl_mod_name(name: &str) -> String {
     format!("{}_impl", snake_case(name))
 }
 
+pub fn craby_tmp_dir(project_root: &Path) -> PathBuf {
+    project_root.join(".craby")
+}
+
 pub fn crate_target_dir(project_root: &Path, target: &str) -> PathBuf {
     project_root.join("target").join(target).join("release")
 }

@@ -22,7 +22,7 @@ pub fn codegen<'a>(opts: CodegenOptions<'a>) -> Result<Vec<Schema>, anyhow::Erro
         path.extension().unwrap_or_default() == "ts"
             && path
                 .file_name()
-                .unwrap_or_default()
+                .unwrap()
                 .to_string_lossy()
                 .starts_with(SPEC_FILE_PREFIX)
     })?;
