@@ -10,7 +10,7 @@ repository = "https://github.com/leegeunhyeok/craby"
 [dependencies]
 craby_common = { path = "../craby_common" }
 uuid         = { version = "1.17.0", features = ["v4"] }
-oxc          = { version = "0.90.0", features = ["full"] }
+oxc          = { version = "0.90.0", features = ["ast_visit", "semantic", "transformer"] }
 anyhow       = { workspace = true }
 log          = { workspace = true }
 serde        = { workspace = true, features = ["derive"] }
