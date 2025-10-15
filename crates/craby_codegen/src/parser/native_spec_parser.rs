@@ -194,10 +194,12 @@ impl<'a> NativeModuleAnalyzer<'a> {
             match &member.initializer {
                 Some(expr) => match expr {
                     Expression::NumericLiteral(num_lit) => {
+                        if let Some(TypeAnnotation::Number) = member_type {
+                            return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
+                        }
+
                         if member_type.is_none() {
                             member_type = Some(TypeAnnotation::Number);
-                        } else if !matches!(member_type.as_ref().unwrap(), TypeAnnotation::Number) {
-                            return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
                         }
 
                         let raw = num_lit.value as usize;
@@ -214,10 +216,12 @@ impl<'a> NativeModuleAnalyzer<'a> {
                         }
                     }
                     Expression::StringLiteral(str_lit) => {
+                        if let Some(TypeAnnotation::String) = member_type {
+                            return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
+                        }
+
                         if member_type.is_none() {
                             member_type = Some(TypeAnnotation::String);
-                        } else if !matches!(member_type.as_ref().unwrap(), TypeAnnotation::String) {
-                            return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
                         }
 
                         members.push(EnumMember {
@@ -228,10 +232,12 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     _ => self.collect_error(INVALID_SPEC, it.span),
                 },
                 None => {
+                    if let Some(TypeAnnotation::Number) = member_type {
+                        return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
+                    }
+
                     if member_type.is_none() {
                         member_type = Some(TypeAnnotation::Number);
-                    } else if !matches!(member_type.as_ref().unwrap(), TypeAnnotation::Number) {
-                        return self.collect_error(INVALID_MIXED_ENUM_MEMBER, it.span);
                     }
 
                     members.push(EnumMember {
