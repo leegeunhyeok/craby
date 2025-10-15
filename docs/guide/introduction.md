@@ -1,22 +1,22 @@
 # Introduction
 
 :::warning
-This project is currently under development and is in early alpha. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+
+This project is currently under development and is in early beta. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+
 :::
 
 ## What is Craby?
 
-**Craby** is a type-safe Rust development tool for React Native that bridges the gap between JavaScript and native code. It automatically generates Rust and C++ code based on TypeScript NativeModule schemas and integrates with **pure C++ TurboModule**—no platform-specific interop like `ObjCTurboModule` or `JavaTurboModule` required.
+Craby is a type-safe Rust development tool for React Native. It automatically generates Rust/C++ bindings from TypeScript schemas and integrates directly with **pure C++ TurboModule**, bypassing platform-specific layers like `ObjCTurboModule` and `JavaTurboModule`.
 
 ## Motivation
 
 React Native provides [TurboModule](https://reactnative.dev/docs/turbo-native-modules-introduction), a JSI (JavaScript Interface) integration layer built on C++. To support platform-specific languages (Kotlin/Java for Android, Objective-C/Swift for iOS), it implements compatibility layers like `ObjCTurboModule` and `JavaTurboModule`, which introduce some overhead compared to pure C++ implementations.
 
-Craby was created to address this performance gap by enabling direct integration with pure C++ TurboModules using [Rust](https://rust-lang.org). By bypassing platform compatibility layers and leveraging Rust/C++ FFI, it aims to deliver zero-overhead performance.
+Craby was created to address this performance gap by enabling direct integration with pure C++ TurboModule using [Rust](https://rust-lang.org). By bypassing platform compatibility layers and leveraging Rust/C++ FFI, it aims to deliver zero-overhead performance.
 
 For most use cases requiring platform-specific features (e.g., camera access, sensors, native UI components), TurboModule remains the better choice. However, when maximum performance is critical—such as efficient large-scale data processing, cryptographic operations, or real-time data parsing—Craby offers a compelling alternative.
-
-### The Solution
 
 Craby solves these problems by:
 
@@ -30,6 +30,7 @@ Craby solves these problems by:
 ### Performance
 
 Craby achieves superior performance through:
+
 - **Pure C++ Integration**: Direct integration with C++ TurboModule bypasses platform-specific layers (`ObjCTurboModule`, `JavaTurboModule`)
 - **Zero-Cost FFI**: Rust-to-C++ communication via [cxx](https://cxx.rs/) ensures zero-overhead interop with compile-time safety
 - **Template-Based Types**: C++ templates provide type-safe, compile-time conversions between user-defined types across the TypeScript-Rust-C++ boundary
@@ -39,7 +40,7 @@ Craby achieves superior performance through:
 [This benchmark](https://github.com/leegeunhyeok/NitroBenchmarks/pull/1) compares the total execution time when calling a single native method `100,000` times:
 
 | Module       | `addNumbers`   | `addStrings`   |
-|--------------|----------------|----------------|
+| ------------ | -------------- | -------------- |
 | ExpoModules  | 445.21ms (x83) | 427.21ms (x18) |
 | TurboModules | 116.13ms (x21) | 175.27ms (x7)  |
 | NitroModules | 7.07ms (24%)   | 28.53ms (20%)  |
@@ -50,6 +51,7 @@ Note: These benchmarks only compare native method throughput in extreme cases, a
 ### Automatic Code Generation
 
 Never write boilerplate again. Craby analyzes your TypeScript specs and generates:
+
 - Rust trait definitions
 - C++ bridging implementations
 - FFI layer code
@@ -58,6 +60,7 @@ Never write boilerplate again. Craby analyzes your TypeScript specs and generate
 ### Type Safety
 
 Craby ensures type consistency across the entire stack:
+
 - TypeScript types → Rust types → C++ types
 - Compile-time validation prevents mismatched types
 - Rich type support including objects, arrays, enums, promises, and nullable types
@@ -69,7 +72,7 @@ With Craby, you focus on what matters—your implementation:
 ```rust
 impl CalculatorSpec for Calculator {
     fn add(&mut self, a: Number, b: Number) -> Number {
-        a + b  // Just implement your logic!
+        a + b  // Focus on what matters!
     }
 }
 ```
@@ -97,7 +100,7 @@ graph LR
 1. **Codegen from TypeScript**: Generate code based on TypeScript NativeModule specifications
 2. **Rust Code Generation**: Generate FFI code, user-defined types (structs/enums), and traits to ensure module interface contracts
 3. **C++ Code Generation**: Generate pure C++ TurboModule implementations and templates for efficient data interoperability
-4. **Integration**: When the React Native application builds, the C++ TurboModule is compiled and integrated into the app 
+4. **Integration**: When the React Native application builds, the C++ TurboModule is compiled and integrated into the app
 
 ## When to Use Craby
 

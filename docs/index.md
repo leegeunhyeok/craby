@@ -6,9 +6,9 @@ hero:
   image:
     src: /logo.svg
     alt: Craby
-  name: "Craby"
-  text: "Type-safe Rust for React Native"
-  tagline: Auto-generated, integrated with pure C++ TurboModule
+  name: Craby
+  text: Type-safe Rust for React Native
+  tagline: Auto generated, integrated with pure C++ TurboModule
   actions:
     - theme: brand
       text: Get Started
@@ -19,9 +19,9 @@ hero:
 
 features:
   - title: ⚡️ High Performance
-    details: Pure C++ integration with zero-cost FFI eliminates platform-specific interop overhead
+    details: Pure C++ TurboModule integration via Rust FFI eliminates platform-specific interop overhead
   - title: 🛡️ Type-Safe Code Generation
-    details: Define APIs in TypeScript—auto-generate type-safe Rust traits and C++ bridges
+    details: Define module specification in TypeScript—auto-generate type-safe bindings
   - title: ✅ Easy Rust + TurboModule Integration
-    details: Just implement Rust traits. Craby handles bridging and platform configuration
+    details: Just implement your own Rust module. Craby handles bridging and platform configuration
 ---

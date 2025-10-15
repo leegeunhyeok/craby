@@ -1,7 +1,9 @@
 # Getting Started
 
 :::warning
-This project is currently under development and is in early alpha. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+
+This project is currently under development and is in early beta. For more information about the stable release, please refer to the following [link](https://github.com/leegeunhyeok/craby/issues/1)
+
 :::
 
 This guide will walk you through creating your first Craby module from scratch.
@@ -15,7 +17,9 @@ Craby-built modules require a minimum React Native version of:
 ## Prerequisites
 
 ::: warning macOS Required
+
 Craby development requires **macOS** with **Xcode 12 or higher** for building [*-apple-ios](https://doc.rust-lang.org/rustc/platform-support/apple-ios.html) targets.
+
 :::
 
 Before you begin, make sure you have the following installed:
@@ -123,7 +127,9 @@ Let's create a simple calculator module to understand the Craby workflow.
 Create `src/NativeCalculator.ts`:
 
 ::: info
+
 Module spec files must start with the "Native" prefix.
+
 :::
 
 ```typescript

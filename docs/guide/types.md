@@ -369,4 +369,4 @@ See [Sync vs Async](/guide/sync-vs-async) for more details on async operations.
 
 ## Limitations
 
-Craby supports fewer types than standard TurboModules to maintain simplicity and focus on performance-critical use cases. Types not listed in the supported types table are not available.
+Craby supports fewer types than standard TurboModule to maintain simplicity and focus on performance-critical use cases. Types not listed in the supported types table are not available.

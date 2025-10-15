@@ -5,7 +5,9 @@ This guide explains how to define your native module using TypeScript specs.
 ## Basic Module Structure
 
 ::: info
+
 Module spec files must start with the "Native" prefix.
+
 :::
 
 Every Craby module starts with a TypeScript spec that extends `NativeModule`:
