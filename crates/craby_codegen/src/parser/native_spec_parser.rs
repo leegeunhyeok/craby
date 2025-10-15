@@ -28,6 +28,7 @@ const INVALID_MIXED_ENUM_MEMBER: &str =
     "Enum member type must be single type (eg. only `number` or `string`)";
 const INVALID_REGISTRY_METHOD: &str = "Invalid NativeModuleRegistry method";
 const INVALID_RESERVED_ARG_NAME_ID: &str = "Reserved argument name `it_` is not allowed";
+const INVALID_RESERVED_METHOD_NAME_ID: &str = "Reserved method name `emit` is not allowed";
 
 pub struct NativeModuleAnalyzer<'a> {
     pub diagnostics: Vec<OxcDiagnostic>,
@@ -341,10 +342,6 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     Err(e) => return Err(error(&e.to_string(), prop_sig.span)),
                 };
 
-                if prop_name == RESERVED_ARG_NAME_MODULE {
-                    return Err(error(INVALID_RESERVED_ARG_NAME_ID, prop_sig.span));
-                }
-
                 let type_annotation =
                     match self.try_into_type_annotation(&type_annotation.type_annotation) {
                         Ok(type_annotation) => type_annotation,
@@ -374,6 +371,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
             _ => return Err(error(INVALID_SPEC, sig.span)),
         };
 
+        if method_name == RESERVED_METHOD_NAME_MODULE {
+            return Err(error(INVALID_RESERVED_METHOD_NAME_ID, sig.span));
+        }
+
         let params = sig
             .params
             .items
@@ -388,6 +389,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     .kind
                     .get_identifier_name()
                     .ok_or_else(|| error(INVALID_SPEC, param.span))?;
+
+                if param_name == RESERVED_ARG_NAME_MODULE {
+                    return Err(error(INVALID_RESERVED_ARG_NAME_ID, param.span));
+                }
 
                 let param_type_annotation = param
                     .pattern
@@ -1196,6 +1201,40 @@ mod tests {
 
         export interface Spec extends NativeModule {
             myMethod(arg: Promise): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let result = try_parse_schema(&src);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_reserved_arg_name() {
+        let src: &'static str = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        export interface Spec extends NativeModule {
+            myMethod(it_: number): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let result = try_parse_schema(&src);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_reserved_method_name() {
+        let src: &'static str = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        export interface Spec extends NativeModule {
+            emit(): void;
         }
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');

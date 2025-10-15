@@ -21,5 +21,10 @@ pub mod specs {
     pub const REGISTRY_GET_ENFORCING: &str = "getEnforcing";
 
     pub const RESERVED_TYPE_PROMISE: &str = "Promise";
+
+    /// `it_` is reserved for the `shared_ptr` of the module
     pub const RESERVED_ARG_NAME_MODULE: &str = "it_";
+
+    /// `emit` is reserved for signals
+    pub const RESERVED_METHOD_NAME_MODULE: &str = "emit";
 }
