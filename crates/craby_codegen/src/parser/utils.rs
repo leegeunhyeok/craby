@@ -17,7 +17,7 @@ pub fn render_report<'a>(diagnostics: Vec<OxcDiagnostic>, opts: RenderReportOpti
         .with_links(false);
 
     for diagnostic in
-        DiagnosticService::wrap_diagnostics(opts.project_root, opts.path, &opts.src, diagnostics)
+        DiagnosticService::wrap_diagnostics(opts.project_root, opts.path, opts.src, diagnostics)
     {
         let mut output = String::new();
         if handler

@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 pub fn write_file(file_path: &PathBuf, content: &String, overwrite: bool) -> anyhow::Result<bool> {
-    if overwrite == false && file_path.try_exists()? {
+    if !overwrite && file_path.try_exists()? {
         return Ok(false);
     }
 

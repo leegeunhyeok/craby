@@ -30,15 +30,12 @@ pub struct InitOptions {
 pub fn init(opts: InitOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::init::InitOptions {
         cwd: opts.cwd.into(),
-        pkg_name: opts.pkg_name.into(),
+        pkg_name: opts.pkg_name,
     };
 
-    match craby_cli::commands::init::perform(opts) {
-        Err(e) => {
-            error!("Error: {}", e.to_string());
-            debug!("Error: {:?}", e);
-        }
-        _ => (),
+    if let Err(e) = craby_cli::commands::init::perform(opts) {
+        error!("Error: {}", e);
+        debug!("Error: {:?}", e);
     };
 
     Ok(())

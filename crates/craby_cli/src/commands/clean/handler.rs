@@ -11,10 +11,7 @@ pub struct CleanOptions {
 }
 
 pub fn perform(opts: CleanOptions) -> anyhow::Result<()> {
-    match load_config(&opts.project_root) {
-        Err(e) => anyhow::bail!("Craby project is not initialized. reason: {}", e),
-        _ => {}
-    };
+    if let Err(e) = load_config(&opts.project_root) { anyhow::bail!("Craby project is not initialized. reason: {}", e) };
 
     info!("🧹 Cleaning up files...");
 

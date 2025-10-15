@@ -62,13 +62,13 @@ impl TypeAnnotation {
     /// craby::bridging::MyStruct     // Object
     /// craby::bridging::NullableNumber  // Nullable<Number>
     /// ```
-    pub fn as_cxx_type(&self, mod_name: &String) -> Result<String, anyhow::Error> {
+    pub fn as_cxx_type(&self, _mod_name: &String) -> Result<String, anyhow::Error> {
         let cxx_type = match self {
             TypeAnnotation::Boolean => "bool".to_string(),
             TypeAnnotation::Number => "double".to_string(),
             TypeAnnotation::String => "rust::String".to_string(),
             TypeAnnotation::Array(element_type) => {
-                format!("rust::Vec<{}>", element_type.as_cxx_type(mod_name)?)
+                format!("rust::Vec<{}>", element_type.as_cxx_type(_mod_name)?)
             }
             TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => {
                 format!("craby::bridging::{}", name)
@@ -193,7 +193,7 @@ impl TypeAnnotation {
         mod_name: &String,
         ident: &String,
     ) -> Result<CxxFromJs, anyhow::Error> {
-        let from_js_expr = match &*self {
+        let from_js_expr = match self {
             TypeAnnotation::Boolean
             | TypeAnnotation::Number
             | TypeAnnotation::String
@@ -222,7 +222,7 @@ impl TypeAnnotation {
     /// react::bridging::toJs(rt, value)
     /// ```
     pub fn as_cxx_to_js(&self, ident: &String) -> Result<CxxToJs, anyhow::Error> {
-        let to_js_expr = match &*self {
+        let to_js_expr = match self {
             TypeAnnotation::Boolean
             | TypeAnnotation::Number
             | TypeAnnotation::String
@@ -599,23 +599,20 @@ impl Schema {
             let alias_spec = type_annotation.as_object().unwrap();
 
             for prop in &alias_spec.props {
-                match &prop.type_annotation {
-                    nullable_type @ TypeAnnotation::Nullable(type_annotation) => {
-                        let key = nullable_type.as_cxx_type(&self.module_name)?;
+                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation {
+                    let key = nullable_type.as_cxx_type(&self.module_name)?;
 
-                        if nullable_bridging_templates.contains_key(&key) {
-                            continue;
-                        }
-
-                        let bridging_template = cxx_nullable_bridging_template(
-                            &self.module_name,
-                            &nullable_type.as_cxx_type(&self.module_name)?,
-                            type_annotation,
-                        )?;
-
-                        nullable_bridging_templates.insert(key, bridging_template);
+                    if nullable_bridging_templates.contains_key(&key) {
+                        continue;
                     }
-                    _ => {}
+
+                    let bridging_template = cxx_nullable_bridging_template(
+                        &self.module_name,
+                        &nullable_type.as_cxx_type(&self.module_name)?,
+                        type_annotation,
+                    )?;
+
+                    nullable_bridging_templates.insert(key, bridging_template);
                 }
             }
         }
@@ -680,7 +677,7 @@ pub mod template {
         for prop in &obj.props {
             let ident = format!("obj${}", camel_case(&prop.name));
             let converted_ident = format!("_{}", ident);
-            let from_js = prop.type_annotation.as_cxx_from_js(&mod_name, &ident)?;
+            let from_js = prop.type_annotation.as_cxx_from_js(mod_name, &ident)?;
             let to_js = prop
                 .type_annotation
                 .as_cxx_to_js(&format!("value.{}", snake_case(&prop.name)))?;
@@ -990,7 +987,7 @@ pub mod template {
             return react::bridging::toJs(rt, value.val);"#,
         };
 
-        let template = cxx_bridging_template(&nullable_namespace, from_js_impl, to_js_impl);
+        let template = cxx_bridging_template(nullable_namespace, from_js_impl, to_js_impl);
 
         Ok(template)
     }

@@ -1,0 +1,19 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: schemas
+---
+[
+    Schema {
+        module_name: "MyModule",
+        aliases: [],
+        enums: [],
+        methods: [
+            Method {
+                name: "myMethod",
+                params: [],
+                ret_type: Void,
+            },
+        ],
+        signals: [],
+    },
+]

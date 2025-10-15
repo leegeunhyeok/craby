@@ -28,7 +28,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         anyhow::bail!("{} directory already exists", dest_dir.display());
     }
 
-    if is_git_available() == false {
+    if !is_git_available() {
         anyhow::bail!("Git command is not available. Please install Git and try again.");
     }
 

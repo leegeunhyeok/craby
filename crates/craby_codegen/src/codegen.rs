@@ -18,7 +18,7 @@ pub struct CodegenOptions<'a> {
 }
 
 pub fn codegen<'a>(opts: CodegenOptions<'a>) -> Result<Vec<Schema>, anyhow::Error> {
-    let srcs = collect_files(&opts.source_dir, &|path: &PathBuf| {
+    let srcs = collect_files(opts.source_dir, &|path: &PathBuf| {
         path.extension().unwrap_or_default() == "ts"
             && path
                 .file_name()
@@ -28,7 +28,7 @@ pub fn codegen<'a>(opts: CodegenOptions<'a>) -> Result<Vec<Schema>, anyhow::Erro
     })?;
     debug!("{} source file(s) found", srcs.len());
 
-    if srcs.len() == 0 {
+    if srcs.is_empty() {
         anyhow::bail!("No native module specification files found.");
     }
 
@@ -44,7 +44,7 @@ pub fn codegen<'a>(opts: CodegenOptions<'a>) -> Result<Vec<Schema>, anyhow::Erro
                     render_report(
                         diagnostics,
                         RenderReportOptions {
-                            project_root: &opts.project_root,
+                            project_root: opts.project_root,
                             path,
                             src,
                         },

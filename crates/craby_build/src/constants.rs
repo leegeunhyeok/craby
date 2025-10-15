@@ -86,8 +86,8 @@ pub mod android {
                 Abi::X86 => "i686_linux_android",
             };
 
-            let cxxlang_path = get_ndk_clang_path(&self, true)?;
-            let clang_path = get_ndk_clang_path(&self, false)?;
+            let cxxlang_path = get_ndk_clang_path(self, true)?;
+            let clang_path = get_ndk_clang_path(self, false)?;
             let llvm_ar_path = get_ndk_llvm_ar_path()?;
 
             let envs = HashMap::from([

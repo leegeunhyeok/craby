@@ -23,7 +23,7 @@ pub fn perform(opts: ShowOptions) -> anyhow::Result<()> {
 
     for (i, schema) in schemas.iter().enumerate() {
         println!("{} ({}/{})", schema.module_name.bold(), i + 1, total_mods);
-        print_schema(&schema)?;
+        print_schema(schema)?;
         println!();
     }
 

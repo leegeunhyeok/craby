@@ -46,7 +46,7 @@ pub fn is_valid_version(version: &str) -> bool {
 
 pub fn get_version_from_commit_message() -> Result<Option<String>> {
     let output = Command::new("git")
-        .args(&["log", "-1", "--pretty=%B"])
+        .args(["log", "-1", "--pretty=%B"])
         .stdout(Stdio::piped())
         .output()?;
 
@@ -72,7 +72,7 @@ pub fn is_main_ref() -> bool {
 
 pub fn collect_packages() -> Result<Vec<PackageInfo>> {
     let output = Command::new("yarn")
-        .args(&["workspaces", "list", "--json"])
+        .args(["workspaces", "list", "--json"])
         .stdout(Stdio::piped())
         .output()?;
 
@@ -84,7 +84,7 @@ pub fn collect_packages() -> Result<Vec<PackageInfo>> {
     let packages: Vec<PackageInfo> = stdout
         .lines()
         .filter(|line| line.contains("packages/"))
-        .map(|line| serde_json::from_str(line))
+        .map(serde_json::from_str)
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(packages)

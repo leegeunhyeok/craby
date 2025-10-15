@@ -278,8 +278,7 @@ impl Method {
                 self.params
                     .iter()
                     .map(|param| param.try_into_impl_sig())
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter(),
+                    .collect::<Result<Vec<_>, _>>()?,
             )
             .collect::<Vec<_>>()
             .join(", ");
@@ -293,7 +292,7 @@ impl Method {
 
         Ok(format!(
             "fn {}({}){}",
-            fn_name.to_string(),
+            fn_name,
             params_sig,
             ret_annotation
         ))
@@ -611,7 +610,7 @@ impl Schema {
                 {
                     let rs_type = type_annotation.as_rs_type()?.0;
 
-                    if !type_impls.contains_key(&rs_type) {
+                    if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
                         let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                         let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                         let default_val = type_annotation.as_rs_default_val()?;
@@ -653,7 +652,7 @@ impl Schema {
                             default_val = default_val,
                         };
 
-                        type_impls.insert(rs_type, [default_impl, nullable_impl].join("\n\n"));
+                        e.insert([default_impl, nullable_impl].join("\n\n"));
                     }
                 }
             }
@@ -662,7 +661,7 @@ impl Schema {
             {
                 let rs_type = type_annotation.as_rs_type()?.0;
 
-                if !type_impls.contains_key(&rs_type) {
+                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;
@@ -704,7 +703,7 @@ impl Schema {
                         default_val = default_val,
                     };
 
-                    type_impls.insert(rs_type, [default_impl, nullable_impl].join("\n\n"));
+                    e.insert([default_impl, nullable_impl].join("\n\n"));
                 }
             }
         }

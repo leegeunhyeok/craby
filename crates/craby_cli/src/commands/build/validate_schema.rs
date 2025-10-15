@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::Path};
 
 use craby_codegen::types::Schema;
 use craby_common::constants::{crate_dir, HASH_COMMAND_PREFIX};
@@ -8,7 +8,7 @@ use log::debug;
 ///
 /// If the hash does not match, it will bail with an error
 /// In this case, you need to re-generate the `generated.rs` file by `codegen` command
-pub fn validate_schema(project_root: &PathBuf, schemas: &Vec<Schema>) -> anyhow::Result<()> {
+pub fn validate_schema(project_root: &Path, schemas: &[Schema]) -> anyhow::Result<()> {
     let src = fs::read_to_string(crate_dir(project_root).join("src").join("generated.rs"))?;
     let src_hash = get_hash_from_src(&src)?;
     let curr_hash = Schema::to_hash(schemas);

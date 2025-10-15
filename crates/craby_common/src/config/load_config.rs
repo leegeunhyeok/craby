@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use log::debug;
 
@@ -9,7 +12,7 @@ use crate::{
 
 use super::{types::CrabyConfig, CargoManifest, CompleteCrabyConfig};
 
-pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow::Error> {
+pub fn load_config(project_root: &Path) -> Result<CompleteCrabyConfig, anyhow::Error> {
     debug!("Cargo version: {}", cargo_version()?);
     let manifest_path = crate_dir(project_root).join("Cargo.toml");
     let config_path = project_root.join("craby.toml");
@@ -21,7 +24,7 @@ pub fn load_config(project_root: &PathBuf) -> Result<CompleteCrabyConfig, anyhow
     let source_dir = project_root.join(PathBuf::from(&config.project.source_dir));
 
     Ok(CompleteCrabyConfig {
-        project_root: project_root.clone(),
+        project_root: project_root.to_path_buf(),
         project: config.project,
         source_dir,
     })

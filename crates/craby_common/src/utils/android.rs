@@ -1,6 +1,9 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-pub fn is_gradle_configured(project_root: &PathBuf) -> Result<bool, anyhow::Error> {
+pub fn is_gradle_configured(project_root: &Path) -> Result<bool, anyhow::Error> {
     let gradle_path = build_gradle_path(project_root);
 
     let mut passed = true;
@@ -11,6 +14,6 @@ pub fn is_gradle_configured(project_root: &PathBuf) -> Result<bool, anyhow::Erro
     Ok(passed)
 }
 
-pub fn build_gradle_path(project_root: &PathBuf) -> PathBuf {
+pub fn build_gradle_path(project_root: &Path) -> PathBuf {
     project_root.join("android").join("build.gradle")
 }

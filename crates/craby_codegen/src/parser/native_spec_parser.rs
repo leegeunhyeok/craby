@@ -74,9 +74,8 @@ impl<'a> NativeModuleAnalyzer<'a> {
             None => return,
         };
 
-        match self.as_mod_name(it) {
-            Some(mod_name) => drop(self.mods.insert(spec_id, mod_name)),
-            _ => {}
+        if let Some(mod_name) = self.as_mod_name(it) {
+            drop(self.mods.insert(spec_id, mod_name))
         };
     }
 
@@ -114,12 +113,11 @@ impl<'a> NativeModuleAnalyzer<'a> {
     }
 
     fn collect_interface_type(&mut self, it: &TSInterfaceDeclaration<'a>) {
-        match self.try_assert_reserved_type(&it.id.name) {
-            Err(e) => return self.collect_error(&e.to_string(), it.span),
-            _ => {}
+        if let Err(e) = self.try_assert_reserved_type(&it.id.name) {
+            return self.collect_error(&e.to_string(), it.span);
         };
 
-        if it.extends.len() > 0 {
+        if !it.extends.is_empty() {
             return self.collect_error(INVALID_SPEC, it.span);
         }
 
@@ -145,13 +143,12 @@ impl<'a> NativeModuleAnalyzer<'a> {
     }
 
     fn collect_alias_type(&mut self, it: &TSTypeAliasDeclaration<'a>) {
-        match self.try_assert_reserved_type(&it.id.name) {
-            Err(e) => return self.collect_error(&e.to_string(), it.span),
-            _ => {}
+        if let Err(e) = self.try_assert_reserved_type(&it.id.name) {
+            return self.collect_error(&e.to_string(), it.span);
         };
 
         if let Some(params) = &it.type_parameters {
-            if params.params.len() > 0 {
+            if !params.params.is_empty() {
                 return self.collect_error("Type parameters are not supported", it.span);
             }
         }
@@ -180,9 +177,9 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     Err(e) => self.diagnostics.push(e),
                 }
             }
-            TSType::TSUnionType(union_type) => match self.try_into_nullable(&union_type) {
+            TSType::TSUnionType(union_type) => match self.try_into_nullable(union_type) {
                 Ok(type_annotation) => drop(self.decls.insert(id, type_annotation)),
-                Err(e) => return self.diagnostics.push(error(&e.to_string(), it.span)),
+                Err(e) => self.diagnostics.push(error(&e.to_string(), it.span)),
             },
             _ => self.collect_error(INVALID_SPEC, it.span),
         }
@@ -296,7 +293,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 }
                 _ => {
                     self.collect_error("Invalid specification type reference", it.span);
-                    return None;
+                    None
                 }
             }
         } else {
@@ -313,7 +310,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
             Some(Argument::StringLiteral(str_lit)) => {
                 let mod_name = str_lit.value.as_str().to_string();
 
-                if self.mods.values().find(|name| *name == &mod_name).is_some() {
+                if self.mods.values().any(|name| name == &mod_name) {
                     self.diagnostics.push(
                         OxcDiagnostic::error("Duplicate module name").with_label(str_lit.span),
                     );
@@ -325,11 +322,11 @@ impl<'a> NativeModuleAnalyzer<'a> {
             }
             Some(_) => {
                 self.collect_error("NativeModule name must be a string literal", it.span);
-                return None;
+                None
             }
             None => {
                 self.collect_error("NativeModule name is required", it.span);
-                return None;
+                None
             }
         }
     }
@@ -380,7 +377,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
             .items
             .iter()
             .map(|param| {
-                if param.decorators.len() > 0 {
+                if !param.decorators.is_empty() {
                     return Err(error(INVALID_SPEC, param.span));
                 }
 
@@ -444,14 +441,14 @@ impl<'a> NativeModuleAnalyzer<'a> {
                         .symbol_id();
 
                     if sym_id == self.mod_signal_sym_id {
-                        return Ok(Signal { name: event_name });
+                        Ok(Signal { name: event_name })
                     } else {
-                        return Err(error(INVALID_SPEC, sig.span));
+                        Err(error(INVALID_SPEC, sig.span))
                     }
                 }
-                _ => return Err(error(INVALID_SPEC, sig.span)),
+                _ => Err(error(INVALID_SPEC, sig.span)),
             },
-            _ => return Err(error(INVALID_SPEC, sig.span)),
+            _ => Err(error(INVALID_SPEC, sig.span)),
         }
     }
 
@@ -495,7 +492,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 }
                 _ => anyhow::bail!(INVALID_TYPE_REFERENCE),
             },
-            TSType::TSUnionType(union_type) => self.try_into_nullable(&union_type),
+            TSType::TSUnionType(union_type) => self.try_into_nullable(union_type),
             TSType::TSTypeLiteral { .. } => anyhow::bail!(INVALID_TYPE_LITERAL),
             TSType::TSFunctionType { .. } => anyhow::bail!(INVALID_FUNC_PARAM),
             _ => anyhow::bail!(INVALID_SPEC),
@@ -518,7 +515,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
         let base = match self.try_into_type_annotation(base)? {
             TypeAnnotation::Promise(..) => anyhow::bail!("Promise type cannot be nullable"),
-            base @ _ => base,
+            base => base,
         };
 
         Ok(TypeAnnotation::Nullable(Box::new(base)))
@@ -526,39 +523,43 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
     /// Check the specification interface extends `NativeModule` interface of 'craby-modules' package.
     fn is_spec(&self, it: &TSInterfaceDeclaration<'a>) -> bool {
-        it.extends
-            .iter()
-            .find(|ex| {
-                if let Some(ref_id) = ex.expression.get_identifier_reference() {
-                    // Check if the expression is `NativeModule` of 'craby-modules' package
-                    // eg. `import type { NativeModule } from 'craby-modules';`
-                    let sym_id = self.scoping.get_reference(ref_id.reference_id()).symbol_id();
-                    sym_id == self.mod_type_sym_id
-                } else if let Some(member_expr) = ex.expression.get_member_expr() {
-                    // Check if the expression is `Namespace.NativeModule` of 'craby-modules' package
-                    // eg. `import * as Namespace from 'craby-modules'`
-                    matches!(
-                        member_expr.object(),
-                        Expression::Identifier(ident)
-                            if self.scoping.get_reference(ident.reference_id()).symbol_id() == self.mod_ns_sym_id
-                            && member_expr.static_property_name() == Some(NATIVE_MODULE_INTERFACE)
-                    )
+        it.extends.iter().any(|ex| {
+            if let Some(ref_id) = ex.expression.get_identifier_reference() {
+                // Check if the expression is `NativeModule` of 'craby-modules' package
+                // eg. `import type { NativeModule } from 'craby-modules';`
+                let sym_id = self
+                    .scoping
+                    .get_reference(ref_id.reference_id())
+                    .symbol_id();
+                sym_id == self.mod_type_sym_id
+            } else if let Some(member_expr) = ex.expression.get_member_expr() {
+                // Check if the expression is `Namespace.NativeModule` of 'craby-modules' package
+                // eg. `import * as Namespace from 'craby-modules'`
+                if let Expression::Identifier(ident) = member_expr.object() {
+                    let sym_id = self.scoping.get_reference(ident.reference_id()).symbol_id();
+                    member_expr.static_property_name() == Some(NATIVE_MODULE_INTERFACE)
+                        && self
+                            .mod_ns_sym_id
+                            .zip(sym_id)
+                            .is_some_and(|(id, s)| id == s)
                 } else {
                     false
                 }
-            })
-            .is_some()
+            } else {
+                false
+            }
+        })
     }
 
     fn is_reg_call(&mut self, it: &CallExpression<'a>) -> bool {
-        match &it.callee {
-            Expression::StaticMemberExpression(member) => match &&member.object {
+        if let Expression::StaticMemberExpression(member) = &it.callee {
+            match &member.object {
                 Expression::Identifier(ident) => {
                     let sym_id = self.scoping.get_reference(ident.reference_id()).symbol_id();
-                    let is_reg = match (self.mod_reg_sym_id, sym_id) {
-                        (Some(id), Some(sym_id)) => id == sym_id,
-                        _ => false,
-                    };
+                    let is_reg = self
+                        .mod_reg_sym_id
+                        .zip(sym_id)
+                        .is_some_and(|(id, s)| id == s);
                     let is_get = member.property.name == REGISTRY_GET
                         || member.property.name == REGISTRY_GET_ENFORCING;
 
@@ -570,48 +571,26 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     };
                 }
                 Expression::StaticMemberExpression(inner_member) => {
-                    // FIXME: Could not get the symbol id of namespace
-                    // inner_member: `Namespace.NativeModuleRegistry`
-                    let is_ns = if let Some(ident) = inner_member.object.get_identifier_reference()
+                    if let Some(ident) = inner_member.get_first_object().get_identifier_reference()
                     {
                         let sym_id = self.scoping.get_reference(ident.reference_id()).symbol_id();
-                        match (self.mod_ns_sym_id, sym_id) {
-                            (Some(id), Some(sym_id)) => id == sym_id,
-                            _ => false,
-                        }
-                    } else {
-                        false
-                    };
+                        let is_ns = self
+                            .mod_ns_sym_id
+                            .zip(sym_id)
+                            .is_some_and(|(id, s)| id == s);
 
-                    if is_ns {
-                        match &&member.object {
-                            Expression::Identifier(ident) => {
-                                let sym_id =
-                                    self.scoping.get_reference(ident.reference_id()).symbol_id();
-                                let is_reg = match (self.mod_reg_sym_id, sym_id) {
-                                    (Some(id), Some(sym_id)) => id == sym_id,
-                                    _ => false,
-                                };
-                                let is_get = member.property.name == REGISTRY_GET
-                                    || member.property.name == REGISTRY_GET_ENFORCING;
-
-                                return if is_get {
-                                    is_reg
-                                } else {
-                                    self.collect_error(
-                                        INVALID_REGISTRY_METHOD,
-                                        member.property.span,
-                                    );
-                                    false
-                                };
-                            }
-                            _ => {}
+                        if !is_ns {
+                            return false;
                         }
+                    }
+
+                    if let Expression::Identifier(_) = member.get_first_object() {
+                        let name = member.property.name;
+                        return name == REGISTRY_GET || name == REGISTRY_GET_ENFORCING;
                     }
                 }
                 _ => {}
-            },
-            _ => {}
+            }
         }
 
         false
@@ -625,8 +604,8 @@ impl<'a> NativeModuleAnalyzer<'a> {
 
     fn collect_types(
         type_annotation: &TypeAnnotation,
-        scoping: &Scoping,
-        decls: &FxHashMap<SymbolId, TypeAnnotation>,
+        _scoping: &Scoping,
+        _decls: &FxHashMap<SymbolId, TypeAnnotation>,
         types: &mut FxHashSet<TypeAnnotation>,
         enums: &mut FxHashSet<TypeAnnotation>,
     ) {
@@ -636,8 +615,8 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 for prop in &obj.props {
                     NativeModuleAnalyzer::collect_types(
                         &prop.type_annotation,
-                        scoping,
-                        decls,
+                        _scoping,
+                        _decls,
                         types,
                         enums,
                     );
@@ -647,10 +626,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 enums.insert(enum_type.clone());
             }
             TypeAnnotation::Nullable(base_type) => {
-                NativeModuleAnalyzer::collect_types(base_type, scoping, decls, types, enums);
+                NativeModuleAnalyzer::collect_types(base_type, _scoping, _decls, types, enums);
             }
             TypeAnnotation::Promise(resolved_type) => {
-                NativeModuleAnalyzer::collect_types(resolved_type, scoping, decls, types, enums);
+                NativeModuleAnalyzer::collect_types(resolved_type, _scoping, _decls, types, enums);
             }
             _ => {}
         }
@@ -722,13 +701,13 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     for param in &mut method.params {
                         NativeModuleAnalyzer::resolve_refs(
                             &mut param.type_annotation,
-                            &self.scoping,
+                            self.scoping,
                             &self.decls,
                         );
 
                         NativeModuleAnalyzer::collect_types(
                             &param.type_annotation,
-                            &self.scoping,
+                            self.scoping,
                             &self.decls,
                             &mut types,
                             &mut enums,
@@ -738,13 +717,13 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     // Resolve type annotation of return value
                     NativeModuleAnalyzer::resolve_refs(
                         &mut method.ret_type,
-                        &self.scoping,
+                        self.scoping,
                         &self.decls,
                     );
 
                     NativeModuleAnalyzer::collect_types(
                         &method.ret_type,
-                        &self.scoping,
+                        self.scoping,
                         &self.decls,
                         &mut types,
                         &mut enums,
@@ -863,7 +842,7 @@ pub fn try_parse_schema(src: &str) -> Result<Vec<Schema>, ParseError> {
         });
     }
 
-    let mut program = ret.program;
+    let program = ret.program;
     let ret = SemanticBuilder::new().build(&program);
 
     if !ret.errors.is_empty() {
@@ -875,9 +854,9 @@ pub fn try_parse_schema(src: &str) -> Result<Vec<Schema>, ParseError> {
     let scoping = ret.semantic.into_scoping();
     let mut analyzer = NativeModuleAnalyzer::new(&scoping);
 
-    analyzer.visit_program(&mut program);
+    analyzer.visit_program(&program);
 
-    if analyzer.diagnostics.len() > 0 {
+    if !analyzer.diagnostics.is_empty() {
         return Err(ParseError::Oxc {
             diagnostics: analyzer.diagnostics,
         });
@@ -943,7 +922,7 @@ mod tests {
         export default NativeModuleRegistry.getEnforcing<Spec>('CrabyTest');
 
         ";
-        let result = try_parse_schema(&src).unwrap();
+        let result = try_parse_schema(src).unwrap();
 
         assert!(result.len() == 1);
         assert_debug_snapshot!(result);
@@ -961,27 +940,62 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let schemas = try_parse_schema(&src).unwrap();
+        let schemas = try_parse_schema(src).unwrap();
 
         assert!(schemas.len() == 1);
         assert_debug_snapshot!(schemas);
     }
 
     #[test]
-    fn test_spec_interface_with_namespace() {
-        // let src = "
-        // import type * as CrabyNativeModules from 'craby-modules';
+    fn test_spec_import_without_type() {
+        let src = "
+        import { NativeModuleRegistry, NativeModule, Signal } from 'craby-modules';
 
-        // export interface Spec extends CrabyNativeModules.NativeModule {
-        //     myMethod(): void;
-        // }
+        export interface Spec extends NativeModule {
+            myMethod(): void;
+        }
 
-        // export default CrabyNativeModules.NativeModuleRegistry.getEnforcing<Spec>('MyModule');
-        // ";
-        // let schemas = try_parse_schema(&src).unwrap();
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let schemas = try_parse_schema(src).unwrap();
 
-        // assert!(schemas.len() == 1);
-        // assert_debug_snapshot!(schemas);
+        assert!(schemas.len() == 1);
+        assert_debug_snapshot!(schemas);
+    }
+
+    #[test]
+    fn test_spec_import_as_namespace() {
+        let src = "
+        import * as CrabyNativeModules from 'craby-modules';
+
+        export interface Spec extends CrabyNativeModules.NativeModule {
+            myMethod(): void;
+        }
+
+        export default CrabyNativeModules.NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let schemas = try_parse_schema(src).unwrap();
+
+        assert!(schemas.len() == 1);
+        assert_debug_snapshot!(schemas);
+    }
+
+    #[test]
+    fn test_spec_import_as_namespace_type() {
+        let src = "
+        import type * as CrabyNativeModules from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        export interface Spec extends CrabyNativeModules.NativeModule {
+            myMethod(): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let schemas = try_parse_schema(src).unwrap();
+
+        assert!(schemas.len() == 1);
+        assert_debug_snapshot!(schemas);
     }
 
     #[test]
@@ -996,7 +1010,7 @@ mod tests {
 
         export const Foo = NativeModuleRegistry.getEnforcing<Spec>('TestModule');
         ";
-        let schemas = try_parse_schema(&src).unwrap();
+        let schemas = try_parse_schema(src).unwrap();
 
         assert!(schemas.len() == 1);
         assert!(schemas[0].signals.len() == 1);
@@ -1022,7 +1036,7 @@ mod tests {
         export const Foo = NativeModuleRegistry.getEnforcing<Spec1>('FooModule');
         export const Bar = NativeModuleRegistry.getEnforcing<Spec2>('BarModule');
         ";
-        let schemas = try_parse_schema(&src).unwrap();
+        let schemas = try_parse_schema(src).unwrap();
 
         assert!(schemas.len() == 2);
         assert_debug_snapshot!(schemas);
@@ -1040,7 +1054,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1056,7 +1070,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1073,7 +1087,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Unknown>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1090,7 +1104,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec, any>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1107,7 +1121,7 @@ mod tests {
 
         export default Something.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1124,7 +1138,7 @@ mod tests {
 
         export default NativeModuleRegistry.foo<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1142,7 +1156,7 @@ mod tests {
         export const Foo = NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         export const Bar = NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1164,7 +1178,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1186,7 +1200,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1205,7 +1219,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1222,7 +1236,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1239,7 +1253,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1256,7 +1270,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1273,7 +1287,7 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let result = try_parse_schema(&src);
+        let result = try_parse_schema(src);
 
         assert!(result.is_err());
     }
@@ -1312,13 +1326,13 @@ mod tests {
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
         ";
-        let schemas = try_parse_schema(&src_1).unwrap();
+        let schemas = try_parse_schema(src_1).unwrap();
         let hash_1 = Schema::to_hash(&schemas);
 
-        let schemas = try_parse_schema(&src_1).unwrap();
+        let schemas = try_parse_schema(src_1).unwrap();
         let hash_2 = Schema::to_hash(&schemas);
 
-        let schemas = try_parse_schema(&src_2).unwrap();
+        let schemas = try_parse_schema(src_2).unwrap();
         let hash_3 = Schema::to_hash(&schemas);
 
         assert_eq!(hash_1, hash_2);

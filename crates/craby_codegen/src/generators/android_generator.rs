@@ -219,10 +219,16 @@ impl Template for AndroidTemplate {
         let path = self.file_path(file_type);
         let content = match file_type {
             AndroidFileType::JNIEntry => self.jni_entry(&project.schemas),
-            AndroidFileType::CmakeLists => Ok(self.cmakelists(&project)),
+            AndroidFileType::CmakeLists => Ok(self.cmakelists(project)),
         }?;
 
         Ok(vec![(path, content)])
+    }
+}
+
+impl Default for AndroidGenerator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

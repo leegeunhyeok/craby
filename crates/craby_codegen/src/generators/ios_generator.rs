@@ -109,6 +109,12 @@ impl Template for IosTemplate {
     }
 }
 
+impl Default for IosGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IosGenerator {
     pub fn new() -> Self {
         Self

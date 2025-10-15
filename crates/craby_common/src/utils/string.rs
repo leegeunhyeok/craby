@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use convert_case::{Case, Casing};
 use regex::Regex;
 
@@ -8,12 +10,14 @@ impl SanitizedString {
         Regex::new(r"[^a-zA-Z0-9]").unwrap()
     }
 
-    pub fn to_string(&self) -> String {
-        self.0.to_string()
-    }
-
     pub fn to_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl Display for SanitizedString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

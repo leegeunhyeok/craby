@@ -6,7 +6,7 @@ use log::{debug, error};
 use crate::constants::toolchain::Target;
 
 pub fn build_target(project_root: &Path, target: &Target) -> Result<(), anyhow::Error> {
-    let manifest_path = crate_manifest_path(&project_root.to_path_buf())
+    let manifest_path = crate_manifest_path(project_root)
         .to_string_lossy()
         .to_string();
     debug!("Manifest path: {}", manifest_path);

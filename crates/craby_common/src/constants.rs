@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::utils::string::{flat_case, snake_case, SanitizedString};
 
@@ -36,7 +36,7 @@ pub mod ios {}
 pub const SPEC_FILE_PREFIX: &str = "Native";
 
 pub fn lib_base_name(name: &SanitizedString) -> String {
-    format!("{}", flat_case(name.0.as_ref()))
+    flat_case(name.0.as_ref()).to_string()
 }
 
 /// Returns the destination name of the built library
@@ -47,45 +47,45 @@ pub fn dest_lib_name(name: &SanitizedString) -> String {
 }
 
 /// Example: `some_module_impl`
-pub fn impl_mod_name(name: &String) -> String {
-    format!("{}_impl", snake_case(name.as_str()))
+pub fn impl_mod_name(name: &str) -> String {
+    format!("{}_impl", snake_case(name))
 }
 
-pub fn crate_target_dir(project_root: &PathBuf, target: &str) -> PathBuf {
+pub fn crate_target_dir(project_root: &Path, target: &str) -> PathBuf {
     project_root.join("target").join(target).join("release")
 }
 
-pub fn crate_dir(project_root: &PathBuf) -> PathBuf {
+pub fn crate_dir(project_root: &Path) -> PathBuf {
     project_root.join("crates").join("lib")
 }
 
-pub fn crate_manifest_path(project_root: &PathBuf) -> PathBuf {
+pub fn crate_manifest_path(project_root: &Path) -> PathBuf {
     crate_dir(project_root).join("Cargo.toml")
 }
 
-pub fn cxx_bridge_dir(project_root: &PathBuf, target: &str) -> PathBuf {
+pub fn cxx_bridge_dir(project_root: &Path, target: &str) -> PathBuf {
     project_root.join("target").join(target).join("cxxbridge")
 }
 
-pub fn cxx_bridge_include_dir(project_root: &PathBuf) -> PathBuf {
+pub fn cxx_bridge_include_dir(project_root: &Path) -> PathBuf {
     crate_dir(project_root).join("include")
 }
 
-pub fn cxx_dir(project_root: &PathBuf) -> PathBuf {
+pub fn cxx_dir(project_root: &Path) -> PathBuf {
     project_root.join("cpp")
 }
 
-pub fn android_path(project_root: &PathBuf) -> PathBuf {
+pub fn android_path(project_root: &Path) -> PathBuf {
     project_root.join("android")
 }
 
-pub fn jni_base_path(project_root: &PathBuf) -> PathBuf {
+pub fn jni_base_path(project_root: &Path) -> PathBuf {
     android_path(project_root)
         .join("src")
         .join("main")
         .join("jni")
 }
 
-pub fn ios_base_path(project_root: &PathBuf) -> PathBuf {
+pub fn ios_base_path(project_root: &Path) -> PathBuf {
     project_root.join("ios")
 }

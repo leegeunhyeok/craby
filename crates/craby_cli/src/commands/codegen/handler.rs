@@ -1,4 +1,7 @@
-use std::{path::PathBuf, time::Instant};
+use std::{
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
 use craby_codegen::{
     codegen,
@@ -105,7 +108,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn with_generated_comment(path: &PathBuf, code: &String) -> String {
+fn with_generated_comment(path: &Path, code: &str) -> String {
     match path.extension() {
         Some(ext) => match ext.to_str().unwrap() {
             // Source files
@@ -118,6 +121,6 @@ fn with_generated_comment(path: &PathBuf, code: &String) -> String {
     }
 }
 
-fn without_generated_comment(code: &String) -> String {
+fn without_generated_comment(code: &str) -> String {
     format!("{}\n", code)
 }

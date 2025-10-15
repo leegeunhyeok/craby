@@ -37,7 +37,7 @@ pub fn print_guide(mod_name: &String) {
             }}
           }}
         }}"#,
-        kebab_name = kebab_case(&mod_name),
+        kebab_name = kebab_case(mod_name),
     };
     highlighter.highlight_code_with_box(&gradle_code, "gradle");
 

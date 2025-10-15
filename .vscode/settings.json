@@ -1,5 +1,6 @@
 {
-  "rust-analyzer.cargo.features": [],
+  "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.checkOnSave": false,
   "files.associations": {
     "__bit_reference": "cpp",
     "__hash_table": "cpp",

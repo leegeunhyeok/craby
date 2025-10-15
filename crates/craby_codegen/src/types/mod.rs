@@ -23,7 +23,7 @@ pub struct Schema {
 }
 
 impl Schema {
-    pub fn to_hash(schemas: &Vec<Schema>) -> String {
+    pub fn to_hash(schemas: &[Schema]) -> String {
         let serialized = serde_json::to_string(schemas).unwrap();
         debug!("Serialized schemas: {}", serialized);
         let mut hasher = Xxh3::new();

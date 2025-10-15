@@ -23,8 +23,8 @@ pub fn render_template(
     for entry in WalkDir::new(template_dir) {
         let entry = entry?;
         let path = entry.path();
-        let base_bath = replace_path(&path, template_data, true);
-        let target_path = replace_path(&path, template_data, false);
+        let base_bath = replace_path(path, template_data, true);
+        let target_path = replace_path(path, template_data, false);
 
         if base_bath != target_path {
             debug!("Renaming {:?} to {:?}", base_bath, target_path);
@@ -48,7 +48,7 @@ pub fn render_template(
         }
     }
 
-    fs::rename(&template_dir, &dest_dir)?;
+    fs::rename(template_dir, dest_dir)?;
 
     Ok(())
 }
@@ -81,7 +81,7 @@ fn replace_path(
 }
 
 /// Custom render rules for specific files
-fn custom_render(path: &Path, content: &String) -> Option<String> {
+fn custom_render(path: &Path, content: &str) -> Option<String> {
     let base_name = path.file_name().unwrap().to_string_lossy().to_string();
 
     match base_name.as_str() {

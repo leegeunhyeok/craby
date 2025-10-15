@@ -81,7 +81,7 @@ impl Artifacts {
 
         if !dest.try_exists()? {
             debug!("Creating destination directory: {:?}", dest);
-            fs::create_dir_all(&dest)?;
+            fs::create_dir_all(dest)?;
         }
 
         for src in target_artifacts {

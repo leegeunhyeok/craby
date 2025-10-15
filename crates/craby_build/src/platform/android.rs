@@ -16,7 +16,7 @@ pub const ANDROID_TARGETS: [Target; 4] = [
     Target::Android(Abi::X86),
 ];
 
-pub fn crate_libs<'a>(config: &'a CompleteCrabyConfig) -> Result<(), anyhow::Error> {
+pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
     let jni_base_path = jni_base_path(&config.project_root);
 
     for target in ANDROID_TARGETS {
