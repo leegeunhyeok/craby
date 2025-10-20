@@ -34,7 +34,7 @@ pub trait CrabyTestSpec {
     fn promise_method(&mut self, arg: Number) -> Promise<Number>;
     fn set_state(&mut self, arg: Number) -> Void;
     fn snake_method(&mut self) -> Void;
-    fn string_method(&mut self, arg: String) -> String;
+    fn string_method(&mut self, arg: &str) -> String;
     fn trigger_signal(&mut self) -> Void;
 }
 

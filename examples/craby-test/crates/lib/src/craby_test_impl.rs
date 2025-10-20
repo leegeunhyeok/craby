@@ -24,7 +24,7 @@ impl CrabyTestSpec for CrabyTest {
         !arg
     }
 
-    fn string_method(&mut self, arg: String) -> String {
+    fn string_method(&mut self, arg: &str) -> String {
         format!("From Rust: {}", arg)
     }
 

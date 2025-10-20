@@ -30,7 +30,7 @@ impl LightComputeSpec for LightCompute {
         a + b  // Returns immediately
     }
 
-    fn format_string(&mut self, text: String) -> String {
+    fn format_string(&mut self, text: &str) -> String {
         text.to_uppercase()  // Returns immediately
     }
 }
@@ -97,9 +97,9 @@ impl HeavyComputeSpec for HeavyCompute {
         promise::resolve(prime as f64)
     }
 
-    fn compute_hash(&mut self, data: String) -> Promise<String> {
+    fn compute_hash(&mut self, data: &str) -> Promise<String> {
         // CPU-intensive hashing - safe here in separate thread
-        let hash = expensive_hash_algorithm(&data);
+        let hash = expensive_hash_algorithm(data);
         promise::resolve(hash)
     }
 }

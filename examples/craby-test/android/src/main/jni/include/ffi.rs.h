@@ -1122,7 +1122,7 @@ void setState(::craby::bridging::CrabyTest &it_, double arg);
 
 void snakeMethod(::craby::bridging::CrabyTest &it_);
 
-::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg);
+::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::Str arg);
 
 void triggerSignal(::craby::bridging::CrabyTest &it_);
 } // namespace bridging

@@ -621,7 +621,7 @@ struct Bridging<craby::bridging::NullableString> {
       return craby::bridging::NullableString{true, rust::String()};
     }
 
-    auto val = react::bridging::fromJs<rust::Str>(rt, value, callInvoker);
+    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
     auto ret = craby::bridging::NullableString{false, val};
 
     return ret;
@@ -705,7 +705,7 @@ struct Bridging<craby::bridging::TestObject> {
     auto obj$pascalCase = obj.getProperty(rt, "PascalCase");
     auto obj$snakeCase = obj.getProperty(rt, "snake_case");
 
-    auto _obj$foo = react::bridging::fromJs<rust::Str>(rt, obj$foo, callInvoker);
+    auto _obj$foo = react::bridging::fromJs<rust::String>(rt, obj$foo, callInvoker);
     auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
     auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
     auto _obj$sub = react::bridging::fromJs<craby::bridging::NullableSubObject>(rt, obj$sub, callInvoker);

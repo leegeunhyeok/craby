@@ -110,7 +110,7 @@ pub mod bridging {
         fn craby_test_snake_method(it_: &mut CrabyTest) -> Result<()>;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String>;
+        fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String>;
 
         #[cxx_name = "triggerSignal"]
         fn craby_test_trigger_signal(it_: &mut CrabyTest) -> Result<()>;
@@ -248,7 +248,7 @@ fn craby_test_snake_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     })
 }
 
-fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String, anyhow::Error> {
+fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, anyhow::Error> {
     catch_panic!({
         let ret = it_.string_method(arg);
         ret

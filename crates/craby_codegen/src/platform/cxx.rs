@@ -56,6 +56,7 @@ impl TypeAnnotation {
     /// ```cpp
     /// bool                          // Boolean
     /// double                        // Number
+    /// rust::Str                     // String (arguments)
     /// rust::String                  // String
     /// rust::Vec<double>             // Array<Number>
     /// craby::bridging::MyEnum       // Enum
@@ -66,7 +67,7 @@ impl TypeAnnotation {
         let cxx_type = match self {
             TypeAnnotation::Boolean => "bool".to_string(),
             TypeAnnotation::Number => "double".to_string(),
-            TypeAnnotation::String => "rust::Str".to_string(),
+            TypeAnnotation::String => "rust::String".to_string(),
             TypeAnnotation::Array(element_type) => {
                 format!("rust::Vec<{}>", element_type.as_cxx_type(_mod_name)?)
             }
@@ -287,8 +288,13 @@ impl Method {
             let arg_ref = cxx_arg_ref(idx);
             let arg_var = cxx_arg_var(idx);
             let from_js = param.type_annotation.as_cxx_from_js(mod_name, &arg_ref)?;
+            let from_js = if let TypeAnnotation::String = &param.type_annotation {
+                from_js.expr.replace("rust::String", "rust::Str")
+            } else {
+                from_js.expr
+            };
             args.push(arg_var.clone());
-            args_decls.push(format!("auto {} = {};", arg_var, from_js.expr));
+            args_decls.push(format!("auto {} = {};", arg_var, from_js));
         }
 
         let invoke_stmts = match &self.ret_type {

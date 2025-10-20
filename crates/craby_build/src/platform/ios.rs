@@ -1,4 +1,8 @@
-use std::{fs, path::{Path, PathBuf}, process::Command};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
@@ -51,9 +55,14 @@ pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
         artifacts.copy_to(ArtifactType::Header, &ios_base_path.join("include"))?;
 
         // ios/framework/lib{lib_name}.xcframework/{identifier}
+        let is_sim = artifacts.identifier.contains("sim");
         artifacts.copy_to(
             ArtifactType::Lib,
-            &xcframework_path.join(&artifacts.identifier),
+            &xcframework_path.join(if is_sim {
+                Identifier::Simulator.try_into_str()?
+            } else {
+                Identifier::Arm64.try_into_str()?
+            }),
         )?;
     }
 

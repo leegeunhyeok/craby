@@ -1199,7 +1199,7 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_snake_method(::craby::bridging::CrabyTest &it_) noexcept;
 
-::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_string_method(::craby::bridging::CrabyTest &it_, ::rust::String *arg, ::rust::String *return$) noexcept;
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_string_method(::craby::bridging::CrabyTest &it_, ::rust::Str arg, ::rust::String *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_trigger_signal(::craby::bridging::CrabyTest &it_) noexcept;
 } // extern "C"
@@ -1383,9 +1383,9 @@ void snakeMethod(::craby::bridging::CrabyTest &it_) {
   }
 }
 
-::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::String arg) {
+::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::Str arg) {
   ::rust::MaybeUninit<::rust::String> return$;
-  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_string_method(it_, &arg, &return$.value);
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_string_method(it_, arg, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }

@@ -10,11 +10,11 @@ Craby automatically converts types between TypeScript, Rust, and C++ at compile-
 |------------|------|-----|
 | `boolean` | `bool` | `bool` |
 | `number` | `f64` | `double` |
-| `string` | `std::string::String` | `std::string` |
+| `string` | `&str` for parameters, otherwise `String` | `std::string` |
 | `object` | `struct` | `struct` |
-| `T[]` | `std::vec::Vec<T>` | `std::vector<T>` |
+| `T[]` | `Vec<T>` | `std::vector<T>` |
 | `T \| null` | `Nullable<T>` | `struct` |
-| `Promise<T>` | `std::result::Result<T, anyhow::Error>` | `T` (Unwrapped) |
+| `Promise<T>` | `Result<T>` | `T` (Unwrapped) |
 | `enum` | `enum` | `enum class` |
 | `void` | `()` | `void` |
 
@@ -31,9 +31,8 @@ Craby provides type aliases to make Rust types more familiar to TypeScript devel
 |-----------|------------|
 | `bool` | `Boolean` |
 | `f64` | `Number` |
-| `std::string::String` | `String` |
-| `std::vec::Vec<T>` | `Array<T>` |
-| `std::result::Result<T, anyhow::Error>` | `Promise<T>` |
+| `Vec<T>` | `Array<T>` |
+| `Result<T>` | `Promise<T>` |
 | `()` | `Void` |
 
 ## Number
@@ -70,7 +69,7 @@ export interface Spec extends NativeModule {
 **Rust:**
 ```rust
 impl GreeterSpec for Greeter {
-    fn greet(&mut self, name: String) -> String {
+    fn greet(&mut self, name: &str) -> String {
         format!("Hello, {}!", name)
     }
 }
@@ -120,7 +119,7 @@ pub struct User {
 }
 
 impl UserManagerSpec for UserManager {
-    fn create_user(&mut self, name: String, age: Number, email: String) -> User {
+    fn create_user(&mut self, name: &str, age: Number, email: &str) -> User {
         User {
             name,
             age,
@@ -179,7 +178,7 @@ impl ArrayProcessorSpec for ArrayProcessor {
         numbers.iter().sum()
     }
 
-    fn reverse(&mut self, mut items: Array<String>) -> Array<String> {
+    fn reverse(&mut self, mut items: Array<&str>) -> Array<String> {
         items.reverse();
         items
     }

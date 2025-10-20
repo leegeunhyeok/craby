@@ -58,12 +58,12 @@ export interface Spec extends NativeModule {
 
 ```rust
 impl DataParserSpec for DataParser {
-    fn parse_large_data(&mut self, data: String) -> Promise<Void> {
+    fn parse_large_data(&mut self, data: &str) -> Promise<Void> {
         if data.is_empty() {
             return promise::reject("Data cannot be empty");
         }
 
-        match parse(&data) {
+        match parse(data) {
             Ok(_) => promise::resolve(()),
             Err(e) => promise::reject(&e.to_string()),
         }

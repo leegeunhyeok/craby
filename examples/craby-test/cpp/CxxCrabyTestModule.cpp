@@ -381,7 +381,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    auto arg0 = react::bridging::fromJs<rust::String>(rt, args[0], callInvoker);
+    auto arg0 = react::bridging::fromJs<rust::Str>(rt, args[0], callInvoker);
     auto ret = craby::bridging::stringMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
