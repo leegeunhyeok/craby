@@ -341,7 +341,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
       throw jsi::JSError(rt, "Expected 1 argument");
     }
 
-    auto arg0 = react::bridging::fromJs<rust::String>(rt, args[0], callInvoker);
+    auto arg0 = react::bridging::fromJs<rust::Str>(rt, args[0], callInvoker);
     auto ret = craby::bridging::stringMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
@@ -509,14 +509,26 @@ namespace facebook {
 namespace react {
 
 template <>
+struct Bridging<rust::Str> {
+  static rust::Str fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto str = value.asString(rt).utf8(rt);
+    return rust::Str(str.data(), str.size());
+  }
+
+  static jsi::Value toJs(jsi::Runtime& rt, const rust::Str& value) {
+    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+  }
+};
+
+template <>
 struct Bridging<rust::String> {
   static rust::String fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
     auto str = value.asString(rt).utf8(rt);
-    return rust::String(str);
+    return rust::String(str.data(), str.size());
   }
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {
-    return react::bridging::toJs(rt, std::string(value));
+    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
   }
 };
 
@@ -609,7 +621,7 @@ struct Bridging<craby::bridging::NullableString> {
       return craby::bridging::NullableString{true, rust::String()};
     }
 
-    auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
+    auto val = react::bridging::fromJs<rust::Str>(rt, value, callInvoker);
     auto ret = craby::bridging::NullableString{false, val};
 
     return ret;
@@ -693,7 +705,7 @@ struct Bridging<craby::bridging::TestObject> {
     auto obj$pascalCase = obj.getProperty(rt, "PascalCase");
     auto obj$snakeCase = obj.getProperty(rt, "snake_case");
 
-    auto _obj$foo = react::bridging::fromJs<rust::String>(rt, obj$foo, callInvoker);
+    auto _obj$foo = react::bridging::fromJs<rust::Str>(rt, obj$foo, callInvoker);
     auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
     auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
     auto _obj$sub = react::bridging::fromJs<craby::bridging::NullableSubObject>(rt, obj$sub, callInvoker);

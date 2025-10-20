@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Entry, BTreeMap};
 
 use craby_common::utils::string::{camel_case, pascal_case, snake_case};
 use indoc::formatdoc;
@@ -290,12 +290,7 @@ impl Method {
             format!(" -> {}", return_type)
         };
 
-        Ok(format!(
-            "fn {}({}){}",
-            fn_name,
-            params_sig,
-            ret_annotation
-        ))
+        Ok(format!("fn {}({}){}", fn_name, params_sig, ret_annotation))
     }
 }
 
@@ -310,7 +305,11 @@ impl Param {
     /// items: Vec<MyStruct>
     /// ```
     pub fn try_into_cxx_sig(&self) -> Result<String, anyhow::Error> {
-        let param_type = self.type_annotation.as_rs_type()?.0;
+        let param_type = if let TypeAnnotation::String = &self.type_annotation {
+            "&str".to_string()
+        } else {
+            self.type_annotation.as_rs_type()?.0
+        };
         Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
 
@@ -324,7 +323,11 @@ impl Param {
     /// items: Array<MyStruct>
     /// ```
     pub fn try_into_impl_sig(&self) -> Result<String, anyhow::Error> {
-        let param_type = self.type_annotation.as_rs_impl_type()?.0;
+        let param_type = if let TypeAnnotation::String = &self.type_annotation {
+            "&str".to_string()
+        } else {
+            self.type_annotation.as_rs_impl_type()?.0
+        };
         Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
 }
@@ -610,7 +613,7 @@ impl Schema {
                 {
                     let rs_type = type_annotation.as_rs_type()?.0;
 
-                    if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
+                    if let Entry::Vacant(e) = type_impls.entry(rs_type) {
                         let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                         let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                         let default_val = type_annotation.as_rs_default_val()?;
@@ -661,7 +664,7 @@ impl Schema {
             {
                 let rs_type = type_annotation.as_rs_type()?.0;
 
-                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
+                if let Entry::Vacant(e) = type_impls.entry(rs_type) {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;

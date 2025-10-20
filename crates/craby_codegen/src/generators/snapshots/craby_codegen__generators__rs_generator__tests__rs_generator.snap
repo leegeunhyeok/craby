@@ -102,7 +102,7 @@ pub mod bridging {
         fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
 
         #[cxx_name = "stringMethod"]
-        fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String>;
+        fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String>;
     }
 
     #[namespace = "craby::signals"]
@@ -191,7 +191,7 @@ fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64)
     })
 }
 
-fn craby_test_string_method(it_: &mut CrabyTest, arg: String) -> Result<String, anyhow::Error> {
+fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, anyhow::Error> {
     catch_panic!({
         let ret = it_.string_method(arg);
         ret
@@ -223,7 +223,7 @@ pub trait CrabyTestSpec {
     fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
     fn promise_method(&mut self, arg: Number) -> Promise<Number>;
     fn snake_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
-    fn string_method(&mut self, arg: String) -> String;
+    fn string_method(&mut self, arg: &str) -> String;
 }
 
 pub enum CrabyTestSignal {
@@ -478,7 +478,7 @@ impl CrabyTestSpec for CrabyTest {
         unimplemented!();
     }
 
-    fn string_method(&mut self, arg: String) -> String {
+    fn string_method(&mut self, arg: &str) -> String {
         unimplemented!();
     }
 }

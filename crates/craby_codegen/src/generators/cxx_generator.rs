@@ -498,14 +498,26 @@ impl CxxTemplate {
             namespace react {{
 
             template <>
+            struct Bridging<rust::Str> {{
+              static rust::Str fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
+                auto str = value.asString(rt).utf8(rt);
+                return rust::Str(str.data(), str.size());
+              }}
+
+              static jsi::Value toJs(jsi::Runtime& rt, const rust::Str& value) {{
+                return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+              }}
+            }};
+
+            template <>
             struct Bridging<rust::String> {{
               static rust::String fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
                 auto str = value.asString(rt).utf8(rt);
-                return rust::String(str);
+                return rust::String(str.data(), str.size());
               }}
 
               static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {{
-                return react::bridging::toJs(rt, std::string(value));
+                return react::bridging::toJs(rt, std::string(value.data(), value.size()));
               }}
             }};
 

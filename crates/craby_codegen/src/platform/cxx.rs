@@ -66,7 +66,7 @@ impl TypeAnnotation {
         let cxx_type = match self {
             TypeAnnotation::Boolean => "bool".to_string(),
             TypeAnnotation::Number => "double".to_string(),
-            TypeAnnotation::String => "rust::String".to_string(),
+            TypeAnnotation::String => "rust::Str".to_string(),
             TypeAnnotation::Array(element_type) => {
                 format!("rust::Vec<{}>", element_type.as_cxx_type(_mod_name)?)
             }
