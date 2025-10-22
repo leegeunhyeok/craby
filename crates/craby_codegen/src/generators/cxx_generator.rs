@@ -146,11 +146,6 @@ impl CxxTemplate {
         let cxx_methods = self.cxx_methods(schema)?;
         let include_stmt = format!("#include \"{}.hpp\"", cxx_mod);
 
-        let mut mod_members = vec![format!(
-            "static constexpr const char *kModuleName = \"{}\";",
-            schema.module_name
-        )];
-
         // Assign method metadata with function pointer to the TurboModule's method map
         //
         // ```cpp
@@ -195,6 +190,7 @@ impl CxxTemplate {
 
             let unregister_stmt = formatdoc! {
                 r#"
+                // Unregister from signal manager
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
                 auto& manager = craby::signals::SignalManager::getInstance();
                 manager.unregisterDelegate(id);"#,
@@ -236,33 +232,37 @@ impl CxxTemplate {
 
                         auto callback = args[0].asObject(rt).asFunction(rt);
                         auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
+                        auto id = thisModule.nextListenerId_.fetch_add(1);
                         auto name = "{signal_name}";
                         
-                        if (listenersMap_.find(name) == listenersMap_.end()) {{
-                          listenersMap_[name] = std::vector<std::shared_ptr<jsi::Function>>();
+                        if (thisModule.listenersMap_.find(name) == thisModule.listenersMap_.end()) {{
+                          thisModule.listenersMap_[name] = std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>();
                         }}
-                        listenersMap_[name].push_back(callbackRef);
+
+                        {{
+                          std::lock_guard<std::mutex> lock(thisModule.listenersMutex_);
+                          thisModule.listenersMap_[name].emplace(id, callbackRef);
+                        }}
+
+                        auto modulePtr = &thisModule;
+                        auto cleanup = [modulePtr, name, id] {{
+                          std::lock_guard<std::mutex> lock(modulePtr->listenersMutex_);
+                          auto eventMap = modulePtr->listenersMap_.find(name);
+                          if (eventMap != modulePtr->listenersMap_.end()) {{
+                            auto it = eventMap->second.find(id);
+                            if (it != eventMap->second.end()) {{
+                              eventMap->second.erase(it);
+                            }}
+                          }}
+                          return jsi::Value::undefined();
+                        }};
 
                         return jsi::Function::createFromHostFunction(
                           rt,
                           jsi::PropNameID::forAscii(rt, "cleanup"),
                           0,
-                          [callbackRef, name](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {{
-                            std::lock_guard<std::mutex> lock(mutex_);
-                            auto& listeners = listenersMap_[name];
-                            listeners.erase(
-                              std::remove_if(listeners.begin(), listeners.end(),
-                              [&callbackRef](const std::shared_ptr<jsi::Function>& fn) {{
-                                return fn.get() == callbackRef.get();
-                              }}),
-                              listeners.end()
-                            );
-
-                            if (listeners.empty()) {{
-                              listenersMap_.erase(name);
-                            }}
-
-                            return jsi::Value::undefined();
+                          [cleanup](jsi::Runtime& rt, const jsi::Value&, const jsi::Value*, size_t) -> jsi::Value {{
+                            return cleanup();
                           }}
                         );
                       }} catch (const jsi::JSError &err) {{
@@ -278,11 +278,6 @@ impl CxxTemplate {
                 });
             }
 
-            mod_members.extend(vec![
-              format!("inline static std::mutex mutex_;"),
-              format!("inline static std::unordered_map<std::string, std::vector<std::shared_ptr<facebook::jsi::Function>>> listenersMap_;"),
-            ]);
-
             method_defs.insert(0, "void emit(std::string name);".to_string());
 
             method_impls.insert(
@@ -292,11 +287,11 @@ impl CxxTemplate {
                     void {cxx_mod}::emit(std::string name) {{
                       std::vector<std::shared_ptr<facebook::jsi::Function>> listeners;
                       {{
-                        std::lock_guard<std::mutex> lock(mutex_);
+                        std::lock_guard<std::mutex> lock(listenersMutex_);
                         auto it = listenersMap_.find(name);
                         if (it != listenersMap_.end()) {{
-                          for (const auto& fn : it->second) {{
-                            listeners.push_back(fn);
+                          for (auto &[_, listener] : it->second) {{
+                            listeners.push_back(listener);
                           }}
                         }}
                       }}
@@ -353,6 +348,17 @@ impl CxxTemplate {
             }}
 
             {cxx_mod}::~{cxx_mod}() {{
+              invalidate();
+            }}
+
+            void {cxx_mod}::invalidate() {{
+              if (invalidated_.exchange(true)) {{
+                return;
+              }}
+
+              invalidated_.store(true);
+              listenersMap_.clear();
+            
             {unregister_stmt}
             }}
             
@@ -374,23 +380,31 @@ impl CxxTemplate {
 
             class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
             public:
-            {mod_members}
+              static constexpr const char *kModuleName = "{turbo_module_name}";
 
               {cxx_mod}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
               ~{cxx_mod}();
 
+              void invalidate();
             {method_defs}
 
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
               std::shared_ptr<craby::bridging::{module_name}> module_;
+              std::atomic<bool> invalidated_{{false}};
+              std::atomic<size_t> nextListenerId_{{0}};
+              std::mutex listenersMutex_;
+              std::unordered_map<
+                std::string,
+                std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
+                listenersMap_;
             }};
 
             }} // namespace {flat_name}"#,
+            turbo_module_name = schema.module_name,
             module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
-            mod_members = indent_str(mod_members.join("\n"), 2),
             method_defs = indent_str(method_defs.join("\n\n"), 2),
         };
 
@@ -431,10 +445,10 @@ impl CxxTemplate {
             #pragma once
 
             #include "ffi.rs.h"
-            #include <memory>
             #include <ReactCommon/TurboModule.h>
             #include <jsi/jsi.h>
-
+            #include <memory>
+            
             namespace craby {{
             {hpp}
             }} // namespace craby"#,

@@ -2,9 +2,9 @@
 #pragma once
 
 #include "ffi.rs.h"
-#include <memory>
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
+#include <memory>
 
 namespace craby {
 namespace calculator {
@@ -16,6 +16,7 @@ public:
   CxxCalculatorModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
   ~CxxCalculatorModule();
 
+  void invalidate();
   static facebook::jsi::Value
   add(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
@@ -39,6 +40,13 @@ public:
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
   std::shared_ptr<craby::bridging::Calculator> module_;
+  std::atomic<bool> invalidated_{false};
+  std::atomic<size_t> nextListenerId_{0};
+  std::mutex listenersMutex_;
+  std::unordered_map<
+    std::string,
+    std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
+    listenersMap_;
 };
 
 } // namespace calculator

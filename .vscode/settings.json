@@ -74,6 +74,7 @@
     "vector": "cpp",
     "algorithm": "cpp",
     "thread": "cpp",
-    "iterator": "cpp"
+    "iterator": "cpp",
+    "*.rs": "cpp"
   }
 }

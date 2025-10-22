@@ -28,6 +28,17 @@ CxxCalculatorModule::CxxCalculatorModule(
 }
 
 CxxCalculatorModule::~CxxCalculatorModule() {
+  invalidate();
+}
+
+void CxxCalculatorModule::invalidate() {
+  if (invalidated_.exchange(true)) {
+    return;
+  }
+
+  invalidated_.store(true);
+  listenersMap_.clear();
+
   // No signals
 }
 

@@ -89,7 +89,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: nightly-2025-09-21
+          toolchain: nightly-2025-09-22
           targets: ${{ matrix.settings.target }}
       - name: Cache cargo
         uses: actions/cache@v4
@@ -273,7 +273,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin
-          toolchain: nightly-2025-09-21
+          toolchain: nightly-2025-09-22
       - name: Prepare packages
         run: cargo xtask prepare --ts
       - name: Lint
@@ -292,7 +292,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-darwin
-          toolchain: nightly-2025-09-21
+          toolchain: nightly-2025-09-22
           components: clippy
       - name: Lint
         run: cargo clippy --all -- --deny warnings

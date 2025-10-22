@@ -287,11 +287,18 @@ impl Method {
         for (idx, param) in self.params.iter().enumerate() {
             let arg_ref = cxx_arg_ref(idx);
             let arg_var = cxx_arg_var(idx);
-            let from_js = param.type_annotation.as_cxx_from_js(mod_name, &arg_ref)?;
+
+            // `rust::Str` holds a reference to `std::string`.
+            // To avoid dangling pointers, the converted `std::string` is retained within the scope for the lifetime of the reference.
             let from_js = if let TypeAnnotation::String = &param.type_annotation {
-                from_js.expr.replace("rust::String", "rust::Str")
+                // Capture the converted `std::string` within the scope of the reference
+                let str_var = format!("{}$raw", arg_var);
+                args_decls.push(format!("auto {} = {}.asString(rt).utf8(rt);", str_var, arg_ref));
+
+                // Convert the `std::string` to `rust::Str` 
+                format!("rust::Str({}.data(), {}.size())", str_var, str_var)
             } else {
-                from_js.expr
+                param.type_annotation.as_cxx_from_js(mod_name, &arg_ref)?.expr
             };
             args.push(arg_var.clone());
             args_decls.push(format!("auto {} = {};", arg_var, from_js));
@@ -605,7 +612,9 @@ impl Schema {
             let alias_spec = type_annotation.as_object().unwrap();
 
             for prop in &alias_spec.props {
-                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation {
+                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
+                    &prop.type_annotation
+                {
                     let key = nullable_type.as_cxx_type(&self.module_name)?;
 
                     if nullable_bridging_templates.contains_key(&key) {

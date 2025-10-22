@@ -2,9 +2,9 @@
 #pragma once
 
 #include "ffi.rs.h"
-#include <memory>
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
+#include <memory>
 
 namespace craby {
 namespace crabytest {
@@ -12,12 +12,11 @@ namespace crabytest {
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
   static constexpr const char *kModuleName = "CrabyTest";
-  inline static std::mutex mutex_;
-  inline static std::unordered_map<std::string, std::vector<std::shared_ptr<facebook::jsi::Function>>> listenersMap_;
 
   CxxCrabyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
   ~CxxCrabyTestModule();
 
+  void invalidate();
   void emit(std::string name);
 
   static facebook::jsi::Value
@@ -98,6 +97,13 @@ public:
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
   std::shared_ptr<craby::bridging::CrabyTest> module_;
+  std::atomic<bool> invalidated_{false};
+  std::atomic<size_t> nextListenerId_{0};
+  std::mutex listenersMutex_;
+  std::unordered_map<
+    std::string,
+    std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
+    listenersMap_;
 };
 
 } // namespace crabytest
