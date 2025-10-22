@@ -23,6 +23,8 @@ pub enum CxxFileType {
     Mod,
     /// bridging-generated.hpp
     BridgingHpp,
+    /// utils.hpp
+    UtilsHpp,
     /// signals.h
     SignalsH,
 }
@@ -84,17 +86,10 @@ impl CxxTemplate {
     ///     std::shared_ptr<react::CallInvoker> jsInvoker)
     ///     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
     ///   callInvoker_ = std::move(jsInvoker);
-    ///   module_ = std::shared_ptr<craby::bridging::MyTestModule>(
-    ///     craby::bridging::createMyTestModule(reinterpret_cast<uintptr_t>(this)).into_raw(),
-    ///     [](craby::bridging::MyTestModule *ptr) { rust::Box<craby::bridging::MyTestModule>::from_raw(ptr); }
-    ///   );
-    ///
+    ///   threadPool_ = std::make_shared<ThreadPool>(10);
     ///   methodMap_["multiply"] = MethodMetadata{2, &CxxMyTestModule::multiply};
     /// }
-    ///
-    /// CxxMyTestModule::~CxxMyTestModule() {
-    ///   // No signals
-    /// }
+    /// ```
     ///
     /// jsi::Value CxxMyTestModule::multiply(jsi::Runtime &rt,
     ///                                       react::TurboModule &turboModule,
@@ -343,7 +338,7 @@ impl CxxTemplate {
                 craby::bridging::create{module_name}(reinterpret_cast<uintptr_t>(this)).into_raw(),
                 [](craby::bridging::{module_name} *ptr) {{ rust::Box<craby::bridging::{module_name}>::from_raw(ptr); }}
               );
-            
+              threadPool_ = std::make_shared<ThreadPool>(10);
             {method_maps}
             }}
 
@@ -360,6 +355,9 @@ impl CxxTemplate {
               listenersMap_.clear();
             
             {unregister_stmt}
+
+              // Shutdown thread pool
+              threadPool_->shutdown();
             }}
             
             {method_impls}
@@ -391,6 +389,7 @@ impl CxxTemplate {
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
               std::shared_ptr<craby::bridging::{module_name}> module_;
+              std::shared_ptr<ThreadPool> threadPool_;
               std::atomic<bool> invalidated_{{false}};
               std::atomic<size_t> nextListenerId_{{0}};
               std::mutex listenersMutex_;
@@ -427,8 +426,6 @@ impl CxxTemplate {
             {include_stmt}
             #include "cxx.h"
             #include "bridging-generated.hpp"
-            #include "utils.hpp"
-            #include <thread>
             #include <react/bridging/Bridging.h>
 
             using namespace facebook;
@@ -444,7 +441,7 @@ impl CxxTemplate {
             r#"
             #pragma once
 
-            #include "ffi.rs.h"
+            #include "utils.hpp"
             #include <ReactCommon/TurboModule.h>
             #include <jsi/jsi.h>
             #include <memory>
@@ -569,6 +566,196 @@ impl CxxTemplate {
         };
 
         Ok(cxx_bridging)
+    }
+
+    /// Generates C++ utils header file.
+    ///
+    /// # Generated Code
+    ///
+    /// ```cpp
+    /// #pragma once
+    ///
+    /// #include "cxx.h"
+    /// #include "ffi.rs.h"
+    /// #include <condition_variable>
+    /// #include <functional>
+    /// #include <mutex>
+    /// #include <queue>
+    /// #include <thread>
+    /// #include <vector>
+    ///
+    /// inline std::string errorMessage(const std::exception &err) {
+    ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+    ///   return std::string(rs_err ? rs_err->what() : err.what());
+    /// }
+    ///
+    /// class ThreadPool {
+    /// private:
+    ///   std::vector<std::thread> workers;
+    ///   std::queue<std::function<void()>> tasks;
+    ///   std::mutex mutex;
+    ///   std::condition_variable condition;
+    ///   bool stop;
+    /// }
+    ///
+    /// public:
+    ///   ThreadPool(size_t num_threads = 10) : stop(false) {
+    ///     for (size_t i = 0; i < num_threads; ++i) {
+    ///       workers.emplace_back([this] {
+    ///         while (true) {
+    ///           std::function<void()> task;
+    ///
+    ///           {
+    ///             std::unique_lock<std::mutex> lock(this->mutex);
+    ///             this->condition.wait(
+    ///                 lock, [this] { return this->stop || !this->tasks.empty(); });
+    ///
+    ///           if (this->stop && this->tasks.empty()) {
+    ///             return;
+    ///           }
+    ///
+    ///           task = std::move(this->tasks.front());
+    ///           this->tasks.pop();
+    ///         }
+    ///
+    ///         task();
+    ///       }
+    ///     });
+    ///   }
+    ///
+    ///   template <class F> void enqueue(F &&f) {
+    ///     {
+    ///       std::unique_lock<std::mutex> lock(mutex);
+    ///       if (stop) {
+    ///         return;
+    ///       }
+    ///       tasks.emplace(std::forward<F>(f));
+    ///     }
+    ///     condition.notify_one();
+    ///   }
+    ///
+    ///   void shutdown() {
+    ///     {
+    ///       std::unique_lock<std::mutex> lock(mutex);
+    ///       stop = true;
+    ///       std::queue<std::function<void()>> empty;
+    ///       std::swap(tasks, empty);
+    ///     }
+    ///
+    ///     condition.notify_all();
+    ///
+    ///     for (std::thread &worker : workers) {
+    ///       if (worker.joinable()) {
+    ///         worker.join();
+    ///       }
+    ///     }
+    ///   }
+    ///
+    ///   ~ThreadPool() {
+    ///     {
+    ///       std::unique_lock<std::mutex> lock(mutex);
+    ///       stop = true;
+    ///     }
+    ///     condition.notify_all();
+    ///     for (std::thread &worker : workers) {
+    ///       worker.join();
+    ///     }
+    ///   }
+    /// };
+    /// ```
+    fn cxx_utils(&self) -> String {
+        formatdoc! {
+            r#"
+            #pragma once
+
+            #include "cxx.h"
+            #include "ffi.rs.h"
+            #include <condition_variable>
+            #include <functional>
+            #include <mutex>
+            #include <queue>
+            #include <thread>
+            #include <vector>
+
+            inline std::string errorMessage(const std::exception &err) {{
+              const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+              return std::string(rs_err ? rs_err->what() : err.what());
+            }}
+
+            class ThreadPool {{
+            private:
+              std::vector<std::thread> workers;
+              std::queue<std::function<void()>> tasks;
+              std::mutex mutex;
+              std::condition_variable condition;
+              bool stop;
+
+            public:
+              ThreadPool(size_t num_threads = 10) : stop(false) {{
+                for (size_t i = 0; i < num_threads; ++i) {{
+                  workers.emplace_back([this] {{
+                    while (true) {{
+                      std::function<void()> task;
+
+                      {{
+                        std::unique_lock<std::mutex> lock(this->mutex);
+                        this->condition.wait(
+                            lock, [this] {{ return this->stop || !this->tasks.empty(); }});
+
+                        if (this->stop && this->tasks.empty()) {{
+                          return;
+                        }}
+
+                        task = std::move(this->tasks.front());
+                        this->tasks.pop();
+                      }}
+
+                      task();
+                    }}
+                  }});
+                }}
+              }}
+
+              template <class F> void enqueue(F &&f) {{
+                {{
+                  std::unique_lock<std::mutex> lock(mutex);
+                  if (stop) {{
+                    return;
+                  }}
+                  tasks.emplace(std::forward<F>(f));
+                }}
+                condition.notify_one();
+              }}
+
+              void shutdown() {{
+                {{
+                  std::unique_lock<std::mutex> lock(mutex);
+                  stop = true;
+                  std::queue<std::function<void()>> empty;
+                  std::swap(tasks, empty);
+                }}
+
+                condition.notify_all();
+
+                for (std::thread &worker : workers) {{
+                  if (worker.joinable()) {{
+                    worker.join();
+                  }}
+                }}
+              }}
+
+              ~ThreadPool() {{
+                {{
+                  std::unique_lock<std::mutex> lock(mutex);
+                  stop = true;
+                }}
+                condition.notify_all();
+                for (std::thread &worker : workers) {{
+                  worker.join();
+                }}
+              }}
+            }};"#
+        }
     }
 
     /// Generates the signal manager header file for event emission.
@@ -708,6 +895,9 @@ impl Template for CxxTemplate {
                 cxx_dir(&project.root).join("bridging-generated.hpp"),
                 self.cxx_bridging(&project.schemas)?,
             )],
+            CxxFileType::UtilsHpp => {
+                vec![(cxx_dir(&project.root).join("utils.hpp"), self.cxx_utils())]
+            }
             CxxFileType::SignalsH => {
                 let has_signals = project
                     .schemas
@@ -768,6 +958,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
         let res = [
             template.render(project, &CxxFileType::Mod)?,
             template.render(project, &CxxFileType::BridgingHpp)?,
+            template.render(project, &CxxFileType::UtilsHpp)?,
             template.render(project, &CxxFileType::SignalsH)?,
         ]
         .into_iter()

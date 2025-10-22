@@ -2,8 +2,6 @@
 #include "CxxCalculatorModule.hpp"
 #include "cxx.h"
 #include "bridging-generated.hpp"
-#include "utils.hpp"
-#include <thread>
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;
@@ -20,7 +18,7 @@ CxxCalculatorModule::CxxCalculatorModule(
     craby::bridging::createCalculator(reinterpret_cast<uintptr_t>(this)).into_raw(),
     [](craby::bridging::Calculator *ptr) { rust::Box<craby::bridging::Calculator>::from_raw(ptr); }
   );
-
+  threadPool_ = std::make_shared<ThreadPool>(10);
   methodMap_["add"] = MethodMetadata{2, &CxxCalculatorModule::add};
   methodMap_["divide"] = MethodMetadata{2, &CxxCalculatorModule::divide};
   methodMap_["multiply"] = MethodMetadata{2, &CxxCalculatorModule::multiply};
@@ -40,6 +38,9 @@ void CxxCalculatorModule::invalidate() {
   listenersMap_.clear();
 
   // No signals
+
+  // Shutdown thread pool
+  threadPool_->shutdown();
 }
 
 jsi::Value CxxCalculatorModule::add(jsi::Runtime &rt,

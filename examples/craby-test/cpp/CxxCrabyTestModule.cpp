@@ -2,8 +2,6 @@
 #include "CxxCrabyTestModule.hpp"
 #include "cxx.h"
 #include "bridging-generated.hpp"
-#include "utils.hpp"
-#include <thread>
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;
@@ -25,7 +23,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
     craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
     [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
   );
-
+  threadPool_ = std::make_shared<ThreadPool>(10);
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
@@ -59,6 +57,9 @@ void CxxCrabyTestModule::invalidate() {
   uintptr_t id = reinterpret_cast<uintptr_t>(this);
   auto& manager = craby::signals::SignalManager::getInstance();
   manager.unregisterDelegate(id);
+
+  // Shutdown thread pool
+  threadPool_->shutdown();
 }
 
 void CxxCrabyTestModule::emit(std::string name) {
@@ -314,7 +315,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     react::AsyncPromise<double> promise(rt, callInvoker);
 
-    std::thread([it_, promise, arg0]() mutable {
+    thisModule.threadPool_->enqueue([it_, promise, arg0]() mutable {
       try {
         auto ret = craby::bridging::promiseMethod(*it_, arg0);
         promise.resolve(ret);
@@ -323,7 +324,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
       } catch (const std::exception &err) {
         promise.reject(errorMessage(err));
       }
-    }).detach();
+    });
 
     return react::bridging::toJs(rt, promise);
   } catch (const jsi::JSError &err) {

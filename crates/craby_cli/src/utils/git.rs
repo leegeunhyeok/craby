@@ -33,7 +33,11 @@ pub fn clone_template() -> Result<PathBuf, anyhow::Error> {
     )?;
 
     debug!("Setting sparse checkout...");
-    run_command("git", &["sparse-checkout", "set", "template"], Some(temp_dir.to_str().unwrap()))?;
+    run_command(
+        "git",
+        &["sparse-checkout", "set", "template"],
+        Some(temp_dir.to_str().unwrap()),
+    )?;
 
     let temp_dir = temp_dir.join("template");
 
