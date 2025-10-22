@@ -183,9 +183,18 @@ const TEST_SUITES: TestSuite[] = [
         Module.CrabyTestModule.triggerSignal();
       }
 
-      cleanup();
+      const cleanupResults = [
+        cleanup(),
+        cleanup(), // noop
+        cleanup(), // noop
+      ];
 
-      // 4th trigger after the cleanup is called
+      assert(
+        cleanupResults.every((result) => result === undefined),
+        '`cleanup` results are not undefined',
+      );
+
+      // Trigger signal after the cleanup is called
       Module.CrabyTestModule.triggerSignal();
 
       nextTick(() => {
@@ -225,8 +234,10 @@ const TEST_SUITES: TestSuite[] = [
       }
 
       cleanup();
+      cleanup(); // noop
+      cleanup(); // noop
 
-      // 4th trigger after the cleanup is called
+      // Trigger signal after the cleanup is called
       Module.CrabyTestModule.triggerSignal();
 
       nextTick(() => {
