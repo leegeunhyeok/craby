@@ -89,8 +89,6 @@ impl CxxTemplate {
     ///   threadPool_ = std::make_shared<ThreadPool>(10);
     ///   methodMap_["multiply"] = MethodMetadata{2, &CxxMyTestModule::multiply};
     /// }
-    /// ```
-    ///
     /// jsi::Value CxxMyTestModule::multiply(jsi::Runtime &rt,
     ///                                       react::TurboModule &turboModule,
     ///                                       const jsi::Value args[],
