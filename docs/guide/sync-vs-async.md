@@ -51,14 +51,12 @@ console.log(formatted); // "HELLO"
 
 Use synchronous methods when:
 
-<div class="tossface">
 
-- ✅ Operation completes in **< 16ms** (one frame at 60fps)
-- ✅ Simple calculations or data transformations
-- ✅ No heavy computations
-- ✅ Immediate result is needed
+- <span class="tossface">✅</span> Operation completes in **< 16ms** (one frame at 60fps)
+- <span class="tossface">✅</span> Simple calculations or data transformations
+- <span class="tossface">✅</span> No heavy computations
+- <span class="tossface">✅</span> Immediate result is needed
 
-</div>
 
 **Examples of good sync methods:**
 
@@ -122,14 +120,10 @@ HeavyCompute.sortLargeArray([5, 2, 9, 1, 7])
 
 Use asynchronous methods when:
 
-<div class="tossface">
-
-- ✅ Operation takes **> 16ms** (would drop frames)
-- ✅ CPU-intensive computations
-- ✅ You want to keep the UI responsive
-- ✅ Operation can fail and needs error handling
-
-</div>
+- <span class="tossface">✅</span> Operation takes **> 16ms** (would drop frames)
+- <span class="tossface">✅</span> CPU-intensive computations
+- <span class="tossface">✅</span> You want to keep the UI responsive
+- <span class="tossface">✅</span> Operation can fail and needs error handling
 
 **Examples of good async methods:**
 
