@@ -2,6 +2,7 @@
 #include "CxxCalculatorModule.hpp"
 #include "cxx.h"
 #include "bridging-generated.hpp"
+#include "utils.hpp"
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;

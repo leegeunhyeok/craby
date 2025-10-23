@@ -23,6 +23,8 @@ pub enum CxxFileType {
     Mod,
     /// bridging-generated.hpp
     BridgingHpp,
+    /// ThreadPool.hpp
+    ThreadPoolHpp,
     /// utils.hpp
     UtilsHpp,
     /// signals.h
@@ -106,9 +108,10 @@ impl CxxTemplate {
     /// #pragma once
     ///
     /// #include "ffi.rs.h"
-    /// #include <memory>
+    /// #include "ThreadPool.hpp"
     /// #include <ReactCommon/TurboModule.h>
     /// #include <jsi/jsi.h>
+    /// #include <memory>
     ///
     /// namespace craby {
     /// namespace mymodule {
@@ -424,6 +427,7 @@ impl CxxTemplate {
             {include_stmt}
             #include "cxx.h"
             #include "bridging-generated.hpp"
+            #include "utils.hpp"
             #include <react/bridging/Bridging.h>
 
             using namespace facebook;
@@ -439,7 +443,8 @@ impl CxxTemplate {
             r#"
             #pragma once
 
-            #include "utils.hpp"
+            #include "ffi.rs.h"
+            #include "ThreadPool.hpp"
             #include <ReactCommon/TurboModule.h>
             #include <jsi/jsi.h>
             #include <memory>
@@ -566,26 +571,19 @@ impl CxxTemplate {
         Ok(cxx_bridging)
     }
 
-    /// Generates C++ utils header file.
+    /// Generates C++ ThreadPool header file.
     ///
     /// # Generated Code
     ///
     /// ```cpp
     /// #pragma once
     ///
-    /// #include "cxx.h"
-    /// #include "ffi.rs.h"
     /// #include <condition_variable>
     /// #include <functional>
     /// #include <mutex>
     /// #include <queue>
     /// #include <thread>
     /// #include <vector>
-    ///
-    /// inline std::string errorMessage(const std::exception &err) {
-    ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
-    ///   return std::string(rs_err ? rs_err->what() : err.what());
-    /// }
     ///
     /// class ThreadPool {
     /// private:
@@ -661,24 +659,17 @@ impl CxxTemplate {
     ///   }
     /// };
     /// ```
-    fn cxx_utils(&self) -> String {
+    fn cxx_thread_pool(&self) -> String {
         formatdoc! {
             r#"
             #pragma once
 
-            #include "cxx.h"
-            #include "ffi.rs.h"
             #include <condition_variable>
             #include <functional>
             #include <mutex>
             #include <queue>
             #include <thread>
             #include <vector>
-
-            inline std::string errorMessage(const std::exception &err) {{
-              const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
-              return std::string(rs_err ? rs_err->what() : err.what());
-            }}
 
             class ThreadPool {{
             private:
@@ -753,6 +744,36 @@ impl CxxTemplate {
                 }}
               }}
             }};"#
+        }
+    }
+
+    /// Generates C++ utils header file.
+    ///
+    /// # Generated Code
+    ///
+    /// ```cpp
+    /// #pragma once
+    ///
+    /// #include "cxx.h"
+    /// #include "ffi.rs.h"
+    ///
+    /// inline std::string errorMessage(const std::exception &err) {
+    ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+    ///   return std::string(rs_err ? rs_err->what() : err.what());
+    /// }
+    /// ```
+    fn cxx_utils(&self) -> String {
+        formatdoc! {
+            r#"
+            #pragma once
+
+            #include "cxx.h"
+            #include "ffi.rs.h"
+
+            inline std::string errorMessage(const std::exception &err) {{
+              const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+              return std::string(rs_err ? rs_err->what() : err.what());
+            }}"#
         }
     }
 
@@ -893,6 +914,12 @@ impl Template for CxxTemplate {
                 cxx_dir(&project.root).join("bridging-generated.hpp"),
                 self.cxx_bridging(&project.schemas)?,
             )],
+            CxxFileType::ThreadPoolHpp => {
+                vec![(
+                    cxx_dir(&project.root).join("ThreadPool.hpp"),
+                    self.cxx_thread_pool(),
+                )]
+            }
             CxxFileType::UtilsHpp => {
                 vec![(cxx_dir(&project.root).join("utils.hpp"), self.cxx_utils())]
             }
@@ -956,6 +983,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
         let res = [
             template.render(project, &CxxFileType::Mod)?,
             template.render(project, &CxxFileType::BridgingHpp)?,
+            template.render(project, &CxxFileType::ThreadPoolHpp)?,
             template.render(project, &CxxFileType::UtilsHpp)?,
             template.render(project, &CxxFileType::SignalsH)?,
         ]
