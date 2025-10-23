@@ -3,7 +3,7 @@ import { ResolverFactory } from 'oxc-resolver';
 
 export interface CreateResolverOptions {
   rootPath: string;
-  singletonModules?: string[];
+  rootModules?: string[];
 }
 
 /**
@@ -33,13 +33,13 @@ export interface CustomResolutionContext {
   preferNativePlatform?: boolean;
 }
 
-const DEFAULT_SINGLETON_MODULES = ['react', 'react-native'];
+const DEFAULT_ROOT_MODULES = ['react', 'react-native'];
 
 const resolvers = new Map();
 
 export function createResolver(options: CreateResolverOptions): CustomResolver {
   function createResolverImpl(context: CustomResolutionContext, platform: string | null, rootPath: string) {
-    const singletonModules = options.singletonModules ?? DEFAULT_SINGLETON_MODULES;
+    const rootModules = options.rootModules ?? DEFAULT_ROOT_MODULES;
     const baseExtensions = context.sourceExts.map((extension) => `.${extension}`);
     let finalExtensions = [...baseExtensions];
 
@@ -63,14 +63,14 @@ export function createResolver(options: CreateResolverOptions): CustomResolver {
       const resolved = resolver.sync(resolveDir, request);
 
       if (resolved.path == null) {
-        throw new Error(`Failed to resolve ${request} from ${context.originModulePath}`);
+        throw new Error(`Failed to resolve '${request}' from '${resolveDir}'`);
       }
 
       return resolved.path;
     }
 
     function resolve(context: CustomResolutionContext, request: string) {
-      for (const target of singletonModules) {
+      for (const target of rootModules) {
         if (request === target || request.startsWith(`${target}/`)) {
           return {
             type: 'sourceFile',

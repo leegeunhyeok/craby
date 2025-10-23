@@ -3,8 +3,7 @@
   "private": true,
   "workspaces": [
     "examples/*",
-    "packages/*",
-    "shared"
+    "packages/*"
   ],
   "scripts": {
     "prepare": "yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run build",

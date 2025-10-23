@@ -113,6 +113,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
     );
 
     if !passed {
+        println!();
         anyhow::bail!("Some required configurations are not configured correctly");
     }
 

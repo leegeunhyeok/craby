@@ -1,4 +1,4 @@
-const { getConfig } = require('shared');
+const { getMetroConfig } = require('@craby/devkit');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 /**
@@ -7,6 +7,6 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
  *
  * @type {import('metro-config').MetroConfig}
  */
-const config = getConfig(__dirname);
+const config = getMetroConfig(__dirname);
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);

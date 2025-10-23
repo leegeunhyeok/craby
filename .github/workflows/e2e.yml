@@ -110,7 +110,7 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Prepare dependencies
-        run: yarn workspaces foreach --all --topological-dev --include "{craby-modules,shared,test-suites}" run build
+        run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
       - name: AVD cache
@@ -185,7 +185,7 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
       - name: Prepare dependencies
-        run: yarn workspaces foreach --all --topological-dev --include "{craby-modules,shared,test-suites}" run build
+        run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
       - name: Install CocoaPods dependencies
         run: pod install
         working-directory: examples/0.80/ios

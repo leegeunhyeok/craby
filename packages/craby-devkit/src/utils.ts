@@ -1,18 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createResolver } from './resolver';
 
-export function getConfig(rootDir: string) {
-  return {
-    projectRoot: rootDir,
-    watchFolders: [getWorkspaceRoot(rootDir)],
-    resolver: {
-      resolveRequest: createResolver({ rootPath: rootDir }),
-    },
-  };
-}
-
-function getWorkspaceRoot(rootDir: string) {
+export function getWorkspaceRoot(rootDir: string) {
   while (path.dirname(rootDir) !== rootDir) {
     const packageJsonPath = path.join(rootDir, 'package.json');
     if (fs.existsSync(packageJsonPath)) {

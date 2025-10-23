@@ -1,9 +1,7 @@
 const path = require('node:path');
+const { withWorkspaceModule } = require('@craby/devkit');
 
-module.exports = {
-  dependencies: {
-    'craby-test': {
-      root: path.resolve(__dirname, '../craby-test'),
-    },
-  },
-};
+const modulePackagePath = path.resolve(__dirname, '../craby-test');
+const config = {};
+
+module.exports = withWorkspaceModule(config, modulePackagePath);

@@ -7,4 +7,3 @@
 /packages/cli-bindings/index.d.ts     linguist-vendored
 /examples/**/*                        linguist-vendored
 /template/**/*                        linguist-vendored
-/shared/**/*                          linguist-vendored

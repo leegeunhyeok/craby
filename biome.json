@@ -10,7 +10,6 @@
     "includes": [
       "packages/*/src/**",
       "examples/*/src/**",
-      "shared/src/**",
       "docs/.vitepress/**/*.mts"
     ]
   },

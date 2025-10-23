@@ -14,7 +14,7 @@ craby_common   = { path = "../craby_common" }
 anyhow         = { workspace = true }
 log            = { workspace = true }
 owo-colors     = { workspace = true }
-serde_json     = { workspace = true }
+serde_json     = { workspace = true, features = ["preserve_order"] }
 clap           = { version = "4.5.41", features = ["derive"] }
 handlebars     = { version = "6.3.2", features = ["walkdir"] }
 walkdir        = "2.5.0"
