@@ -80,6 +80,8 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         .with_validator(url_validator)
         .prompt()?;
 
+    println!();
+
     // CxxFastCalculatorModule
     let cxx_name = cxx_mod_cls_name(&crate_name);
 
@@ -111,7 +113,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         },
     )?;
     info!(
-        "{} Latest package version: {}",
+        "{} Found latest package version: {}",
         STATUS_OK.bold().green(),
         pkg_version
     );
