@@ -95,7 +95,7 @@ pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> 
 
 pub fn setup_template(dest_dir: &Path, template_data: &TemplateData) -> anyhow::Result<()> {
     with_spinner("Cloning template...", |_| match clone_template() {
-        Ok(template_dir) => setup_template_impl(&dest_dir, &template_dir, template_data),
+        Ok(template_dir) => setup_template_impl(dest_dir, &template_dir, template_data),
         Err(e) => anyhow::bail!("Failed to clone template: {}", e),
     })?;
     success("Template generation completed");
