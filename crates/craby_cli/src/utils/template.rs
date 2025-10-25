@@ -8,10 +8,12 @@ use std::{
 };
 use walkdir::WalkDir;
 
+pub type TemplateData = BTreeMap<&'static str, String>;
+
 pub fn render_template(
     dest_dir: &Path,
     template_dir: &Path,
-    template_data: &BTreeMap<&str, &str>,
+    template_data: &BTreeMap<&str, String>,
 ) -> anyhow::Result<()> {
     let reg = Handlebars::new();
 
@@ -55,7 +57,7 @@ pub fn render_template(
 
 fn replace_path(
     path: &Path,
-    template_data: &BTreeMap<&str, &str>,
+    template_data: &BTreeMap<&str, String>,
     keep_base_name: bool,
 ) -> PathBuf {
     if keep_base_name {

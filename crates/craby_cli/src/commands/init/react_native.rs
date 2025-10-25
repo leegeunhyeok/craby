@@ -4,9 +4,23 @@ use craby_common::utils::string::pascal_case;
 use indoc::formatdoc;
 use log::debug;
 
-use crate::utils::terminal::run_command;
+use crate::utils::{
+    log::success,
+    terminal::{run_command, with_spinner},
+};
 
 pub fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
+    with_spinner("Setting up React Native project...", |_| {
+        if let Err(e) = setup_react_native_project_impl(dest_dir, pkg_name) {
+            anyhow::bail!("Failed to setup React Native project: {}", e);
+        }
+        Ok(())
+    })?;
+    success("React Native project setup completed");
+    Ok(())
+}
+
+pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
     let app_name = pascal_case(pkg_name);
 
     // Root package.json
