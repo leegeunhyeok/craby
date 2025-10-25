@@ -14,4 +14,3 @@ export function getMetroConfig(rootDir: string, options: GetMetroConfigOptions) 
     },
   };
 }
-  

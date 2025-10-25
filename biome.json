@@ -10,7 +10,8 @@
     "includes": [
       "packages/*/src/**",
       "examples/*/src/**",
-      "docs/.vitepress/**/*.mts"
+      "docs/.vitepress/**/*.mts",
+      "!template"
     ]
   },
   "formatter": {
