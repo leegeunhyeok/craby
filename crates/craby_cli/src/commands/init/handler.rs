@@ -116,22 +116,32 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         ("year", current_year.as_str()),
     ]);
 
-    with_spinner("Cloning template...", |_| {
-        let template_dir = clone_template()?;
-        debug!(
-            "Rendering template... ({:?} -> {:?})",
-            template_dir, dest_dir
-        );
-        render_template(&dest_dir, &template_dir, &template_data)?;
-        Ok(())
+    with_spinner("Cloning template...", |_| match clone_template() {
+        Ok(template_dir) => {
+            debug!(
+                "Rendering template... ({:?} -> {:?})",
+                template_dir, dest_dir
+            );
+            render_template(&dest_dir, &template_dir, &template_data)?;
+            Ok(())
+        }
+        Err(e) => anyhow::bail!("Failed to clone template: {}", e),
     })?;
     info!("{} Template generation completed", STATUS_OK.bold().green());
 
-    setup_react_native_project(&dest_dir, &opts.pkg_name)?;
+    with_spinner("Setting up React Native project...", |_| {
+        if let Err(e) = setup_react_native_project(&dest_dir, &opts.pkg_name) {
+            anyhow::bail!("Failed to setup React Native project: {}", e);
+        }
+        Ok(())
+    })?;
+    info!("{} React Native project setup completed", STATUS_OK.bold().green());
 
     if is_rustup_installed() {
         with_spinner("Setting up the Rust project, please wait...", |_| {
-            setup_project()?;
+            if let Err(e) = setup_project() {
+                anyhow::bail!("Failed to setup Rust project: {}", e);
+            }
             Ok(())
         })?;
         info!("{} Rust project setup completed", STATUS_OK.bold().green());
@@ -145,19 +155,19 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
 
     let outro = formatdoc! {
         r#"
-        Craby project initialized successfully!
+        {check_mark} Craby project initialized successfully!
 
-        Get started with your Craby project:
+        {get_started}
 
-        $ cd {pkg_name} && yarn install
+        {get_started_cmd}
 
         Run `{codegen_cmd}` to generate Rust code from your native module specifications
-        For more information, see the Craby documentation:
-
-        {docs_url}
+        For more information, see the Craby documentation: {docs_url}
         "#,
-        pkg_name = opts.pkg_name,
-        codegen_cmd = "npx crabygen".green().underline(),
+        check_mark = STATUS_OK.bold().green(),
+        get_started = "Get started with your Craby project:".yellow(),
+        get_started_cmd = format!("$ cd {} && yarn install", opts.pkg_name).dimmed(),
+        codegen_cmd = "npx crabygen".purple().underline(),
         docs_url = "https://craby.rs".dimmed().underline()
     };
     info!("{}", outro);
