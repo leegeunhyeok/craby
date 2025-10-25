@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
   s.authors      = package["author"]
 
   s.platforms    = { :ios => min_ios_version_supported }
-  s.source       = { :git => "{{ repository_url }}", :tag => "#{s.version}" }
+  s.source       = { :git => "{{ repository_url }}.git", :tag => "#{s.version}" }
 
   s.source_files = ["ios/**/*.{{{{raw}}}}{h,m,mm,cc,cpp}{{{{/raw}}}}", "cpp/**/*.{{{{raw}}}}{hpp,cpp}{{{{/raw}}}}"]
   s.private_header_files = "ios/include/*.h"

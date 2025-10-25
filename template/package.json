@@ -2,6 +2,9 @@
   "name": "{{ pkg_name }}",
   "version": "0.1.0",
   "description": "{{ description }}",
+  "workspaces": [
+    "example"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -42,8 +45,8 @@
     "prepack": "yarn build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
-    "clean": "craby clean",
-    "build": "craby build && tsdown"
+    "build": "craby build && tsdown",
+    "clean": "craby clean"
   },
   "keywords": [
     "react-native",
@@ -72,5 +75,6 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
-  }
+  },
+  "packageManager": "yarn@4.10.3"
 }

@@ -5,7 +5,7 @@ use crate::{
         prepare::validate_env,
         react_native::setup_react_native_project,
         rust::setup_rust_toolchain,
-        template::{get_template_data, setup_template},
+        template::{prompt_for_template_data, setup_template},
     },
     utils::log::{sym, Status},
 };
@@ -22,7 +22,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     let dest_dir = opts.cwd.join(&opts.pkg_name);
     validate_env(&dest_dir)?;
 
-    let template_data = get_template_data(&opts.pkg_name)?;
+    let template_data = prompt_for_template_data(&opts.pkg_name)?;
     setup_template(&dest_dir, &template_data)?;
     setup_react_native_project(&dest_dir, &opts.pkg_name)?;
     setup_rust_toolchain()?;

@@ -23,20 +23,6 @@ pub fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Re
 pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
     let app_name = pascal_case(pkg_name);
 
-    // Root package.json
-    let root_package_json_path = dest_dir.join("package.json");
-    let raw_package_json: String = fs::read_to_string(&root_package_json_path)?;
-    let mut package_json = serde_json::from_str::<serde_json::Value>(&raw_package_json)?;
-    if let Some(obj) = package_json.as_object_mut() {
-        debug!("Inserting workspaces field");
-        obj.insert("workspaces".to_string(), serde_json::json!(["example"]));
-
-        fs::write(
-            root_package_json_path,
-            serde_json::to_string_pretty(&package_json)?,
-        )?;
-    }
-
     run_command(
         "npx",
         &[
@@ -49,11 +35,12 @@ pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyho
         Some(&dest_dir.to_string_lossy()),
     )?;
 
-    let react_native_dir = dest_dir.join(&app_name);
-    let react_native_package_json_path = react_native_dir.join("package.json");
-    let raw_package_json = fs::read_to_string(&react_native_package_json_path)?;
-    let mut package_json = serde_json::from_str::<serde_json::Value>(&raw_package_json)?;
-    if let Some(obj) = package_json.as_object_mut() {
+    // <example>/package.json
+    let project_dir = dest_dir.join(&app_name);
+    let react_native_pkg_json_path = project_dir.join("package.json");
+    let raw_pkg_json = fs::read_to_string(&react_native_pkg_json_path)?;
+    let mut pkg_json = serde_json::from_str::<serde_json::Value>(&raw_pkg_json)?;
+    if let Some(obj) = pkg_json.as_object_mut() {
         if let Some(dependencies) = obj.get_mut("dependencies") {
             if let Some(dependencies_obj) = dependencies.as_object_mut() {
                 debug!("Inserting dependencies");
@@ -69,8 +56,8 @@ pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyho
         }
 
         fs::write(
-            react_native_package_json_path,
-            serde_json::to_string_pretty(&package_json)?,
+            react_native_pkg_json_path,
+            serde_json::to_string_pretty(&pkg_json)?,
         )?;
     }
 
@@ -104,19 +91,18 @@ pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyho
     };
 
     debug!("Overwriting config files");
-    fs::write(react_native_dir.join("metro.config.js"), metro_config)?;
+    fs::write(project_dir.join("metro.config.js"), metro_config)?;
     fs::write(
-        react_native_dir.join("react-native.config.js"),
+        project_dir.join("react-native.config.js"),
         react_native_config,
     )?;
 
-    if react_native_dir.try_exists()? {
-        debug!(
-            "Renaming React Native project to example: {:?}",
-            react_native_dir
-        );
-        fs::rename(react_native_dir, dest_dir.join("example"))?;
-    }
+    let dest_dir = dest_dir.join("example");
+    debug!(
+        "Renaming React Native project {:?} to {:?}",
+        project_dir, dest_dir
+    );
+    fs::rename(project_dir, dest_dir)?;
 
     Ok(())
 }

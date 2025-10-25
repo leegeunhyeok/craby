@@ -13,7 +13,7 @@ use crate::utils::{
     terminal::with_spinner,
 };
 
-pub fn get_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> {
+pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> {
     let non_empty_validator = |input: &str| {
         if input.trim().is_empty() {
             Ok(Validation::Invalid("This field is required.".into()))
@@ -95,16 +95,24 @@ pub fn get_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> {
 
 pub fn setup_template(dest_dir: &Path, template_data: &TemplateData) -> anyhow::Result<()> {
     with_spinner("Cloning template...", |_| match clone_template() {
-        Ok(template_dir) => {
-            debug!(
-                "Rendering template... ({:?} -> {:?})",
-                template_dir, dest_dir
-            );
-            render_template(dest_dir, &template_dir, template_data)?;
-            Ok(())
-        }
+        Ok(template_dir) => setup_template_impl(&dest_dir, &template_dir, template_data),
         Err(e) => anyhow::bail!("Failed to clone template: {}", e),
     })?;
     success("Template generation completed");
+
+    Ok(())
+}
+
+pub fn setup_template_impl(
+    dest_dir: &Path,
+    template_dir: &Path,
+    template_data: &TemplateData,
+) -> anyhow::Result<()> {
+    debug!(
+        "Rendering template... ({:?} -> {:?})",
+        template_dir, dest_dir
+    );
+    render_template(dest_dir, template_dir, template_data)?;
+
     Ok(())
 }
