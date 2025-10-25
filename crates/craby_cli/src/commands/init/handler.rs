@@ -1,13 +1,12 @@
-use std::{
-    collections::BTreeMap,
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeMap, path::PathBuf};
 
-use crate::utils::{
-    git::{clone_template, is_git_available},
-    template::render_template,
-    terminal::{run_command, with_spinner},
+use crate::{
+    commands::init::{npm::get_latest_version, react_native::setup_react_native_project},
+    utils::{
+        git::{clone_template, is_git_available},
+        template::render_template,
+        terminal::with_spinner,
+    },
 };
 use chrono::Datelike;
 use craby_build::setup::setup_project;
@@ -100,8 +99,26 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
     let objc_provider = objc_mod_provider_name(&crate_name);
     let current_year = chrono::Local::now().year().to_string();
 
+    let mut pkg_version = String::new();
+    with_spinner(
+        "Getting latest package version...",
+        |_| match get_latest_version() {
+            Ok(res) => {
+                pkg_version = res;
+                Ok(())
+            }
+            Err(e) => anyhow::bail!("Failed to get latest package version: {}", e),
+        },
+    )?;
+    info!(
+        "{} Latest package version: {}",
+        STATUS_OK.bold().green(),
+        pkg_version
+    );
+
     let template_data = BTreeMap::from([
         ("pkg_name", opts.pkg_name.as_str()),
+        ("pkg_version", pkg_version.as_str()),
         ("description", description.as_str()),
         ("author_name", author_name.as_str()),
         ("author_email", author_email.as_str()),
@@ -135,7 +152,10 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         }
         Ok(())
     })?;
-    info!("{} React Native project setup completed", STATUS_OK.bold().green());
+    info!(
+        "{} React Native project setup completed",
+        STATUS_OK.bold().green()
+    );
 
     if is_rustup_installed() {
         with_spinner("Setting up the Rust project, please wait...", |_| {
@@ -171,107 +191,6 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         docs_url = "https://craby.rs".dimmed().underline()
     };
     info!("{}", outro);
-
-    Ok(())
-}
-
-fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
-    let app_name = pascal_case(pkg_name);
-
-    // Root package.json
-    let root_package_json_path = dest_dir.join("package.json");
-    let raw_package_json: String = fs::read_to_string(&root_package_json_path)?;
-    let mut package_json = serde_json::from_str::<serde_json::Value>(&raw_package_json)?;
-    if let Some(obj) = package_json.as_object_mut() {
-        debug!("Inserting workspaces field");
-        obj.insert("workspaces".to_string(), serde_json::json!(["example"]));
-
-        fs::write(
-            root_package_json_path,
-            serde_json::to_string_pretty(&package_json)?,
-        )?;
-    }
-
-    run_command(
-        "npx",
-        &[
-            "@react-native-community/cli@latest",
-            "init",
-            app_name.as_str(),
-            "--skip-install",
-            "--skip-git-init",
-        ],
-        Some(&dest_dir.to_string_lossy()),
-    )?;
-
-    let react_native_dir = dest_dir.join(&app_name);
-    let react_native_package_json_path = react_native_dir.join("package.json");
-    let raw_package_json = fs::read_to_string(&react_native_package_json_path)?;
-    let mut package_json = serde_json::from_str::<serde_json::Value>(&raw_package_json)?;
-    if let Some(obj) = package_json.as_object_mut() {
-        if let Some(dependencies) = obj.get_mut("dependencies") {
-            if let Some(dependencies_obj) = dependencies.as_object_mut() {
-                debug!("Inserting dependencies");
-                dependencies_obj.insert(pkg_name.to_string(), serde_json::json!("workspace:*"));
-            }
-        }
-
-        if let Some(dev_dependencies) = obj.get_mut("devDependencies") {
-            if let Some(dev_dependencies_obj) = dev_dependencies.as_object_mut() {
-                debug!("Inserting devDependencies");
-                dev_dependencies_obj.insert("@craby/devkit".to_string(), serde_json::json!("*"));
-            }
-        }
-
-        fs::write(
-            react_native_package_json_path,
-            serde_json::to_string_pretty(&package_json)?,
-        )?;
-    }
-
-    let metro_config = formatdoc! {
-        r#"
-        const {{ getMetroConfig }} = require('@craby/devkit');
-        const {{ getDefaultConfig, mergeConfig }} = require('@react-native/metro-config');
-
-        /**
-         * Metro configuration
-         * https://reactnative.dev/docs/metro
-         *
-         * @type {{import('@react-native/metro-config').MetroConfig}}
-         */
-        const config = getMetroConfig(__dirname);
-
-        module.exports = mergeConfig(getDefaultConfig(__dirname), config);
-        "#
-    };
-
-    let react_native_config = formatdoc! {
-        r#"
-        const path = require('node:path');
-        const {{ withWorkspaceModule }} = require('@craby/devkit');
-
-        const modulePackagePath = path.resolve(__dirname, '..');
-        const config = {{}};
-
-        module.exports = withWorkspaceModule(config, modulePackagePath);
-        "#
-    };
-
-    debug!("Overwriting config files");
-    fs::write(react_native_dir.join("metro.config.js"), metro_config)?;
-    fs::write(
-        react_native_dir.join("react-native.config.js"),
-        react_native_config,
-    )?;
-
-    if react_native_dir.try_exists()? {
-        debug!(
-            "Renaming React Native project to example: {:?}",
-            react_native_dir
-        );
-        fs::rename(react_native_dir, dest_dir.join("example"))?;
-    }
 
     Ok(())
 }
