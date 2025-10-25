@@ -2,7 +2,6 @@
 #include "CxxCrabyTestModule.hpp"
 #include "cxx.h"
 #include "bridging-generated.hpp"
-#include "utils.hpp"
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;
@@ -24,7 +23,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
     craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
     [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
   );
-  threadPool_ = std::make_shared<ThreadPool>(10);
+  threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
@@ -106,7 +105,7 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -130,7 +129,7 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -153,7 +152,7 @@ jsi::Value CxxCrabyTestModule::camelMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -178,7 +177,7 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -201,7 +200,7 @@ jsi::Value CxxCrabyTestModule::getState(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -225,7 +224,7 @@ jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -249,7 +248,7 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -273,7 +272,7 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -296,7 +295,7 @@ jsi::Value CxxCrabyTestModule::pascalMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -323,7 +322,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
       } catch (const std::exception &err) {
-        promise.reject(errorMessage(err));
+        promise.reject(craby::utils::errorMessage(err));
       }
     });
 
@@ -331,7 +330,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -355,7 +354,7 @@ jsi::Value CxxCrabyTestModule::setState(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -378,7 +377,7 @@ jsi::Value CxxCrabyTestModule::snakeMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -403,7 +402,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -426,7 +425,7 @@ jsi::Value CxxCrabyTestModule::triggerSignal(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -481,7 +480,7 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 

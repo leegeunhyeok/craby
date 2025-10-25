@@ -110,7 +110,7 @@ impl RsTemplate {
                 r#"
                 #[namespace = "craby::signals"]
                 unsafe extern "C++" {{
-                    include!("signals.h");
+                    include!("CrabySignals.h");
 
                     type SignalManager;
 

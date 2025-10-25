@@ -23,11 +23,9 @@ pub enum CxxFileType {
     Mod,
     /// bridging-generated.hpp
     BridgingHpp,
-    /// ThreadPool.hpp
-    ThreadPoolHpp,
-    /// utils.hpp
+    /// CrabyUtils.hpp
     UtilsHpp,
-    /// signals.h
+    /// CrabySignals.h
     SignalsH,
 }
 
@@ -75,7 +73,6 @@ impl CxxTemplate {
     /// #include "CxxMyTestModule.hpp"
     /// #include "cxx.h"
     /// #include "bridging-generated.hpp"
-    /// #include "utils.hpp"
     /// #include <thread>
     /// #include <react/bridging/Bridging.h>
     ///
@@ -88,7 +85,7 @@ impl CxxTemplate {
     ///     std::shared_ptr<react::CallInvoker> jsInvoker)
     ///     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
     ///   callInvoker_ = std::move(jsInvoker);
-    ///   threadPool_ = std::make_shared<ThreadPool>(10);
+    ///   threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
     ///   methodMap_["multiply"] = MethodMetadata{2, &CxxMyTestModule::multiply};
     /// }
     /// jsi::Value CxxMyTestModule::multiply(jsi::Runtime &rt,
@@ -107,8 +104,8 @@ impl CxxTemplate {
     /// ```cpp
     /// #pragma once
     ///
+    /// #include "CrabyUtils.hpp"
     /// #include "ffi.rs.h"
-    /// #include "ThreadPool.hpp"
     /// #include <ReactCommon/TurboModule.h>
     /// #include <jsi/jsi.h>
     /// #include <memory>
@@ -264,7 +261,7 @@ impl CxxTemplate {
                       }} catch (const jsi::JSError &err) {{
                         throw err;
                       }} catch (const std::exception &err) {{
-                        throw jsi::JSError(rt, errorMessage(err));
+                        throw jsi::JSError(rt, craby::utils::errorMessage(err));
                       }}
                     }}"#,
                     cxx_mod = cxx_mod,
@@ -339,7 +336,7 @@ impl CxxTemplate {
                 craby::bridging::create{module_name}(reinterpret_cast<uintptr_t>(this)).into_raw(),
                 [](craby::bridging::{module_name} *ptr) {{ rust::Box<craby::bridging::{module_name}>::from_raw(ptr); }}
               );
-              threadPool_ = std::make_shared<ThreadPool>(10);
+              threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
             {method_maps}
             }}
 
@@ -390,7 +387,6 @@ impl CxxTemplate {
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
               std::shared_ptr<craby::bridging::{module_name}> module_;
-              std::shared_ptr<ThreadPool> threadPool_;
               std::atomic<bool> invalidated_{{false}};
               std::atomic<size_t> nextListenerId_{{0}};
               std::mutex listenersMutex_;
@@ -398,6 +394,7 @@ impl CxxTemplate {
                 std::string,
                 std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
                 listenersMap_;
+              std::shared_ptr<craby::utils::ThreadPool> threadPool_;
             }};
 
             }} // namespace {flat_name}"#,
@@ -412,7 +409,6 @@ impl CxxTemplate {
         // #include "my_module.hpp"
         // #include "cxx.h"
         // #include "bridging-generated.hpp"
-        // #include "utils.hpp"
         // #include <thread>
         // #include <react/bridging/Bridging.h>
         //
@@ -427,7 +423,6 @@ impl CxxTemplate {
             {include_stmt}
             #include "cxx.h"
             #include "bridging-generated.hpp"
-            #include "utils.hpp"
             #include <react/bridging/Bridging.h>
 
             using namespace facebook;
@@ -443,8 +438,8 @@ impl CxxTemplate {
             r#"
             #pragma once
 
+            #include "CrabyUtils.hpp"
             #include "ffi.rs.h"
-            #include "ThreadPool.hpp"
             #include <ReactCommon/TurboModule.h>
             #include <jsi/jsi.h>
             #include <memory>
@@ -571,19 +566,24 @@ impl CxxTemplate {
         Ok(cxx_bridging)
     }
 
-    /// Generates C++ ThreadPool header file.
+    /// Generates C++ utils header file.
     ///
     /// # Generated Code
     ///
     /// ```cpp
     /// #pragma once
     ///
+    /// #include "cxx.h"
+    /// #include "ffi.rs.h"
     /// #include <condition_variable>
     /// #include <functional>
     /// #include <mutex>
     /// #include <queue>
     /// #include <thread>
     /// #include <vector>
+    /// 
+    /// namespace craby {
+    /// namespace utils {
     ///
     /// class ThreadPool {
     /// private:
@@ -658,18 +658,31 @@ impl CxxTemplate {
     ///     }
     ///   }
     /// };
+    ///
+    /// inline std::string errorMessage(const std::exception &err) {
+    ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
+    ///   return std::string(rs_err ? rs_err->what() : err.what());
+    /// }
+    /// 
+    /// } // namespace utils
+    /// } // namespace craby
     /// ```
-    fn cxx_thread_pool(&self) -> String {
+    fn cxx_utils(&self) -> String {
         formatdoc! {
             r#"
             #pragma once
 
+            #include "cxx.h"
+            #include "ffi.rs.h"
             #include <condition_variable>
             #include <functional>
             #include <mutex>
             #include <queue>
             #include <thread>
             #include <vector>
+
+            namespace craby {{
+            namespace utils {{
 
             class ThreadPool {{
             private:
@@ -743,37 +756,15 @@ impl CxxTemplate {
                   worker.join();
                 }}
               }}
-            }};"#
-        }
-    }
-
-    /// Generates C++ utils header file.
-    ///
-    /// # Generated Code
-    ///
-    /// ```cpp
-    /// #pragma once
-    ///
-    /// #include "cxx.h"
-    /// #include "ffi.rs.h"
-    ///
-    /// inline std::string errorMessage(const std::exception &err) {
-    ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
-    ///   return std::string(rs_err ? rs_err->what() : err.what());
-    /// }
-    /// ```
-    fn cxx_utils(&self) -> String {
-        formatdoc! {
-            r#"
-            #pragma once
-
-            #include "cxx.h"
-            #include "ffi.rs.h"
+            }};
 
             inline std::string errorMessage(const std::exception &err) {{
               const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
               return std::string(rs_err ? rs_err->what() : err.what());
-            }}"#
+            }}
+            
+            }} // namespace utils
+            }} // namespace craby"#
         }
     }
 
@@ -914,14 +905,11 @@ impl Template for CxxTemplate {
                 cxx_dir(&project.root).join("bridging-generated.hpp"),
                 self.cxx_bridging(&project.schemas)?,
             )],
-            CxxFileType::ThreadPoolHpp => {
-                vec![(
-                    cxx_dir(&project.root).join("ThreadPool.hpp"),
-                    self.cxx_thread_pool(),
-                )]
-            }
             CxxFileType::UtilsHpp => {
-                vec![(cxx_dir(&project.root).join("utils.hpp"), self.cxx_utils())]
+                vec![(
+                    cxx_dir(&project.root).join("CrabyUtils.hpp"),
+                    self.cxx_utils(),
+                )]
             }
             CxxFileType::SignalsH => {
                 let has_signals = project
@@ -931,7 +919,7 @@ impl Template for CxxTemplate {
 
                 if has_signals {
                     vec![(
-                        cxx_bridge_include_dir(&project.root).join("signals.h"),
+                        cxx_bridge_include_dir(&project.root).join("CrabySignals.h"),
                         self.cxx_signals()?,
                     )]
                 } else {
@@ -983,7 +971,6 @@ impl Generator<CxxTemplate> for CxxGenerator {
         let res = [
             template.render(project, &CxxFileType::Mod)?,
             template.render(project, &CxxFileType::BridgingHpp)?,
-            template.render(project, &CxxFileType::ThreadPoolHpp)?,
             template.render(project, &CxxFileType::UtilsHpp)?,
             template.render(project, &CxxFileType::SignalsH)?,
         ]

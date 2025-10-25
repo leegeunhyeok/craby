@@ -6,7 +6,6 @@ expression: result
 #include "CxxCrabyTestModule.hpp"
 #include "cxx.h"
 #include "bridging-generated.hpp"
-#include "utils.hpp"
 #include <react/bridging/Bridging.h>
 
 using namespace facebook;
@@ -28,7 +27,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
     craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
     [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
   );
-  threadPool_ = std::make_shared<ThreadPool>(10);
+  threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{2, &CxxCrabyTestModule::camelMethod};
@@ -107,7 +106,7 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -131,7 +130,7 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -156,7 +155,7 @@ jsi::Value CxxCrabyTestModule::camelMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -181,7 +180,7 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -205,7 +204,7 @@ jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -229,7 +228,7 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -253,7 +252,7 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -278,7 +277,7 @@ jsi::Value CxxCrabyTestModule::pascalMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -305,7 +304,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
       } catch (const std::exception &err) {
-        promise.reject(errorMessage(err));
+        promise.reject(craby::utils::errorMessage(err));
       }
     });
 
@@ -313,7 +312,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -338,7 +337,7 @@ jsi::Value CxxCrabyTestModule::snakeMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -363,7 +362,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -418,7 +417,7 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, errorMessage(err));
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
   }
 }
 
@@ -428,8 +427,8 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
 ./cpp/CxxCrabyTestModule.hpp
 #pragma once
 
+#include "CrabyUtils.hpp"
 #include "ffi.rs.h"
-#include "ThreadPool.hpp"
 #include <ReactCommon/TurboModule.h>
 #include <jsi/jsi.h>
 #include <memory>
@@ -510,7 +509,6 @@ public:
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
   std::shared_ptr<craby::bridging::CrabyTest> module_;
-  std::shared_ptr<ThreadPool> threadPool_;
   std::atomic<bool> invalidated_{false};
   std::atomic<size_t> nextListenerId_{0};
   std::mutex listenersMutex_;
@@ -518,6 +516,7 @@ protected:
     std::string,
     std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
     listenersMap_;
+  std::shared_ptr<craby::utils::ThreadPool> threadPool_;
 };
 
 } // namespace crabytest
@@ -800,15 +799,20 @@ struct Bridging<craby::bridging::NullableNumber> {
 } // namespace react
 } // namespace facebook
 
-./cpp/ThreadPool.hpp
+./cpp/CrabyUtils.hpp
 #pragma once
 
+#include "cxx.h"
+#include "ffi.rs.h"
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
+
+namespace craby {
+namespace utils {
 
 class ThreadPool {
 private:
@@ -884,18 +888,15 @@ public:
   }
 };
 
-./cpp/utils.hpp
-#pragma once
-
-#include "cxx.h"
-#include "ffi.rs.h"
-
 inline std::string errorMessage(const std::exception &err) {
   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
   return std::string(rs_err ? rs_err->what() : err.what());
 }
 
-./crates/lib/include/signals.h
+} // namespace utils
+} // namespace craby
+
+./crates/lib/include/CrabySignals.h
 #pragma once
 
 #include "rust/cxx.h"

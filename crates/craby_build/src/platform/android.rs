@@ -39,8 +39,8 @@ pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
         }
     }
 
-    let signal_path = jni_base_path.join("include").join("signals.h");
-    debug!("Post-processing signals.h: {:?}", signal_path);
+    let signal_path = jni_base_path.join("include").join("CrabySignals.h");
+    debug!("Post-processing CrabySignals.h: {:?}", signal_path);
     if signal_path.try_exists()? {
         replace_cxx_header(&signal_path)?;
     }

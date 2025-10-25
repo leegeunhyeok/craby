@@ -66,7 +66,7 @@ pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
         )?;
     }
 
-    let signal_path = ios_base_path.join("include").join("signals.h");
+    let signal_path = ios_base_path.join("include").join("CrabySignals.h");
     if signal_path.try_exists()? {
         replace_cxx_header(&signal_path)?;
     }

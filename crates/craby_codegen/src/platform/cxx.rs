@@ -274,7 +274,7 @@ impl Method {
     ///   } catch (const jsi::JSError &err) {
     ///     throw err;
     ///   } catch (const std::exception &err) {
-    ///     throw jsi::JSError(rt, errorMessage(err));
+    ///     throw jsi::JSError(rt, craby::utils::errorMessage(err));
     ///   }
     /// }
     /// ```
@@ -352,7 +352,7 @@ impl Method {
                 //   } catch (const jsi::JSError &err) {
                 //     promise.reject(err.getMessage());
                 //   } catch (const std::exception &err) {
-                //     promise.reject(errorMessage(err));
+                //     promise.reject(craby::utils::errorMessage(err));
                 //   }
                 // });
                 //
@@ -368,7 +368,7 @@ impl Method {
                       }} catch (const jsi::JSError &err) {{
                         promise.reject(err.getMessage());
                       }} catch (const std::exception &err) {{
-                        promise.reject(errorMessage(err));
+                        promise.reject(craby::utils::errorMessage(err));
                       }}
                     }});
 
@@ -448,7 +448,7 @@ impl Method {
               }} catch (const jsi::JSError &err) {{
                 throw err;
               }} catch (const std::exception &err) {{
-                throw jsi::JSError(rt, errorMessage(err));
+                throw jsi::JSError(rt, craby::utils::errorMessage(err));
               }}
             }}"#,
             fn_name = camel_case(&self.name),

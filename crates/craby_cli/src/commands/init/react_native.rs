@@ -21,7 +21,7 @@ pub fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Re
 }
 
 pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
-    let app_name = pascal_case(pkg_name);
+    let app_name = format!("{}Example", pascal_case(pkg_name));
 
     run_command(
         "npx",
@@ -90,12 +90,22 @@ pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyho
         "#
     };
 
-    debug!("Overwriting config files");
+    let entry_file = formatdoc! {
+        r#"
+        import {{ AppRegistry }} from 'react-native';
+        import App from './App';
+
+        AppRegistry.registerComponent('{app_name}', () => App);
+        "#
+    };
+
+    debug!("Overwriting files");
     fs::write(project_dir.join("metro.config.js"), metro_config)?;
     fs::write(
         project_dir.join("react-native.config.js"),
         react_native_config,
     )?;
+    fs::write(project_dir.join("index.js"), entry_file)?;
 
     let dest_dir = dest_dir.join("example");
     debug!(

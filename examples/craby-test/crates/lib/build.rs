@@ -4,5 +4,5 @@ fn main() {
         .include("include")
         .compile("cxxbridge");
 
-    println!("cargo:rerun-if-changed=include/signals.h");
+    println!("cargo:rerun-if-changed=include/CrabySignals.h");
 }
