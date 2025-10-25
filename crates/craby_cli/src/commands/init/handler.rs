@@ -143,10 +143,24 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
         );
     }
 
-    info!(
-        "Craby project initialized successfully\n\nRun `{}` to generate Rust code from your native module specifications",
-        "npx crabygen".green().underline()
-    );
+    let outro = formatdoc! {
+        r#"
+        Craby project initialized successfully!
+
+        Get started with your Craby project:
+
+        $ cd {pkg_name} && yarn install
+
+        Run `{codegen_cmd}` to generate Rust code from your native module specifications
+        For more information, see the Craby documentation:
+
+        {docs_url}
+        "#,
+        pkg_name = opts.pkg_name,
+        codegen_cmd = "npx crabygen".green().underline(),
+        docs_url = "https://craby.rs".dimmed().underline()
+    };
+    info!("{}", outro);
 
     Ok(())
 }
