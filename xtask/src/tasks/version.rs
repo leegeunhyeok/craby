@@ -3,6 +3,7 @@ use crate::utils::{
     update_cargo_workspace_version, update_package_version,
 };
 use anyhow::Result;
+use indoc::formatdoc;
 use std::env;
 
 pub fn run() -> Result<()> {
@@ -20,13 +21,16 @@ pub fn run() -> Result<()> {
     update_cargo_crate_versions(&version)?;
 
     println!(
-        r#"
-To publish, commit changes and push:
-
-git add -A
-git commit -m "chore: release v{}"
-"#,
-        version
+        "{}",
+        formatdoc!(
+            r#"
+            To publish, commit changes and push:
+            
+            git add -A
+            git commit -m "chore: release v{}"
+            "#,
+            version
+        )
     );
 
     Ok(())

@@ -22,14 +22,8 @@ pub enum RsFileType {
     CrateEntry,
     /// ffi.rs
     FFIEntry,
-    /// types.rs
-    Types,
-    /// context.rs
-    Context,
     /// generated.rs
     Generated,
-    /// macros.rs
-    Macros,
 }
 
 impl RsTemplate {
@@ -38,9 +32,6 @@ impl RsTemplate {
             RsFileType::CrateEntry => PathBuf::from("lib.rs"),
             RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
             RsFileType::Generated => PathBuf::from("generated.rs"),
-            RsFileType::Context => PathBuf::from("context.rs"),
-            RsFileType::Types => PathBuf::from("types.rs"),
-            RsFileType::Macros => PathBuf::from("macros.rs"),
         }
     }
 
@@ -258,9 +249,10 @@ impl RsTemplate {
     /// # Generated Code
     ///
     /// ```rust,ignore
+    /// use craby::{prelude::*, throw};
+    ///
     /// use crate::ffi::bridging::*;
     /// use crate::generated::*;
-    /// use crate::types::*;
     ///
     /// pub struct MyModule {
     ///     ctx: Context,
@@ -322,10 +314,10 @@ impl RsTemplate {
             .collect::<Result<Vec<_>, _>>()?;
 
         // ```rust,ignore
+        // use craby::{prelude::*, throw};
+        //
         // use crate::ffi::bridging::*;
         // use crate::generated::*;
-        // use crate::context::*;
-        // use crate::types::*;
         //
         // pub struct MyModule;
         //
@@ -337,10 +329,10 @@ impl RsTemplate {
         // ```
         let content = formatdoc! {
             r#"
+            use craby::{{prelude::*, throw}};
+
             use crate::ffi::bridging::*;
             use crate::generated::*;
-            use crate::context::*;
-            use crate::types::*;
 
             pub struct {mod_name} {{
                 ctx: Context,
@@ -362,6 +354,7 @@ impl RsTemplate {
     /// ```rust,ignore
     /// pub(crate) mod generated;
     /// pub(crate) mod ffi;
+    ///
     /// pub(crate) mod my_module_impl;
     /// ```
     fn lib_rs(&self, schemas: &[Schema]) -> Result<String, anyhow::Error> {
@@ -374,14 +367,8 @@ impl RsTemplate {
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
-
-            #[macro_use]
-            pub(crate) mod macros;
-
-            pub(crate) mod context;
             pub(crate) mod ffi;
             pub(crate) mod generated;
-            pub(crate) mod types;
 
             {impl_mods}"#,
             impl_mods = impl_mods.join("\n"),
@@ -393,8 +380,9 @@ impl RsTemplate {
     /// Generate the `ffi.rs` file for the given code generation results.
     ///
     /// ```rust,ignore
+    /// use craby::prelude::*;
+    ///
     /// use crate::my_module_impl::*;
-    /// use crate::context::*;
     /// use crate::generated::*;
     ///
     /// use bridging::*;
@@ -426,8 +414,9 @@ impl RsTemplate {
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
+            use craby::prelude::*;
+
             {impl_mods}
-            use crate::context::*;
             use crate::generated::*;
 
             use bridging::*;
@@ -443,189 +432,12 @@ impl RsTemplate {
         Ok(content)
     }
 
-    /// Generates the `context.rs`
-    ///
-    /// ```rust,ignore
-    /// pub struct Context {
-    ///     pub id: usize,
-    ///     pub data_path: String,
-    /// }
-    /// ```
-    fn context_rs(&self) -> String {
-        formatdoc! {
-            r#"
-            pub struct Context {{
-                pub id: usize,
-                pub data_path: String,
-            }}
-            
-            impl Context {{
-                pub fn new(id: usize, data_path: &str) -> Self {{
-                    Context {{ id, data_path: data_path.to_string() }}
-                }}
-            }}"#,
-        }
-    }
-
-    /// Generates the `types.rs` with common type aliases and utilities.
-    ///
-    /// # Generated Code
-    ///
-    /// ```rust,ignore
-    /// pub type Boolean = bool;
-    /// pub type Number = f64;
-    /// pub type String = std::string::String;
-    /// pub type Array<T> = std::vec::Vec<T>;
-    /// pub type Promise<T> = std::result::Result<T, anyhow::Error>;
-    /// pub type Void = ();
-    ///
-    /// pub mod promise {
-    ///     use super::Promise;
-    ///
-    ///     pub fn resolve<T>(val: T) -> Promise<T> {
-    ///         Ok(val)
-    ///     }
-    ///
-    ///     pub fn reject<T>(err: impl AsRef<str>) -> Promise<T> {
-    ///         Err(anyhow::anyhow!(err.as_ref().to_string()))
-    ///     }
-    /// }
-    ///
-    /// pub struct Nullable<T> {
-    ///     val: Option<T>,
-    /// }
-    ///
-    /// impl<T> Nullable<T> {
-    ///     pub fn new(val: Option<T>) -> Self {
-    ///         Nullable { val }
-    ///     }
-    ///
-    ///     pub fn some(val: T) -> Self {
-    ///         Nullable { val: Some(val) }
-    ///     }
-    ///
-    ///     pub fn none() -> Self {
-    ///         Nullable { val: None }
-    ///     }
-    /// }
-    /// ```
-    fn types_rs(&self) -> String {
-        formatdoc! {
-            r#"
-            #[rustfmt::skip]
-            pub type Boolean = bool;
-            pub type Number = f64;
-            pub type String = std::string::String;
-            pub type Array<T> = std::vec::Vec<T>;
-            pub type Promise<T> = std::result::Result<T, anyhow::Error>;
-            pub type Void = ();
-
-            pub mod promise {{
-                use super::Promise;
-
-                pub fn resolve<T>(val: T) -> Promise<T> {{
-                    Ok(val)
-                }}
-
-                pub fn reject<T>(err: impl AsRef<str>) -> Promise<T> {{
-                    Err(anyhow::anyhow!(err.as_ref().to_string()))
-                }}
-            }}
-
-            pub struct Nullable<T> {{
-                val: Option<T>,
-            }}
-
-            impl<T> Nullable<T> {{
-                pub fn new(val: Option<T>) -> Self {{
-                    Nullable {{ val }}
-                }}
-
-                pub fn some(val: T) -> Self {{
-                    Nullable {{ val: Some(val) }}
-                }}
-
-                pub fn none() -> Self {{
-                    Nullable {{ val: None }}
-                }}
-
-                pub fn value(mut self, val: T) -> Self {{
-                    self.val = Some(val);
-                    self
-                }}
-
-                pub fn value_of(&self) -> Option<&T> {{
-                    self.val.as_ref()
-                }}
-
-                pub fn into_value(self) -> Option<T> {{
-                    self.val
-                }}
-            }}"#,
-        }
-    }
-
-    /// Generates utility macros for error handling.
-    ///
-    /// # Generated Code
-    ///
-    /// ```rust,ignore
-    /// #[macro_export]
-    /// macro_rules! throw {
-    ///     ($($arg:tt)*) => {{
-    ///         panic!($($arg)*)
-    ///     }};
-    /// }
-    ///
-    /// #[macro_export]
-    /// macro_rules! catch_panic {
-    ///     ($expr:expr) => {{
-    ///         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {
-    ///             let msg = if let Some(s) = e.downcast_ref::<&str>() {
-    ///                 (*s).to_string()
-    ///             } else if let Some(s) = e.downcast_ref::<String>() {
-    ///                 s.clone()
-    ///             } else {
-    ///                 "Unknown panic occurred".to_string()
-    ///             };
-    ///             anyhow::anyhow!(msg)
-    ///         })
-    ///     }};
-    /// }
-    /// ```
-    fn macros_rs(&self) -> String {
-        formatdoc! {
-            r#"
-            #[macro_export]
-            macro_rules! throw {{
-                ($($arg:tt)*) => {{
-                    panic!($($arg)*)
-                }};
-            }}
-
-            #[macro_export]
-            macro_rules! catch_panic {{
-                ($expr:expr) => {{
-                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {{
-                        let msg = if let Some(s) = e.downcast_ref::<&str>() {{
-                            (*s).to_string()
-                        }} else if let Some(s) = e.downcast_ref::<String>() {{
-                            s.clone()
-                        }} else {{
-                            "Unknown panic occurred".to_string()
-                        }};
-                        anyhow::anyhow!(msg)
-                    }})
-                }};
-            }}"#
-        }
-    }
-
     /// Generate the `generated.rs` file for the given code generation results.
     ///
     /// ```rust,ignore
+    /// use craby::prelude::*;
+    ///
     /// use crate::ffi::bridging::*;
-    /// use crate::types::*;
     ///
     /// pub trait MyModuleSpec {
     ///     fn multiply(&mut self, a: f64, b: f64) -> f64;
@@ -649,9 +461,9 @@ impl RsTemplate {
                 r#"
                 {hash}
                 #[rustfmt::skip]
-                use crate::ffi::bridging::*;
-                use crate::context::*;
-                use crate::types::*;"#,
+                use craby::prelude::*;
+
+                use crate::ffi::bridging::*;"#,
                 hash = format!("{} {}", HASH_COMMAND_PREFIX, hash),
             }],
             spec_codes,
@@ -677,9 +489,6 @@ impl Template for RsTemplate {
             RsFileType::CrateEntry => self.lib_rs(&project.schemas),
             RsFileType::FFIEntry => self.ffi_rs(&project.schemas),
             RsFileType::Generated => self.generated_rs(&project.schemas),
-            RsFileType::Context => Ok(self.context_rs()),
-            RsFileType::Types => Ok(self.types_rs()),
-            RsFileType::Macros => Ok(self.macros_rs()),
         }?;
 
         Ok(vec![(path, content)])
@@ -710,9 +519,6 @@ impl Generator<RsTemplate> for RsGenerator {
             template.render(project, &RsFileType::CrateEntry)?,
             template.render(project, &RsFileType::FFIEntry)?,
             template.render(project, &RsFileType::Generated)?,
-            template.render(project, &RsFileType::Context)?,
-            template.render(project, &RsFileType::Types)?,
-            template.render(project, &RsFileType::Macros)?,
         ]
         .into_iter()
         .flatten()

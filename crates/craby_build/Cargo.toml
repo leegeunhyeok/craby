@@ -7,10 +7,24 @@ description = "Craby build utilities"
 license = "MIT"
 repository = "https://github.com/leegeunhyeok/craby"
 
+[features]
+default = []
+artifact = [
+  "dep:craby_codegen",
+  "dep:craby_common",
+  "dep:indoc",
+  "dep:log",
+  "dep:anyhow",
+  "dep:owo-colors"
+]
+cxx = ["dep:cxx-build"]
+
 [dependencies]
-craby_codegen = { version = "0.0.0", path = "../craby_codegen" }
-craby_common  = { version = "0.0.0", path = "../craby_common" }
-log           = { workspace = true }
-anyhow        = { workspace = true }
-owo-colors    = { workspace = true }
-indoc         = "2.0.6"
+craby_codegen = { version = "0.0.0", path = "../craby_codegen", optional = true }
+craby_common  = { version = "0.0.0", path = "../craby_common", optional = true }
+cxx-build     = { version = "1.0.180", optional = true }
+indoc         = { version = "2.0.6", optional = true }
+log           = { workspace = true, optional = true }
+anyhow        = { workspace = true, optional = true }
+owo-colors    = { workspace = true, optional = true }
+toml = "0.9.8"

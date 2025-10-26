@@ -7,7 +7,7 @@ use std::{
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{ios::Identifier, toolchain::Target},
-    cxx::{replace_cxx_header, replace_cxx_iter_template},
+    platform::common::{replace_cxx_header, replace_cxx_iter_template},
 };
 
 use craby_common::{

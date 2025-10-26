@@ -1042,8 +1042,8 @@ namespace craby {
     struct NullableNumber;
     struct NullableString;
     struct SubObject;
-    struct NullableSubObject;
     struct TestObject;
+    struct NullableSubObject;
     enum class MyEnum : ::std::uint8_t;
     enum class SwitchState : ::std::uint8_t;
     struct Calculator;

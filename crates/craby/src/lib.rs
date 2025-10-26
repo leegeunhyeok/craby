@@ -1,6 +1,7 @@
 #[macro_use]
 pub mod macros;
 
+/// This module provides the prelude for Craby Modules.
 pub mod prelude {
     pub use crate::context::*;
     pub use crate::types::*;
@@ -9,4 +10,6 @@ pub mod prelude {
 
 pub mod context;
 pub mod types;
-pub use craby_macro::craby_module;
+
+// craby_marco crate
+pub use craby_macro;

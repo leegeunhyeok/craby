@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
+use craby::{prelude::*, throw};
+
 use crate::ffi::bridging::*;
 use crate::generated::*;
-use crate::context::*;
-use crate::types::*;
 
 pub struct CrabyTest {
     ctx: Context,
@@ -16,13 +16,10 @@ impl CrabyTest {
     }
 }
 
+#[craby_module]
 impl CrabyTestSpec for CrabyTest {
     fn new(ctx: Context) -> Self {
         CrabyTest { ctx, state: None }
-    }
-
-    fn id(&self) -> usize {
-        self.ctx.id
     }
 
     fn numeric_method(&mut self, arg: Number) -> Number {

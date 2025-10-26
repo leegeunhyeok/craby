@@ -4,21 +4,16 @@ expression: result
 ---
 ./crates/lib/src/lib.rs
 #[rustfmt::skip]
-
-#[macro_use]
-pub(crate) mod macros;
-
-pub(crate) mod context;
 pub(crate) mod ffi;
 pub(crate) mod generated;
-pub(crate) mod types;
 
 pub(crate) mod craby_test_impl;
 
 ./crates/lib/src/ffi.rs
 #[rustfmt::skip]
+use craby::prelude::*;
+
 use crate::craby_test_impl::*;
-use crate::context::*;
 use crate::generated::*;
 
 use bridging::*;
@@ -125,77 +120,77 @@ fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
 }
 
 fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.array_method(arg);
         ret
     })
 }
 
 fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.boolean_method(arg);
         ret
     })
 }
 
 fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.camel_method(first_arg, second_arg);
         ret
     })
 }
 
 fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.enum_method(arg_0, arg_1);
         ret
     })
 }
 
 fn craby_test_nullable_method(it_: &mut CrabyTest, arg: NullableNumber) -> Result<NullableNumber, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.nullable_method(arg.into());
         ret.into()
     })
 }
 
 fn craby_test_numeric_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.numeric_method(arg);
         ret
     })
 }
 
 fn craby_test_object_method(it_: &mut CrabyTest, arg: TestObject) -> Result<TestObject, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.object_method(arg);
         ret
     })
 }
 
 fn craby_test_pascal_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.pascal_method(first_arg, second_arg);
         ret
     })
 }
 
 fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.promise_method(arg);
         ret
     }).and_then(|r| r)
 }
 
 fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.snake_method(first_arg, second_arg);
         ret
     })
 }
 
 fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, anyhow::Error> {
-    catch_panic!({
+    craby::catch_panic!({
         let ret = it_.string_method(arg);
         ret
     })
@@ -204,9 +199,9 @@ fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, an
 ./crates/lib/src/generated.rs
 // Hash: 6d9e25a4f7ff959d
 #[rustfmt::skip]
+use craby::prelude::*;
+
 use crate::ffi::bridging::*;
-use crate::context::*;
-use crate::types::*;
 
 pub trait CrabyTestSpec {
     fn new(ctx: Context) -> Self;
@@ -348,99 +343,11 @@ impl Default for SubObject {
     }
 }
 
-./crates/lib/src/context.rs
-pub struct Context {
-    pub id: usize,
-    pub data_path: String,
-}
-
-impl Context {
-    pub fn new(id: usize, data_path: &str) -> Self {
-        Context { id, data_path: data_path.to_string() }
-    }
-}
-
-./crates/lib/src/types.rs
-#[rustfmt::skip]
-pub type Boolean = bool;
-pub type Number = f64;
-pub type String = std::string::String;
-pub type Array<T> = std::vec::Vec<T>;
-pub type Promise<T> = std::result::Result<T, anyhow::Error>;
-pub type Void = ();
-
-pub mod promise {
-    use super::Promise;
-
-    pub fn resolve<T>(val: T) -> Promise<T> {
-        Ok(val)
-    }
-
-    pub fn reject<T>(err: impl AsRef<str>) -> Promise<T> {
-        Err(anyhow::anyhow!(err.as_ref().to_string()))
-    }
-}
-
-pub struct Nullable<T> {
-    val: Option<T>,
-}
-
-impl<T> Nullable<T> {
-    pub fn new(val: Option<T>) -> Self {
-        Nullable { val }
-    }
-
-    pub fn some(val: T) -> Self {
-        Nullable { val: Some(val) }
-    }
-
-    pub fn none() -> Self {
-        Nullable { val: None }
-    }
-
-    pub fn value(mut self, val: T) -> Self {
-        self.val = Some(val);
-        self
-    }
-
-    pub fn value_of(&self) -> Option<&T> {
-        self.val.as_ref()
-    }
-
-    pub fn into_value(self) -> Option<T> {
-        self.val
-    }
-}
-
-./crates/lib/src/macros.rs
-#[macro_export]
-macro_rules! throw {
-    ($($arg:tt)*) => {
-        panic!($($arg)*)
-    };
-}
-
-#[macro_export]
-macro_rules! catch_panic {
-    ($expr:expr) => {
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| $expr)).map_err(|e| {
-            let msg = if let Some(s) = e.downcast_ref::<&str>() {
-                (*s).to_string()
-            } else if let Some(s) = e.downcast_ref::<String>() {
-                s.clone()
-            } else {
-                "Unknown panic occurred".to_string()
-            };
-            anyhow::anyhow!(msg)
-        })
-    };
-}
-
 ./crates/lib/src/craby_test_impl.rs
+use craby::{prelude::*, throw};
+
 use crate::ffi::bridging::*;
 use crate::generated::*;
-use crate::context::*;
-use crate::types::*;
 
 pub struct CrabyTest {
     ctx: Context,

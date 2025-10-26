@@ -1,3 +1,7 @@
+pub mod cxx {
+    pub const STD_VERSION: &str = "c++20";
+}
+
 pub mod toolchain {
     use super::{android::Abi, ios::Identifier};
 

@@ -1,5 +1,14 @@
+#[cfg(feature = "artifact")]
 pub mod cargo;
+
+#[cfg(feature = "artifact")]
 pub mod constants;
-pub mod cxx;
+
+#[cfg(feature = "artifact")]
 pub mod platform;
-pub mod setup;
+
+#[cfg(feature = "cxx")]
+mod cxx;
+
+#[cfg(feature = "cxx")]
+pub use cxx::setup;

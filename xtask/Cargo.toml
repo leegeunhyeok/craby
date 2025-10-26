@@ -6,7 +6,7 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-craby_build  = { path = "../crates/craby_build" }
+craby_build  = { path = "../crates/craby_build", features = ["artifact"] }
 anyhow       = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true, features = ["preserve_order"] }
@@ -14,3 +14,4 @@ serde_derive = { workspace = true }
 indexmap     = { version = "2.0.0", features = ["serde"] }
 regex        = "1.0"
 toml_edit    = "0.23.7"
+indoc = "2.0.7"

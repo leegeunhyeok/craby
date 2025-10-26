@@ -5,10 +5,11 @@ edition.workspace = true
 
 [dependencies]
 anyhow = "1.0.99"
+craby = "0.1.0-dev"
 cxx = "1.0.180"
 
 [build-dependencies]
-cxx-build = "1.0.180"
+craby_build = { version = "0.1.0-dev", features = ["cxx"] }
 
 [lib]
 name = "crabytest"

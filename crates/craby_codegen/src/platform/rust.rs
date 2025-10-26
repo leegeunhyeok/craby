@@ -81,7 +81,7 @@ pub struct RsCxxBridge {
     ///
     /// ```rust,ignore
     /// #[cxx_name = "myFunc"]
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Result<Baz>;
+    /// fn my_func(arg1: Foo, arg2: Bar) -> Result<Baz>;
     /// ```
     pub func_extern_sigs: Vec<String>,
     /// The implementation function of the extern function.
@@ -89,8 +89,11 @@ pub struct RsCxxBridge {
     /// **Example**
     ///
     /// ```rust,ignore
-    /// fn myFunc(arg1: Foo, arg2: Bar) -> Result<Baz> {
-    ///   MyModule::my_func(arg1, arg2)
+    /// fn my_func(arg1: Foo, arg2: Bar) -> Result<Baz> {
+    ///     craby::catch_panic!({
+    ///         let ret = it_.my_func(arg1, arg2);
+    ///         ret
+    ///     })
     /// }
     /// ```
     pub func_impls: Vec<String>,
@@ -379,7 +382,7 @@ impl Schema {
     /// }
     ///
     /// fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64> {
-    ///     catch_panic!({
+    ///     craby::catch_panic!({
     ///         let ret = it_.multiply(a, b);
     ///         ret
     ///     })
@@ -498,7 +501,7 @@ impl Schema {
                 TypeAnnotation::Promise(_) => formatdoc! {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
-                        catch_panic!({{
+                        craby::catch_panic!({{
                             let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }}).and_then(|r| r)
@@ -514,7 +517,7 @@ impl Schema {
                 _ => formatdoc! {
                     r#"
                     fn {prefixed_fn_name}({params_sig}){ret_type} {{
-                        catch_panic!({{
+                        craby::catch_panic!({{
                             let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }})

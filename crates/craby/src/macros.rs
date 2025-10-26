@@ -1,3 +1,4 @@
+/// Alias for `panic!` macro.
 #[macro_export]
 macro_rules! throw {
     ($($arg:tt)*) => {
@@ -5,6 +6,7 @@ macro_rules! throw {
     };
 }
 
+/// Catches a panic and returns a `Result` with the error message.
 #[macro_export]
 macro_rules! catch_panic {
     ($expr:expr) => {

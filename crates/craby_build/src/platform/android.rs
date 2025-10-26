@@ -6,7 +6,7 @@ use log::debug;
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{android::Abi, toolchain::Target},
-    cxx::{replace_cxx_header, replace_cxx_iter_template},
+    platform::common::{replace_cxx_header, replace_cxx_iter_template},
 };
 
 pub const ANDROID_TARGETS: [Target; 4] = [
