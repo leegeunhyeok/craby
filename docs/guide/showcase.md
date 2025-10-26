@@ -2,6 +2,8 @@
 
 :::info
 These benchmarks measure native method throughput for performance comparison only. Real-world results may vary.
+
+Note that each module uses different underlying implementations (e.g., C++, Rust libraries), making perfect performance comparisons difficult.
 :::
 
 ## craby-sha256
@@ -15,3 +17,15 @@ SHA-256 hash function implementation based on the [sha2](https://crates.io/crate
 | crypto-js                 | 1367.68ms (x50) |
 | react-native-quick-crypto | 922.73ms (x34)  |
 | craby-sha256              | **26.96ms**     |
+
+## craby-kv
+
+Embedded-level lightweight key-value storage library based on [sled](https://crates.io/crates/sled) crate. ([GitHub](https://github.com/leegeunhyeok/craby-kv))
+
+**Benchmark** (1,000 iterations of set and get):
+
+| Library                                   | Time           |
+| ----------------------------------------- | -------------- |
+| @react-native-async-storage/async-storage | 405.84ms (x58) |
+| react-native-quick-crypto                 | 6.71ms (≈)     |
+| craby-kv                                  | **6.91ms**     |
