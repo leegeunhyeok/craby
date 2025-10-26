@@ -158,19 +158,20 @@ The default implementation file is only generated once to prevent overwriting yo
 ```rust
 use crate::ffi::bridging::*;
 use crate::generated::*;
+use crate::context::*;
 use crate::types::*;
 
 pub struct Calculator {
-    id: usize,
+    ctx: Context,
 }
 
 impl CalculatorSpec for Calculator {
-    fn new(id: usize) -> Self {
-        Calculator { id }
+    fn new(ctx: Context) -> Self {
+        Calculator { ctx }
     }
 
     fn id(&self) -> usize {
-        self.id
+        self.ctx.id
     }
 
     fn add(&mut self, a: Number, b: Number) -> Number {
