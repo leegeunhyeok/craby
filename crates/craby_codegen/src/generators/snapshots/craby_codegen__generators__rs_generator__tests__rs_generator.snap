@@ -240,6 +240,32 @@ impl Default for MyEnum {
     }
 }
 
+impl Default for NullableNumber {
+    fn default() -> Self {
+        NullableNumber {
+            null: true,
+            val: 0.0,
+        }
+    }
+}
+
+impl From<NullableNumber> for Nullable<Number> {
+    fn from(val: NullableNumber) -> Self {
+        Nullable::new(if val.null { None } else { Some(val.val) })
+    }
+}
+
+impl From<Nullable<Number>> for NullableNumber {
+    fn from(val: Nullable<Number>) -> Self {
+        let val = val.into_value();
+        let null = val.is_none();
+        NullableNumber {
+            val: val.unwrap_or(0.0),
+            null,
+        }
+    }
+}
+
 impl Default for NullableString {
     fn default() -> Self {
         NullableString {
@@ -263,22 +289,6 @@ impl From<Nullable<String>> for NullableString {
             val: val.unwrap_or(String::default()),
             null,
         }
-    }
-}
-
-impl Default for SubObject {
-    fn default() -> Self {
-        SubObject {
-            a: NullableString::default(),
-            b: 0.0,
-            c: false
-        }
-    }
-}
-
-impl Default for SwitchState {
-    fn default() -> Self {
-        SwitchState::Off
     }
 }
 
@@ -308,6 +318,22 @@ impl From<Nullable<SubObject>> for NullableSubObject {
     }
 }
 
+impl Default for SubObject {
+    fn default() -> Self {
+        SubObject {
+            a: NullableString::default(),
+            b: 0.0,
+            c: false
+        }
+    }
+}
+
+impl Default for SwitchState {
+    fn default() -> Self {
+        SwitchState::Off
+    }
+}
+
 impl Default for TestObject {
     fn default() -> Self {
         TestObject {
@@ -318,32 +344,6 @@ impl Default for TestObject {
             camel_case: 0.0,
             pascal_case: 0.0,
             snake_case: 0.0
-        }
-    }
-}
-
-impl Default for NullableNumber {
-    fn default() -> Self {
-        NullableNumber {
-            null: true,
-            val: 0.0,
-        }
-    }
-}
-
-impl From<NullableNumber> for Nullable<Number> {
-    fn from(val: NullableNumber) -> Self {
-        Nullable::new(if val.null { None } else { Some(val.val) })
-    }
-}
-
-impl From<Nullable<Number>> for NullableNumber {
-    fn from(val: Nullable<Number>) -> Self {
-        let val = val.into_value();
-        let null = val.is_none();
-        NullableNumber {
-            val: val.unwrap_or(0.0),
-            null,
         }
     }
 }
