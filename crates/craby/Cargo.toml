@@ -1,0 +1,12 @@
+[package]
+name = "craby"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Core prelude for Craby Modules"
+license = "MIT"
+repository = "https://github.com/leegeunhyeok/craby"
+
+[dependencies]
+craby_macro = { path = "../craby_macro" }
+anyhow      = { workspace = true }
