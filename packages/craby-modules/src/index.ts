@@ -25,7 +25,7 @@ function prepareJNI(moduleName: string) {
     return;
   }
 
-  TurboModuleRegistry.get(`__craby_${moduleName}__`);
+  TurboModuleRegistry.get(`__craby${moduleName}_JNI_prepare__`);
 }
 
 interface NativeModuleRegistry {

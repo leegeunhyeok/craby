@@ -154,6 +154,17 @@ const TEST_SUITES: TestSuite[] = [
     },
   },
   {
+    label: 'Context',
+    description: '(Data path)',
+    action: () => {
+      const path = Module.CrabyTestModule.getDataPath();
+
+      assert(path !== '', '`getDataPath` result is empty');
+
+      return path;
+    },
+  },
+  {
     label: 'Panics',
     action: () => {
       try {

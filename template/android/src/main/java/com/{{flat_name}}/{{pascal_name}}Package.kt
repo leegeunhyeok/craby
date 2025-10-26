@@ -23,9 +23,21 @@ class {{ pascal_name }}Package : BaseReactPackage() {
   override fun getReactModuleInfoProvider(): ReactModuleInfoProvider {
     return ReactModuleInfoProvider {
       val moduleInfos: MutableMap<String, ReactModuleInfo> = HashMap()
+      moduleInfos[{{ pascal_name }}Package.JNI_PREPARE_MODULE_NAME] = ReactModuleInfo(
+        {{ pascal_name }}Package.JNI_PREPARE_MODULE_NAME,
+        {{ pascal_name }}Package.JNI_PREPARE_MODULE_NAME,
+        false,  // canOverrideExistingModule
+        false,  // needsEagerInit
+        false,  // isCxxModule
+        true,  // isTurboModule
+      )
       moduleInfos
     }
   }
 
   private external fun nativeSetDataPath(dataPath: String)
+
+  companion object {
+    const val JNI_PREPARE_MODULE_NAME = "__crabyUnknown_JNI_prepare__"
+  }
 }

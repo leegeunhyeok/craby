@@ -32,6 +32,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
   methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
+  methodMap_["getDataPath"] = MethodMetadata{0, &CxxCrabyTestModule::getDataPath};
   methodMap_["getState"] = MethodMetadata{0, &CxxCrabyTestModule::getState};
   methodMap_["nullableMethod"] = MethodMetadata{1, &CxxCrabyTestModule::nullableMethod};
   methodMap_["numericMethod"] = MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
@@ -176,6 +177,29 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<craby::bridging::MyEnum>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<craby::bridging::SwitchState>(rt, args[1], callInvoker);
     auto ret = craby::bridging::enumMethod(*it_, arg0, arg1);
+
+    return react::bridging::toJs(rt, ret);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::getDataPath(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (0 != count) {
+      throw jsi::JSError(rt, "Expected 0 argument");
+    }
+
+    auto ret = craby::bridging::getDataPath(*it_);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
@@ -400,7 +424,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
 
     auto arg0$raw = args[0].asString(rt).utf8(rt);
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
-    auto ret = dataPath;
+    auto ret = craby::bridging::stringMethod(*it_, arg0);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {

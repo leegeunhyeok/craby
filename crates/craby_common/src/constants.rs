@@ -90,6 +90,15 @@ pub fn jni_base_path(project_root: &Path) -> PathBuf {
         .join("jni")
 }
 
+pub fn java_base_path(project_root: &Path, project_name: &str) -> PathBuf {
+    android_path(project_root)
+        .join("src")
+        .join("main")
+        .join("java")
+        .join("com")
+        .join(flat_case(project_name))
+}
+
 pub fn ios_base_path(project_root: &Path) -> PathBuf {
     project_root.join("ios")
 }

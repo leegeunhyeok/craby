@@ -86,6 +86,9 @@ pub mod bridging {
         #[cxx_name = "enumMethod"]
         fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
 
+        #[cxx_name = "getDataPath"]
+        fn craby_test_get_data_path(it_: &mut CrabyTest) -> Result<String>;
+
         #[cxx_name = "getState"]
         fn craby_test_get_state(it_: &mut CrabyTest) -> Result<f64>;
 
@@ -191,6 +194,13 @@ fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
 fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
     catch_panic!({
         let ret = it_.enum_method(arg_0, arg_1);
+        ret
+    })
+}
+
+fn craby_test_get_data_path(it_: &mut CrabyTest) -> Result<String, anyhow::Error> {
+    catch_panic!({
+        let ret = it_.get_data_path();
         ret
     })
 }

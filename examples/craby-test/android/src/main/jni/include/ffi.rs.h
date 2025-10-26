@@ -1106,6 +1106,8 @@ void camelMethod(::craby::bridging::CrabyTest &it_);
 
 ::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1);
 
+::rust::String getDataPath(::craby::bridging::CrabyTest &it_);
+
 double getState(::craby::bridging::CrabyTest &it_);
 
 ::craby::bridging::NullableNumber nullableMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber arg);

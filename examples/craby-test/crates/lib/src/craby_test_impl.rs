@@ -96,6 +96,10 @@ impl CrabyTestSpec for CrabyTest {
         self.state.unwrap_or(0.0)
     }
 
+    fn get_data_path(&mut self) -> String {
+        self.ctx.data_path.clone()
+    }
+
     fn trigger_signal(&mut self) -> Void {
         self.emit(CrabyTestSignal::OnSignal);
     }

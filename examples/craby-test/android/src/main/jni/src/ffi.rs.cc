@@ -1183,6 +1183,8 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_enum_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1, ::rust::String *return$) noexcept;
 
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_get_data_path(::craby::bridging::CrabyTest &it_, ::rust::String *return$) noexcept;
+
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_get_state(::craby::bridging::CrabyTest &it_, double *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_nullable_method(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber *arg, ::craby::bridging::NullableNumber *return$) noexcept;
@@ -1309,6 +1311,15 @@ void camelMethod(::craby::bridging::CrabyTest &it_) {
 ::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1) {
   ::rust::MaybeUninit<::rust::String> return$;
   ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_enum_method(it_, arg_0, arg_1, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+::rust::String getDataPath(::craby::bridging::CrabyTest &it_) {
+  ::rust::MaybeUninit<::rust::String> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_get_data_path(it_, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
