@@ -446,7 +446,7 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
     auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
     auto id = thisModule.nextListenerId_.fetch_add(1);
     auto name = "onSignal";
-    
+
     if (thisModule.listenersMap_.find(name) == thisModule.listenersMap_.end()) {
       thisModule.listenersMap_[name] = std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>();
     }

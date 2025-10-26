@@ -1,6 +1,5 @@
-package com.basic
+package com.crabytest
 
-import com.facebook.hermes.reactexecutor.HermesExecutor
 import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
@@ -16,6 +15,7 @@ class CrabyTestPackage : BaseReactPackage() {
   }
 
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
+    nativeSetDataPath(reactContext.filesDir.absolutePath)
     return null
   }
 
@@ -25,4 +25,6 @@ class CrabyTestPackage : BaseReactPackage() {
       moduleInfos
     }
   }
+
+  private external fun nativeSetDataPath(dataPath: String)
 }

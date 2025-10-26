@@ -25,25 +25,56 @@ impl IosTemplate {
     ///
     /// ```objc
     /// #import "CxxMyTestModule.hpp"
-    ///
     /// #import <ReactCommon/CxxTurboModuleUtils.h>
+    /// #include <string>
     ///
     /// @interface CrabyMyAppModuleProvider : NSObject
     /// @end
     ///
     /// @implementation CrabyMyAppModuleProvider
+    ///
     /// + (void)load {
+    ///   const char *cDataPath = [[self getDataPath] UTF8String];
+    ///   std::string dataPath(cDataPath);
+    /// 
+    ///   craby::mymodule::CxxMyTestModule::dataPath = dataPath;
+    ///
     ///   facebook::react::registerCxxModuleToGlobalModuleMap(
-    ///     craby::mymodule::CxxMyTestModule::kModuleName,
-    ///     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-    ///       return std::make_shared<craby::mymodule::CxxMyTestModule>(jsInvoker);
-    ///     });
+    ///       craby::mymodule::CxxMyTestModule::kModuleName,
+    ///       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
+    ///         return std::make_shared<craby::mymodule::CxxMyTestModule>(jsInvoker);
+    ///       });
     /// }
+    ///
+    /// + (NSString *)getDataPath {
+    ///   NSString *appGroupID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"AppGroupID"];
+    ///   NSString *dataPath = nil;
+    ///
+    ///   if (appGroupID != nil) {
+    ///     NSFileManager *fileManager = [NSFileManager defaultManager];
+    ///     NSURL *containerURL = [fileManager containerURLForSecurityApplicationGroupIdentifier:appGroupID];
+    ///
+    ///     if (containerURL == nil) {
+    ///       throw [NSException exceptionWithName:@"CrabyInitializationException"
+    ///                                     reason:[NSString stringWithFormat:@"Invalid AppGroup ID: %@", appGroupID]
+    ///                                   userInfo:nil];
+    ///     } else {
+    ///       dataPath = [containerURL path];
+    ///     }
+    ///   } else {
+    ///     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true);
+    ///     dataPath = [paths firstObject];
+    ///   }
+    ///
+    ///   return dataPath;
+    /// }
+    ///
     /// @end
     /// ```
     fn module_provider(&self, project: &CodegenContext) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
-        let mut cxx_registers = vec![];
+        let mut cxx_prepares = Vec::with_capacity(project.schemas.len());
+        let mut cxx_registers = Vec::with_capacity(project.schemas.len());
         let objc_mod_provider_name = objc_mod_provider_name(&project.name);
 
         project.schemas.iter().for_each(|schema| {
@@ -51,35 +82,68 @@ impl IosTemplate {
             let cxx_mod = cxx_mod_cls_name(&schema.module_name);
             let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
             let cxx_include = format!("#import \"{cxx_mod}.hpp\"");
+            let cxx_prepare = format!("{cxx_namespace}::dataPath = dataPath;");
             let cxx_register = formatdoc! {
                 r#"
                 facebook::react::registerCxxModuleToGlobalModuleMap(
                     {cxx_namespace}::kModuleName,
                     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
-                    return std::make_shared<{cxx_namespace}>(jsInvoker);
+                      return std::make_shared<{cxx_namespace}>(jsInvoker);
                     }});"#,
                 cxx_namespace = cxx_namespace,
             };
 
             cxx_includes.push(cxx_include);
+            cxx_prepares.push(cxx_prepare);
             cxx_registers.push(cxx_register);
         });
 
         let content = formatdoc! {
             r#"
             {cxx_includes}
-
             #import <ReactCommon/CxxTurboModuleUtils.h>
+            #include <string>
 
             @interface {objc_mod_provider_name} : NSObject
             @end
 
             @implementation {objc_mod_provider_name}
+
             + (void)load {{
+              const char *cDataPath = [[self getDataPath] UTF8String];
+              std::string dataPath(cDataPath);
+
+            {cxx_prepares}
+
             {cxx_registers}
             }}
+
+            + (NSString *)getDataPath {{
+              NSString *appGroupID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"AppGroupID"];
+              NSString *dataPath = nil;
+
+              if (appGroupID != nil) {{
+                NSFileManager *fileManager = [NSFileManager defaultManager];
+                NSURL *containerURL = [fileManager containerURLForSecurityApplicationGroupIdentifier:appGroupID];
+
+                if (containerURL == nil) {{
+                  throw [NSException exceptionWithName:@"CrabyInitializationException"
+                                                reason:[NSString stringWithFormat:@"Invalid AppGroup ID: %@", appGroupID]
+                                              userInfo:nil];
+                  }} else {{
+                    dataPath = [containerURL path];
+                  }}
+              }} else {{
+                NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true);
+                dataPath = [paths firstObject];
+              }}
+
+              return dataPath;
+            }}
+
             @end"#,
             cxx_includes = cxx_includes.join("\n"),
+            cxx_prepares = indent_str(cxx_prepares.join("\n"), 2),
             cxx_registers = indent_str(cxx_registers.join("\n"), 2),
             objc_mod_provider_name = objc_mod_provider_name,
         };

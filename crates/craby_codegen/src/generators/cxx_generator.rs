@@ -116,6 +116,7 @@ impl CxxTemplate {
     /// class JSI_EXPORT CxxMyTestModule : public facebook::react::TurboModule {
     /// public:
     ///   static constexpr const char *kModuleName = "MyTestModule";
+    ///   static std::string dataPath;
     ///
     ///   CxxMyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
     ///   ~CxxMyTestModule();
@@ -227,7 +228,7 @@ impl CxxTemplate {
                         auto callbackRef = std::make_shared<jsi::Function>(std::move(callback));
                         auto id = thisModule.nextListenerId_.fetch_add(1);
                         auto name = "{signal_name}";
-                        
+
                         if (thisModule.listenersMap_.find(name) == thisModule.listenersMap_.end()) {{
                           thisModule.listenersMap_[name] = std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>();
                         }}
@@ -377,6 +378,7 @@ impl CxxTemplate {
             class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
             public:
               static constexpr const char *kModuleName = "{turbo_module_name}";
+              static std::string dataPath;
 
               {cxx_mod}(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
               ~{cxx_mod}();

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use craby_common::{
     constants::{android_path, dest_lib_name, jni_base_path},
-    utils::string::{flat_case, kebab_case, SanitizedString},
+    utils::string::{flat_case, kebab_case, pascal_case, SanitizedString},
 };
 use indoc::formatdoc;
 
@@ -43,10 +43,27 @@ impl AndroidTemplate {
     ///     });
     ///   return JNI_VERSION_1_6;
     /// }
+    ///
+    /// extern "C"
+    /// JNIEXPORT void JNICALL
+    /// Java_com_mymodule_MyTestModulePackage_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
+    ///     auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
+    ///     craby::mymodule::MyTestModule::dataPath = dataPath;
+    /// }
     /// ```
-    fn jni_entry(&self, schemas: &Vec<Schema>) -> Result<String, anyhow::Error> {
+    fn jni_entry(
+        &self,
+        schemas: &Vec<Schema>,
+        project_name: &str,
+    ) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
-        let mut cxx_registers = vec![];
+        let mut cxx_prepares = Vec::with_capacity(schemas.len());
+        let mut cxx_registers = Vec::with_capacity(schemas.len());
+        let jni_fn_name = format!(
+            "Java_com_{}_{}Package_nativeSetDataPath",
+            flat_case(project_name),
+            pascal_case(project_name)
+        );
 
         for schema in schemas {
             let cxx_mod = cxx_mod_cls_name(&schema.module_name);
@@ -54,6 +71,7 @@ impl AndroidTemplate {
 
             let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
             let cxx_include = format!("#include <{cxx_mod}.hpp>");
+            let cxx_prepare = format!("{cxx_namespace}::dataPath = dataPath;");
             let cxx_register = formatdoc! {
                 r#"
                 facebook::react::registerCxxModuleToGlobalModuleMap(
@@ -65,21 +83,29 @@ impl AndroidTemplate {
             };
 
             cxx_includes.push(cxx_include);
+            cxx_prepares.push(cxx_prepare);
             cxx_registers.push(cxx_register);
         }
 
         let content = formatdoc! {
             r#"
             {cxx_includes}
-
-            #include <jni.h>
             #include <ReactCommon/CxxTurboModuleUtils.h>
+            #include <jni.h>
 
             jint JNI_OnLoad(JavaVM *vm, void *reserved) {{
             {cxx_registers}
               return JNI_VERSION_1_6;
+            }}
+            
+            extern "C"
+            JNIEXPORT void JNICALL
+            {jni_fn_name}(JNIEnv *env, jclass clazz, jstring jDataPath) {{
+              auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
+            {cxx_prepares}
             }}"#,
             cxx_includes = cxx_includes.join("\n"),
+            cxx_prepares = indent_str(cxx_prepares.join("\n"), 2),
             cxx_registers = indent_str(cxx_registers.join("\n"), 2),
         };
 
@@ -218,7 +244,7 @@ impl Template for AndroidTemplate {
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
         let content = match file_type {
-            AndroidFileType::JNIEntry => self.jni_entry(&project.schemas),
+            AndroidFileType::JNIEntry => self.jni_entry(&project.schemas, &project.name),
             AndroidFileType::CmakeLists => Ok(self.cmakelists(project)),
         }?;
 

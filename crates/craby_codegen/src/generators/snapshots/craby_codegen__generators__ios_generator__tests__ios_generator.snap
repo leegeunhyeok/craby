@@ -1,21 +1,51 @@
 ---
 source: crates/craby_codegen/src/generators/ios_generator.rs
-expression: "results.iter().map(|res|\nformat!(\"{}\\n{}\", res.path.display(),\nres.content)).collect::<Vec<_>>().join(\"\\n\\n\")"
+expression: result
 ---
 ./ios/TestModuleModuleProvider.mm
 #import "CxxCrabyTestModule.hpp"
-
 #import <ReactCommon/CxxTurboModuleUtils.h>
+#include <string>
 
 @interface TestModuleModuleProvider : NSObject
 @end
 
 @implementation TestModuleModuleProvider
+
 + (void)load {
+  const char *cDataPath = [[self getDataPath] UTF8String];
+  std::string dataPath(cDataPath);
+
+  craby::crabytest::CxxCrabyTestModule::dataPath = dataPath;
+
   facebook::react::registerCxxModuleToGlobalModuleMap(
       craby::crabytest::CxxCrabyTestModule::kModuleName,
       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-      return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+        return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
       });
 }
+
++ (NSString *)getDataPath {
+  NSString *appGroupID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"AppGroupID"];
+  NSString *dataPath = nil;
+
+  if (appGroupID != nil) {
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    NSURL *containerURL = [fileManager containerURLForSecurityApplicationGroupIdentifier:appGroupID];
+
+    if (containerURL == nil) {
+      throw [NSException exceptionWithName:@"CrabyInitializationException"
+                                    reason:[NSString stringWithFormat:@"Invalid AppGroup ID: %@", appGroupID]
+                                  userInfo:nil];
+      } else {
+        dataPath = [containerURL path];
+      }
+  } else {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, true);
+    dataPath = [paths firstObject];
+  }
+
+  return dataPath;
+}
+
 @end

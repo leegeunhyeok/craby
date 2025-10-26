@@ -13,6 +13,7 @@ namespace calculator {
 class JSI_EXPORT CxxCalculatorModule : public facebook::react::TurboModule {
 public:
   static constexpr const char *kModuleName = "Calculator";
+  static std::string dataPath;
 
   CxxCalculatorModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
   ~CxxCalculatorModule();

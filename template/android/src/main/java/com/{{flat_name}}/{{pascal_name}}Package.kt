@@ -1,6 +1,6 @@
 package com.{{ flat_name }}
 
-import com.facebook.hermes.reactexecutor.HermesExecutor
+import android.app.ActivityThread
 import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
@@ -16,6 +16,7 @@ class {{ pascal_name }}Package : BaseReactPackage() {
   }
 
   override fun getModule(name: String, reactContext: ReactApplicationContext): NativeModule? {
+    nativeSetDataPath(reactContext.filesDir.absolutePath)
     return null
   }
 
@@ -25,4 +26,6 @@ class {{ pascal_name }}Package : BaseReactPackage() {
       moduleInfos
     }
   }
+
+  private external fun nativeSetDataPath(dataPath: String)
 }

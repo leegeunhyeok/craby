@@ -1,8 +1,32 @@
-import { TurboModuleRegistry } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 
 type NativeModule = {};
 
 type Signal = (handler: () => void) => () => void;
+
+/**
+ * Android JNI initialization workaround
+ *
+ * We need `filesDir` of `Context` for JNI initialization, but it's unavailable during `PackageList` construction.
+ * The context is only passed when React Native calls `BaseReactPackage.getModule()`.
+ *
+ * Workaround: Load a dummy module to trigger `getModule()` before the actual module.
+ *
+ * 1. Request non-existent module → triggers `getModule()`
+ * 2. `getModule()` receives `ReactApplicationContext`
+ * 3. Calls `nativeSetDataPath()` (C++ extern function) to set `context.filesDir.absolutePath`
+ * 4. `getModule()` returns `null`, but JNI is now can be initialized with the required values
+ * 4. Actual module can now load with the required values
+ *
+ * @param moduleName The name of the module to prepare.
+ */
+function prepareJNI(moduleName: string) {
+  if (Platform.OS !== 'android') {
+    return;
+  }
+
+  TurboModuleRegistry.get(`__craby_${moduleName}__`);
+}
 
 interface NativeModuleRegistry {
   get<T extends NativeModule>(moduleName: string): T | null;
@@ -11,9 +35,11 @@ interface NativeModuleRegistry {
 
 export const NativeModuleRegistry: NativeModuleRegistry = {
   get<T extends NativeModule>(moduleName: string): T | null {
+    prepareJNI(moduleName);
     return TurboModuleRegistry.get<T>(moduleName);
   },
   getEnforcing<T extends NativeModule>(moduleName: string): T {
+    prepareJNI(moduleName);
     return TurboModuleRegistry.getEnforcing<T>(moduleName);
   },
 };

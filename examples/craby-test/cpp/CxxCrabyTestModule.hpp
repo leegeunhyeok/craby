@@ -13,6 +13,7 @@ namespace crabytest {
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
   static constexpr const char *kModuleName = "CrabyTest";
+  static std::string dataPath;
 
   CxxCrabyTestModule(std::shared_ptr<facebook::react::CallInvoker> jsInvoker);
   ~CxxCrabyTestModule();
