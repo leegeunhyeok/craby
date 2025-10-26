@@ -24,6 +24,8 @@ pub enum RsFileType {
     FFIEntry,
     /// types.rs
     Types,
+    /// context.rs
+    Context,
     /// generated.rs
     Generated,
     /// macros.rs
@@ -36,6 +38,7 @@ impl RsTemplate {
             RsFileType::CrateEntry => PathBuf::from("lib.rs"),
             RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
             RsFileType::Generated => PathBuf::from("generated.rs"),
+            RsFileType::Context => PathBuf::from("context.rs"),
             RsFileType::Types => PathBuf::from("types.rs"),
             RsFileType::Macros => PathBuf::from("macros.rs"),
         }
@@ -78,7 +81,7 @@ impl RsTemplate {
     ///         type MyModule;
     ///
     ///         #[cxx_name = "createMyModule"]
-    ///         fn create_my_module(id: usize) -> Box<MyModule>;
+    ///         fn create_my_module(id: usize, data_path: &str) -> Box<MyModule>;
     ///
     ///         #[cxx_name = "multiply"]
     ///         fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64>;
@@ -146,8 +149,9 @@ impl RsTemplate {
     /// # Generated Code
     ///
     /// ```rust,ignore
-    /// fn create_my_module(id: usize) -> Box<MyModule> {
-    ///     Box::new(MyModule::new(id))
+    /// fn create_my_module(id: usize, data_path: &str) -> Box<MyModule> {
+    ///     let ctx = Context::new(id, data_path);
+    ///     Box::new(MyModule::new(ctx))
     /// }
     ///
     /// fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64> {
@@ -232,7 +236,7 @@ impl RsTemplate {
         let spec_trait = formatdoc! {
             r#"
             pub trait {trait_name} {{
-                fn new(id: usize) -> Self;
+                fn new(ctx: Context) -> Self;
                 fn id(&self) -> usize;
             {methods}
             }}"#,
@@ -259,16 +263,16 @@ impl RsTemplate {
     /// use crate::types::*;
     ///
     /// pub struct MyModule {
-    ///     id: usize,
+    ///     ctx: Context,
     /// }
     ///
     /// impl MyModuleSpec for MyModule {
-    ///     fn new(id: usize) -> Self {
-    ///         MyModule { id }
+    ///     fn new(ctx: Context) -> Self {
+    ///         MyModule { ctx }
     ///     }
     ///
     ///     fn id(&self) -> usize {
-    ///         self.id
+    ///         self.ctx.id
     ///     }
     ///
     ///     fn multiply(&mut self, a: Number, b: Number) -> Number {
@@ -282,15 +286,15 @@ impl RsTemplate {
         let default_methods = vec![
             formatdoc! {
                 r#"
-                fn new(id: usize) -> Self {{
-                    {mod_name} {{ id }}
+                fn new(ctx: Context) -> Self {{
+                    {mod_name} {{ ctx }}
                 }}"#,
                 mod_name = mod_name,
             },
             formatdoc! {
                 r#"
                 fn id(&self) -> usize {{
-                    self.id
+                    self.ctx.id
                 }}"#,
             },
         ];
@@ -320,6 +324,7 @@ impl RsTemplate {
         // ```rust,ignore
         // use crate::ffi::bridging::*;
         // use crate::generated::*;
+        // use crate::context::*;
         // use crate::types::*;
         //
         // pub struct MyModule;
@@ -334,10 +339,11 @@ impl RsTemplate {
             r#"
             use crate::ffi::bridging::*;
             use crate::generated::*;
+            use crate::context::*;
             use crate::types::*;
 
             pub struct {mod_name} {{
-                id: usize,
+                ctx: Context,
             }}
 
             impl {trait_name} for {mod_name} {{
@@ -372,6 +378,7 @@ impl RsTemplate {
             #[macro_use]
             pub(crate) mod macros;
 
+            pub(crate) mod context;
             pub(crate) mod ffi;
             pub(crate) mod generated;
             pub(crate) mod types;
@@ -386,9 +393,11 @@ impl RsTemplate {
     /// Generate the `ffi.rs` file for the given code generation results.
     ///
     /// ```rust,ignore
-    /// use ffi::*;
-    /// use crate::generated::*;
     /// use crate::my_module_impl::*;
+    /// use crate::context::*;
+    /// use crate::generated::*;
+    /// 
+    /// use bridging::*;
     ///
     /// #[cxx::bridge(namespace = "craby::mymodule")]
     /// pub mod bridging {
@@ -418,6 +427,7 @@ impl RsTemplate {
             r#"
             #[rustfmt::skip]
             {impl_mods}
+            use crate::context::*;
             use crate::generated::*;
 
             use bridging::*;
@@ -431,6 +441,30 @@ impl RsTemplate {
         };
 
         Ok(content)
+    }
+
+    /// Generates the `context.rs`
+    ///
+    /// ```rust,ignore
+    /// pub struct Context {
+    ///     pub id: usize,
+    ///     pub data_path: String,
+    /// }
+    /// ```
+    fn context_rs(&self) -> String {
+        formatdoc! {
+            r#"
+            pub struct Context {{
+                pub id: usize,
+                pub data_path: String,
+            }}
+            
+            impl Context {{
+                pub fn new(id: usize, data_path: &str) -> Self {{
+                    Context {{ id, data_path: data_path.to_string() }}
+                }}
+            }}"#,
+        }
     }
 
     /// Generates the `types.rs` with common type aliases and utilities.
@@ -527,7 +561,7 @@ impl RsTemplate {
                 pub fn into_value(self) -> Option<T> {{
                     self.val
                 }}
-            }}"#
+            }}"#,
         }
     }
 
@@ -616,6 +650,7 @@ impl RsTemplate {
                 {hash}
                 #[rustfmt::skip]
                 use crate::ffi::bridging::*;
+                use crate::context::*;
                 use crate::types::*;"#,
                 hash = format!("{} {}", HASH_COMMAND_PREFIX, hash),
             }],
@@ -642,6 +677,7 @@ impl Template for RsTemplate {
             RsFileType::CrateEntry => self.lib_rs(&project.schemas),
             RsFileType::FFIEntry => self.ffi_rs(&project.schemas),
             RsFileType::Generated => self.generated_rs(&project.schemas),
+            RsFileType::Context => Ok(self.context_rs()),
             RsFileType::Types => Ok(self.types_rs()),
             RsFileType::Macros => Ok(self.macros_rs()),
         }?;
@@ -674,6 +710,7 @@ impl Generator<RsTemplate> for RsGenerator {
             template.render(project, &RsFileType::CrateEntry)?,
             template.render(project, &RsFileType::FFIEntry)?,
             template.render(project, &RsFileType::Generated)?,
+            template.render(project, &RsFileType::Context)?,
             template.render(project, &RsFileType::Types)?,
             template.render(project, &RsFileType::Macros)?,
         ]

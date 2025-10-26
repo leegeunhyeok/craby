@@ -8,6 +8,7 @@ expression: result
 #[macro_use]
 pub(crate) mod macros;
 
+pub(crate) mod context;
 pub(crate) mod ffi;
 pub(crate) mod generated;
 pub(crate) mod types;
@@ -17,6 +18,7 @@ pub(crate) mod craby_test_impl;
 ./crates/lib/src/ffi.rs
 #[rustfmt::skip]
 use crate::craby_test_impl::*;
+use crate::context::*;
 use crate::generated::*;
 
 use bridging::*;
@@ -69,7 +71,7 @@ pub mod bridging {
         type CrabyTest;
 
         #[cxx_name = "createCrabyTest"]
-        fn create_craby_test(id: usize) -> Box<CrabyTest>;
+        fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest>;
 
         #[cxx_name = "arrayMethod"]
         fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
@@ -117,8 +119,9 @@ pub mod bridging {
     }
 }
 
-fn create_craby_test(id: usize) -> Box<CrabyTest> {
-    Box::new(CrabyTest::new(id))
+fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
+    let ctx = Context::new(id, data_path);
+    Box::new(CrabyTest::new(ctx))
 }
 
 fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
@@ -202,10 +205,11 @@ fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, an
 // Hash: 6d9e25a4f7ff959d
 #[rustfmt::skip]
 use crate::ffi::bridging::*;
+use crate::context::*;
 use crate::types::*;
 
 pub trait CrabyTestSpec {
-    fn new(id: usize) -> Self;
+    fn new(ctx: Context) -> Self;
     fn id(&self) -> usize;
     fn emit(&self, signal_name: CrabyTestSignal) {
         let manager = crate::ffi::bridging::get_signal_manager();
@@ -344,6 +348,18 @@ impl From<Nullable<Number>> for NullableNumber {
     }
 }
 
+./crates/lib/src/context.rs
+pub struct Context {
+    pub id: usize,
+    pub data_path: String,
+}
+
+impl Context {
+    pub fn new(id: usize, data_path: &str) -> Self {
+        Context { id, data_path: data_path.to_string() }
+    }
+}
+
 ./crates/lib/src/types.rs
 #[rustfmt::skip]
 pub type Boolean = bool;
@@ -423,19 +439,20 @@ macro_rules! catch_panic {
 ./crates/lib/src/craby_test_impl.rs
 use crate::ffi::bridging::*;
 use crate::generated::*;
+use crate::context::*;
 use crate::types::*;
 
 pub struct CrabyTest {
-    id: usize,
+    ctx: Context,
 }
 
 impl CrabyTestSpec for CrabyTest {
-    fn new(id: usize) -> Self {
-        CrabyTest { id }
+    fn new(ctx: Context) -> Self {
+        CrabyTest { ctx }
     }
 
     fn id(&self) -> usize {
-        self.id
+        self.ctx.id
     }
 
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number> {

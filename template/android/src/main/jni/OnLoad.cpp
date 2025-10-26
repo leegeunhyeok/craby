@@ -5,3 +5,9 @@
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   return JNI_VERSION_1_6;
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_{{ flat_name }}_{{ pascal_name }}Package_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
+  auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
+}

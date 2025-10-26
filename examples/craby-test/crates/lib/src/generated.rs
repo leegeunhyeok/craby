@@ -2,10 +2,11 @@
 // Hash: 15eda8eec22eb808
 #[rustfmt::skip]
 use crate::ffi::bridging::*;
+use crate::context::*;
 use crate::types::*;
 
 pub trait CalculatorSpec {
-    fn new(id: usize) -> Self;
+    fn new(ctx: Context) -> Self;
     fn id(&self) -> usize;
     fn add(&mut self, a: Number, b: Number) -> Number;
     fn divide(&mut self, a: Number, b: Number) -> Number;
@@ -14,7 +15,7 @@ pub trait CalculatorSpec {
 }
 
 pub trait CrabyTestSpec {
-    fn new(id: usize) -> Self;
+    fn new(ctx: Context) -> Self;
     fn id(&self) -> usize;
     fn emit(&self, signal_name: CrabyTestSignal) {
         let manager = crate::ffi::bridging::get_signal_manager();

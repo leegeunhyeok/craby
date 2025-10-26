@@ -4,6 +4,7 @@
 #[macro_use]
 pub(crate) mod macros;
 
+pub(crate) mod context;
 pub(crate) mod ffi;
 pub(crate) mod generated;
 pub(crate) mod types;

@@ -1,19 +1,20 @@
 use crate::ffi::bridging::*;
 use crate::generated::*;
+use crate::context::*;
 use crate::types::*;
 
 pub struct CrabyTest {
-    id: usize,
+    ctx: Context,
     state: Option<Number>,
 }
 
 impl CrabyTestSpec for CrabyTest {
-    fn new(id: usize) -> Self {
-        CrabyTest { id, state: None }
+    fn new(ctx: Context) -> Self {
+        CrabyTest { ctx, state: None }
     }
 
     fn id(&self) -> usize {
-        self.id
+        self.ctx.id
     }
 
     fn numeric_method(&mut self, arg: Number) -> Number {

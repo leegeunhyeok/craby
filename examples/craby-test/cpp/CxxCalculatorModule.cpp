@@ -9,13 +9,17 @@ using namespace facebook;
 namespace craby {
 namespace calculator {
 
+std::string CxxCalculatorModule::dataPath = std::string();
+
 CxxCalculatorModule::CxxCalculatorModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCalculatorModule::kModuleName, jsInvoker) {
   // No signals
   callInvoker_ = std::move(jsInvoker);
   module_ = std::shared_ptr<craby::bridging::Calculator>(
-    craby::bridging::createCalculator(reinterpret_cast<uintptr_t>(this)).into_raw(),
+    craby::bridging::createCalculator(
+      reinterpret_cast<uintptr_t>(this),
+      rust::Str(dataPath.data(), dataPath.size())).into_raw(),
     [](craby::bridging::Calculator *ptr) { rust::Box<craby::bridging::Calculator>::from_raw(ptr); }
   );
   threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);

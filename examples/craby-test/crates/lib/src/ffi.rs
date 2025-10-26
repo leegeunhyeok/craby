@@ -2,6 +2,7 @@
 #[rustfmt::skip]
 use crate::calculator_impl::*;
 use crate::craby_test_impl::*;
+use crate::context::*;
 use crate::generated::*;
 
 use bridging::*;
@@ -56,7 +57,7 @@ pub mod bridging {
         type CrabyTest;
 
         #[cxx_name = "createCalculator"]
-        fn create_calculator(id: usize) -> Box<Calculator>;
+        fn create_calculator(id: usize, data_path: &str) -> Box<Calculator>;
 
         #[cxx_name = "add"]
         fn calculator_add(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
@@ -71,7 +72,7 @@ pub mod bridging {
         fn calculator_subtract(it_: &mut Calculator, a: f64, b: f64) -> Result<f64>;
 
         #[cxx_name = "createCrabyTest"]
-        fn create_craby_test(id: usize) -> Box<CrabyTest>;
+        fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest>;
 
         #[cxx_name = "arrayMethod"]
         fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
@@ -128,8 +129,9 @@ pub mod bridging {
     }
 }
 
-fn create_calculator(id: usize) -> Box<Calculator> {
-    Box::new(Calculator::new(id))
+fn create_calculator(id: usize, data_path: &str) -> Box<Calculator> {
+    let ctx = Context::new(id, data_path);
+    Box::new(Calculator::new(ctx))
 }
 
 fn calculator_add(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyhow::Error> {
@@ -160,8 +162,9 @@ fn calculator_subtract(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyh
     })
 }
 
-fn create_craby_test(id: usize) -> Box<CrabyTest> {
-    Box::new(CrabyTest::new(id))
+fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
+    let ctx = Context::new(id, data_path);
+    Box::new(CrabyTest::new(ctx))
 }
 
 fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {

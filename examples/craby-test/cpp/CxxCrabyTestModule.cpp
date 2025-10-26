@@ -9,6 +9,8 @@ using namespace facebook;
 namespace craby {
 namespace crabytest {
 
+std::string CxxCrabyTestModule::dataPath = std::string();
+
 CxxCrabyTestModule::CxxCrabyTestModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
@@ -20,7 +22,9 @@ CxxCrabyTestModule::CxxCrabyTestModule(
                            std::placeholders::_1));
   callInvoker_ = std::move(jsInvoker);
   module_ = std::shared_ptr<craby::bridging::CrabyTest>(
-    craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
+    craby::bridging::createCrabyTest(
+      reinterpret_cast<uintptr_t>(this),
+      rust::Str(dataPath.data(), dataPath.size())).into_raw(),
     [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
   );
   threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
@@ -396,7 +400,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
 
     auto arg0$raw = args[0].asString(rt).utf8(rt);
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
-    auto ret = craby::bridging::stringMethod(*it_, arg0);
+    auto ret = dataPath;
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {

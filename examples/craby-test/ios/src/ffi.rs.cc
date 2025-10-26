@@ -1163,7 +1163,7 @@ extern "C" {
 ::std::size_t craby$bridging$cxxbridge1$CrabyTest$operator$sizeof() noexcept;
 ::std::size_t craby$bridging$cxxbridge1$CrabyTest$operator$alignof() noexcept;
 
-::craby::bridging::Calculator *craby$bridging$cxxbridge1$create_calculator(::std::size_t id) noexcept;
+::craby::bridging::Calculator *craby$bridging$cxxbridge1$create_calculator(::std::size_t id, ::rust::Str data_path) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_add(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
@@ -1173,7 +1173,7 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$calculator_subtract(::craby::bridging::Calculator &it_, double a, double b, double *return$) noexcept;
 
-::craby::bridging::CrabyTest *craby$bridging$cxxbridge1$create_craby_test(::std::size_t id) noexcept;
+::craby::bridging::CrabyTest *craby$bridging$cxxbridge1$create_craby_test(::std::size_t id, ::rust::Str data_path) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_array_method(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> *arg, ::rust::Vec<double> *return$) noexcept;
 
@@ -1236,8 +1236,8 @@ namespace bridging {
   return craby$bridging$cxxbridge1$CrabyTest$operator$alignof();
 }
 
-::rust::Box<::craby::bridging::Calculator> createCalculator(::std::size_t id) noexcept {
-  return ::rust::Box<::craby::bridging::Calculator>::from_raw(craby$bridging$cxxbridge1$create_calculator(id));
+::rust::Box<::craby::bridging::Calculator> createCalculator(::std::size_t id, ::rust::Str data_path) noexcept {
+  return ::rust::Box<::craby::bridging::Calculator>::from_raw(craby$bridging$cxxbridge1$create_calculator(id, data_path));
 }
 
 double add(::craby::bridging::Calculator &it_, double a, double b) {
@@ -1276,8 +1276,8 @@ double subtract(::craby::bridging::Calculator &it_, double a, double b) {
   return ::std::move(return$.value);
 }
 
-::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id) noexcept {
-  return ::rust::Box<::craby::bridging::CrabyTest>::from_raw(craby$bridging$cxxbridge1$create_craby_test(id));
+::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id, ::rust::Str data_path) noexcept {
+  return ::rust::Box<::craby::bridging::CrabyTest>::from_raw(craby$bridging$cxxbridge1$create_craby_test(id, data_path));
 }
 
 ::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg) {

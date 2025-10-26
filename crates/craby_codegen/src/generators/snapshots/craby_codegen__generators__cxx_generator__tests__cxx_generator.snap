@@ -13,6 +13,8 @@ using namespace facebook;
 namespace craby {
 namespace crabytest {
 
+std::string CxxCrabyTestModule::dataPath = std::string();
+
 CxxCrabyTestModule::CxxCrabyTestModule(
     std::shared_ptr<react::CallInvoker> jsInvoker)
     : TurboModule(CxxCrabyTestModule::kModuleName, jsInvoker) {
@@ -24,7 +26,9 @@ CxxCrabyTestModule::CxxCrabyTestModule(
                            std::placeholders::_1));
   callInvoker_ = std::move(jsInvoker);
   module_ = std::shared_ptr<craby::bridging::CrabyTest>(
-    craby::bridging::createCrabyTest(reinterpret_cast<uintptr_t>(this)).into_raw(),
+    craby::bridging::createCrabyTest(
+      reinterpret_cast<uintptr_t>(this),
+      rust::Str(dataPath.data(), dataPath.size())).into_raw(),
     [](craby::bridging::CrabyTest *ptr) { rust::Box<craby::bridging::CrabyTest>::from_raw(ptr); }
   );
   threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);

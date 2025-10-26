@@ -1086,7 +1086,7 @@ private:
 };
 #endif // CXXBRIDGE1_STRUCT_craby$bridging$CrabyTest
 
-::rust::Box<::craby::bridging::Calculator> createCalculator(::std::size_t id) noexcept;
+::rust::Box<::craby::bridging::Calculator> createCalculator(::std::size_t id, ::rust::Str data_path) noexcept;
 
 double add(::craby::bridging::Calculator &it_, double a, double b);
 
@@ -1096,7 +1096,7 @@ double multiply(::craby::bridging::Calculator &it_, double a, double b);
 
 double subtract(::craby::bridging::Calculator &it_, double a, double b);
 
-::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id) noexcept;
+::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id, ::rust::Str data_path) noexcept;
 
 ::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
 

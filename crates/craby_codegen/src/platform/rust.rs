@@ -342,14 +342,14 @@ impl Schema {
     /// type MyModule;
     ///
     /// #[cxx_name = "createMyModule"]
-    /// fn create_my_module(id: usize) -> Box<MyModule>;
+    /// fn create_my_module(id: usize, data_path: &str) -> Box<MyModule>;
     ///
     /// #[cxx_name = "multiply"]
     /// fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64>;
     ///
     /// // Implementation:
-    /// fn create_my_module(id: usize) -> Box<MyModule> {
-    ///     Box::new(MyModule::new(id))
+    /// fn create_my_module(id: usize, data_path: &str) -> Box<MyModule> {
+    ///     Box::new(MyModule::new(id, data_path))
     /// }
     ///
     /// fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64> {
@@ -368,15 +368,16 @@ impl Schema {
         func_extern_sigs.push(formatdoc! {
             r#"
             #[cxx_name = "create{module_name}"]
-            fn create_{snake_cake}(id: usize) -> Box<{module_name}>;"#,
+            fn create_{snake_cake}(id: usize, data_path: &str) -> Box<{module_name}>;"#,
             module_name = pascal_case(&self.module_name),
             snake_cake = snake_case(&self.module_name),
         });
 
         func_impls.push(formatdoc! {
             r#"
-            fn create_{snake_cake}(id: usize) -> Box<{module_name}> {{
-                Box::new({module_name}::new(id))
+            fn create_{snake_cake}(id: usize, data_path: &str) -> Box<{module_name}> {{
+                let ctx = Context::new(id, data_path);
+                Box::new({module_name}::new(ctx))
             }}"#,
             module_name = pascal_case(&self.module_name),
             snake_cake = snake_case(&self.module_name),
