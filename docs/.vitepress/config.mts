@@ -36,6 +36,7 @@ export default withMermaid(
             { text: 'Signals', link: '/guide/signals' },
             { text: 'Errors', link: '/guide/errors' },
             { text: 'Sync vs Async', link: '/guide/sync-vs-async' },
+            { text: 'File I/O', link: '/guide/file-io' },
             { text: 'Stateful Modules', link: '/guide/stateful-modules' },
           ],
         },
