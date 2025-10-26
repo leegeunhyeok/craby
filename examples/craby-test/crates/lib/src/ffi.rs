@@ -9,27 +9,6 @@ use bridging::*;
 
 #[cxx::bridge(namespace = "craby::bridging")]
 pub mod bridging {
-    struct NullableNumber {
-        null: bool,
-        val: f64,
-    }
-
-    struct NullableString {
-        null: bool,
-        val: String
-    }
-
-    struct SubObject {
-        a: NullableString,
-        b: f64,
-        c: bool,
-    }
-
-    struct NullableSubObject {
-        null: bool,
-        val: SubObject
-    }
-
     struct TestObject {
         foo: String,
         bar: f64,
@@ -38,6 +17,27 @@ pub mod bridging {
         camel_case: f64,
         pascal_case: f64,
         snake_case: f64,
+    }
+
+    struct NullableNumber {
+        null: bool,
+        val: f64,
+    }
+
+    struct NullableSubObject {
+        null: bool,
+        val: SubObject,
+    }
+
+    struct NullableString {
+        null: bool,
+        val: String,
+    }
+
+    struct SubObject {
+        a: NullableString,
+        b: f64,
+        c: bool,
     }
 
     enum MyEnum {

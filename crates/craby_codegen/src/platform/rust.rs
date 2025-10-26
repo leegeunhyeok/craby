@@ -1,4 +1,4 @@
-use std::collections::{btree_map::Entry, BTreeMap};
+use std::collections::BTreeMap;
 
 use craby_common::utils::string::{camel_case, pascal_case, snake_case};
 use indoc::formatdoc;
@@ -9,7 +9,9 @@ use crate::{
     parser::types::{
         EnumTypeAnnotation, Method, ObjectTypeAnnotation, Param, RefTypeAnnotation, TypeAnnotation,
     },
-    platform::rust::template::{as_struct_def, collect_alias_default_impls, enum_default_impl},
+    platform::rust::template::{
+        as_nullable_struct_def, as_struct_def, collect_alias_default_impls, enum_default_impl,
+    },
     types::Schema,
     utils::indent_str,
 };
@@ -387,55 +389,26 @@ impl Schema {
         for method_spec in &self.methods {
             // Collect nullable parameters
             for param in &method_spec.params {
-                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
-                    &param.type_annotation
-                {
-                    if struct_defs.contains_key(nullable_type) {
-                        continue;
+                if let nullable_type @ TypeAnnotation::Nullable(..) = &param.type_annotation {
+                    let rs_type = nullable_type.as_rs_type()?.0;
+
+                    if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type)
+                    {
+                        let def = as_nullable_struct_def(nullable_type)?;
+                        e.insert(def.0);
+                        type_impls.push(def.1);
                     }
+                }
+            }
 
-                    let struct_type = nullable_type.as_rs_bridge_type()?.0;
-                    let base_type = type_annotation.as_rs_type()?.0;
-                    let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
-                    let default_val = type_annotation.as_rs_default_val()?;
+            // Collect nullable return type
+            if let nullable_type @ TypeAnnotation::Nullable(..) = &method_spec.ret_type {
+                let rs_type = nullable_type.as_rs_type()?.0;
 
-                    struct_defs.insert(
-                        nullable_type.clone(),
-                        formatdoc! {
-                            r#"
-                            struct {struct_type} {{
-                                null: bool,
-                                val: {base_type},
-                            }}"#,
-                            struct_type = struct_type,
-                            base_type = base_type,
-                        },
-                    );
-
-                    let nullable_impl = formatdoc! {
-                        r#"
-                        impl From<{struct_type}> for Nullable<{rs_impl_type}> {{
-                            fn from(val: {struct_type}) -> Self {{
-                                Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
-                            }}
-                        }}
-
-                        impl From<Nullable<{rs_impl_type}>> for {struct_type} {{
-                            fn from(val: Nullable<{rs_impl_type}>) -> Self {{
-                                let val = val.into_value();
-                                let null = val.is_none();
-                                {struct_type} {{
-                                    val: val.unwrap_or({default_val}),
-                                    null,
-                                }}
-                            }}
-                        }}"#,
-                        struct_type = struct_type,
-                        rs_impl_type = rs_impl_type,
-                        default_val = default_val,
-                    };
-
-                    type_impls.push(nullable_impl);
+                if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type) {
+                    let def = as_nullable_struct_def(nullable_type)?;
+                    e.insert(def.0);
+                    type_impls.push(def.1);
                 }
             }
 
@@ -541,9 +514,23 @@ impl Schema {
 
         // Collect alias types (struct)
         for type_annotation in &self.aliases {
-            if !struct_defs.contains_key(type_annotation) {
+            let rs_type = type_annotation.as_rs_type()?.0;
+
+            if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type) {
                 let obj = type_annotation.as_object().unwrap();
-                struct_defs.insert(type_annotation.clone(), as_struct_def(obj)?);
+                e.insert(as_struct_def(obj)?);
+
+                for prop in &obj.props {
+                    if let nullable_type @ TypeAnnotation::Nullable(..) = &prop.type_annotation {
+                        let rs_type = nullable_type.as_rs_type()?.0;
+                        if let std::collections::hash_map::Entry::Vacant(e) =
+                            struct_defs.entry(rs_type)
+                        {
+                            let def = as_nullable_struct_def(nullable_type)?;
+                            e.insert(def.0);
+                        }
+                    }
+                }
 
                 // Collect default implementations for the alias type
                 let mut type_impls_map = BTreeMap::new();
@@ -624,7 +611,8 @@ impl Schema {
                 {
                     let rs_type = nullable_type.as_rs_type()?.0;
 
-                    if let Entry::Vacant(e) = type_impls.entry(rs_type) {
+                    if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type)
+                    {
                         let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                         let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                         let default_val = type_annotation.as_rs_default_val()?;
@@ -675,7 +663,7 @@ impl Schema {
             {
                 let rs_type = nullable_type.as_rs_type()?.0;
 
-                if let Entry::Vacant(e) = type_impls.entry(rs_type) {
+                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;
@@ -742,7 +730,7 @@ impl Schema {
 }
 
 pub mod template {
-    use std::collections::{btree_map::Entry, BTreeMap};
+    use std::collections::BTreeMap;
 
     use craby_common::utils::string::snake_case;
     use indoc::formatdoc;
@@ -764,7 +752,6 @@ pub mod template {
     /// }
     /// ```
     pub fn as_struct_def(obj: &ObjectTypeAnnotation) -> Result<String, anyhow::Error> {
-        let mut struct_defs = vec![];
         let mut props = Vec::with_capacity(obj.props.len());
 
         for prop in &obj.props {
@@ -779,23 +766,6 @@ pub mod template {
                 snake_case(&prop.name),
                 prop.type_annotation.as_rs_bridge_type()?.0
             ));
-
-            if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation
-            {
-                let name = nullable_type.as_rs_bridge_type()?.0;
-                let rs_type = type_annotation.as_rs_bridge_type()?.0;
-                let struct_def = formatdoc! {
-                    r#"
-                    struct {name} {{
-                        null: bool,
-                        val: {rs_type}
-                    }}"#,
-                    name = name,
-                    rs_type = rs_type,
-                };
-
-                struct_defs.push(struct_def);
-            }
         }
 
         let struct_def = formatdoc! {
@@ -807,9 +777,61 @@ pub mod template {
             props = indent_str(props.join("\n"), 4),
         };
 
-        struct_defs.push(struct_def);
+        Ok(struct_def)
+    }
 
-        Ok(struct_defs.join("\n\n"))
+    /// Generates Rust struct definition for nullable types.
+    ///
+    /// Returns a tuple of the struct definition and the implementation.
+    ///
+    /// - `.0`: struct definition
+    /// - `.1`: implementation
+    pub fn as_nullable_struct_def(
+        nullable_type: &TypeAnnotation,
+    ) -> Result<(String, String), anyhow::Error> {
+        if let TypeAnnotation::Nullable(type_annotation) = nullable_type {
+            let struct_type = nullable_type.as_rs_bridge_type()?.0;
+            let base_type = type_annotation.as_rs_type()?.0;
+            let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+            let default_val = type_annotation.as_rs_default_val()?;
+
+            let struct_def = formatdoc! {
+                r#"
+                struct {struct_type} {{
+                    null: bool,
+                    val: {base_type},
+                }}"#,
+                struct_type = struct_type,
+                base_type = base_type,
+            };
+
+            let struct_impl = formatdoc! {
+                r#"
+                impl From<{struct_type}> for Nullable<{rs_impl_type}> {{
+                    fn from(val: {struct_type}) -> Self {{
+                        Nullable::new(if val.null {{ None }} else {{ Some(val.val) }})
+                    }}
+                }}
+
+                impl From<Nullable<{rs_impl_type}>> for {struct_type} {{
+                    fn from(val: Nullable<{rs_impl_type}>) -> Self {{
+                        let val = val.into_value();
+                        let null = val.is_none();
+                        {struct_type} {{
+                            val: val.unwrap_or({default_val}),
+                            null,
+                        }}
+                    }}
+                }}"#,
+                struct_type = struct_type,
+                rs_impl_type = rs_impl_type,
+                default_val = default_val,
+            };
+
+            return Ok((struct_def, struct_impl));
+        }
+
+        anyhow::bail!("Not a nullable type: {:?}", nullable_type);
     }
 
     /// Generates Default implementation for struct types.
@@ -844,7 +866,7 @@ pub mod template {
             {
                 let rs_type = nullable_type.as_rs_type()?.0;
 
-                if let Entry::Vacant(e) = type_impls.entry(rs_type) {
+                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;
