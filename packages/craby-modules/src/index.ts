@@ -12,11 +12,10 @@ type Signal = (handler: () => void) => () => void;
  *
  * Workaround: Load a dummy module to trigger `getModule()` before the actual module.
  *
- * 1. Request non-existent module → triggers `getModule()`
- * 2. `getModule()` receives `ReactApplicationContext`
- * 3. Calls `nativeSetDataPath()` (C++ extern function) to set `context.filesDir.absolutePath`
- * 4. `getModule()` returns `null`, but JNI is now can be initialized with the required values
- * 4. Actual module can now load with the required values
+ * - 1. Request non-existent module → triggers `getModule()`
+ * - 2. `getModule()` receives `ReactApplicationContext`
+ *   - 2-1. Calls `nativeSetDataPath()` (C++ extern function) to set `context.filesDir.absolutePath`
+ *   - 2-2. Returns placeholder module (no-op) instance (Actual C++ TurboModule is now can be initialized with the required values)
  *
  * @param moduleName The name of the module to prepare.
  */
