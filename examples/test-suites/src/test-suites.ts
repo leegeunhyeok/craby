@@ -165,6 +165,20 @@ const TEST_SUITES: TestSuite[] = [
     },
   },
   {
+    label: 'File I/O',
+    action: () => {
+      const data = 'Hello, World!';
+
+      const writeResult = Module.CrabyTestModule.writeData(data);
+      assert(writeResult, '`writeData` result is false');
+
+      const readData = Module.CrabyTestModule.readData();
+      assert(readData === data, '`readData` result is incorrect');
+
+      return { write: writeResult, read: readData };
+    },
+  },
+  {
     label: 'Panics',
     action: () => {
       try {

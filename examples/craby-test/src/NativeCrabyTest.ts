@@ -44,6 +44,8 @@ export interface Spec extends NativeModule {
   getState(): number;
   // Context (Data path)
   getDataPath(): string;
+  writeData(value: string): boolean;
+  readData(): string | null;
   // Naming conventions
   camelMethod(): void;
   PascalMethod(): void;

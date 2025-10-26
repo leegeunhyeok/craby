@@ -1120,6 +1120,8 @@ void pascalMethod(::craby::bridging::CrabyTest &it_);
 
 double promiseMethod(::craby::bridging::CrabyTest &it_, double arg);
 
+::craby::bridging::NullableString readData(::craby::bridging::CrabyTest &it_);
+
 void setState(::craby::bridging::CrabyTest &it_, double arg);
 
 void snakeMethod(::craby::bridging::CrabyTest &it_);
@@ -1127,6 +1129,8 @@ void snakeMethod(::craby::bridging::CrabyTest &it_);
 ::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::Str arg);
 
 void triggerSignal(::craby::bridging::CrabyTest &it_);
+
+bool writeData(::craby::bridging::CrabyTest &it_, ::rust::Str value);
 } // namespace bridging
 } // namespace craby
 

@@ -107,6 +107,9 @@ pub mod bridging {
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
+        #[cxx_name = "readData"]
+        fn craby_test_read_data(it_: &mut CrabyTest) -> Result<NullableString>;
+
         #[cxx_name = "setState"]
         fn craby_test_set_state(it_: &mut CrabyTest, arg: f64) -> Result<()>;
 
@@ -118,6 +121,9 @@ pub mod bridging {
 
         #[cxx_name = "triggerSignal"]
         fn craby_test_trigger_signal(it_: &mut CrabyTest) -> Result<()>;
+
+        #[cxx_name = "writeData"]
+        fn craby_test_write_data(it_: &mut CrabyTest, value: &str) -> Result<bool>;
     }
 
     #[namespace = "craby::signals"]
@@ -247,6 +253,13 @@ fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyho
     }).and_then(|r| r)
 }
 
+fn craby_test_read_data(it_: &mut CrabyTest) -> Result<NullableString, anyhow::Error> {
+    catch_panic!({
+        let ret = it_.read_data();
+        ret.into()
+    })
+}
+
 fn craby_test_set_state(it_: &mut CrabyTest, arg: f64) -> Result<(), anyhow::Error> {
     catch_panic!({
         let ret = it_.set_state(arg);
@@ -271,6 +284,13 @@ fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String, an
 fn craby_test_trigger_signal(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     catch_panic!({
         let ret = it_.trigger_signal();
+        ret
+    })
+}
+
+fn craby_test_write_data(it_: &mut CrabyTest, value: &str) -> Result<bool, anyhow::Error> {
+    catch_panic!({
+        let ret = it_.write_data(value);
         ret
     })
 }

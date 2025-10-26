@@ -1197,6 +1197,8 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_promise_method(::craby::bridging::CrabyTest &it_, double arg, double *return$) noexcept;
 
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_read_data(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableString *return$) noexcept;
+
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_set_state(::craby::bridging::CrabyTest &it_, double arg) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_snake_method(::craby::bridging::CrabyTest &it_) noexcept;
@@ -1204,6 +1206,8 @@ extern "C" {
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_string_method(::craby::bridging::CrabyTest &it_, ::rust::Str arg, ::rust::String *return$) noexcept;
 
 ::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_trigger_signal(::craby::bridging::CrabyTest &it_) noexcept;
+
+::rust::repr::PtrLen craby$bridging$cxxbridge1$craby_test_write_data(::craby::bridging::CrabyTest &it_, ::rust::Str value, bool *return$) noexcept;
 } // extern "C"
 } // namespace bridging
 
@@ -1380,6 +1384,15 @@ double promiseMethod(::craby::bridging::CrabyTest &it_, double arg) {
   return ::std::move(return$.value);
 }
 
+::craby::bridging::NullableString readData(::craby::bridging::CrabyTest &it_) {
+  ::rust::MaybeUninit<::craby::bridging::NullableString> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_read_data(it_, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
 void setState(::craby::bridging::CrabyTest &it_, double arg) {
   ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_set_state(it_, arg);
   if (error$.ptr) {
@@ -1408,6 +1421,15 @@ void triggerSignal(::craby::bridging::CrabyTest &it_) {
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }
+}
+
+bool writeData(::craby::bridging::CrabyTest &it_, ::rust::Str value) {
+  ::rust::MaybeUninit<bool> return$;
+  ::rust::repr::PtrLen error$ = craby$bridging$cxxbridge1$craby_test_write_data(it_, value, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
 }
 } // namespace bridging
 } // namespace craby
