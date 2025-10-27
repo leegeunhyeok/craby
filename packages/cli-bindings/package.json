@@ -1,6 +1,6 @@
 {
   "name": "@craby/cli-bindings",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0-dev.20251027103419",
   "description": "N-API binding package for Craby CLI",
   "license": "MIT",
   "type": "module",
