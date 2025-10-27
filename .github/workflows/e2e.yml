@@ -57,9 +57,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        react-native-version: ['0.76', '0.80']
+        react-native:
+          - version: '0.76'
+            app-identifier: 'com.craby76'
+
+          - version: '0.80'
+            app-identifier: 'com.craby80'
     runs-on: ubuntu-latest
-    name: E2E Android
+    name: E2E Android - react-native@${{ matrix.react-native.version }}
     needs:
       - build
     steps:
@@ -139,10 +144,10 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
-      - name: Build Android app
+      - name: Build Android app - ${{ matrix.react-native.version }}
         run: ./gradlew assembleRelease
-        working-directory: examples/${{ matrix.react-native-version }}/android
-      - name: Run E2E tests
+        working-directory: examples/${{ matrix.react-native.version }}/android
+      - name: Run E2E tests - ${{ matrix.react-native.version }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
@@ -150,18 +155,26 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native-version }}/android"
+            export MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }}
+            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}/android"
             adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
-            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native-version }}"
-            yarn e2e:android
+            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}"
+            yarn e2e
 
   e2e-ios:
     strategy:
       fail-fast: false
       matrix:
-        react-native-version: ['0.76', '0.80']
+        react-native:
+          - version: '0.76'
+            scheme: 'Craby76'
+            app-identifier: 'org.reactjs.native.example.Craby76'
+
+          - version: '0.80'
+            scheme: 'Craby80'
+            app-identifier: 'org.reactjs.native.example.Craby80'
     runs-on: macos-latest
-    name: E2E iOS
+    name: E2E iOS - react-native@${{ matrix.react-native.version }}
     needs:
       - build
     steps:
@@ -197,18 +210,18 @@ jobs:
         run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
       - name: Install CocoaPods dependencies
         run: pod install
-        working-directory: examples/${{ matrix.react-native-version }}/ios
-      - name: Build iOS app
+        working-directory: examples/${{ matrix.react-native.version }}/ios
+      - name: Build iOS app - ${{ matrix.react-native.version }}
         run: |
           xcodebuild \
-            -workspace Craby80.xcworkspace \
-            -scheme Craby80 \
+            -workspace ${{ matrix.react-native.scheme }}.xcworkspace \
+            -scheme ${{ matrix.react-native.scheme }} \
             -configuration Release \
             -sdk iphonesimulator \
             -derivedDataPath "$HOME/DerivedData" \
             -quiet
-        working-directory: examples/${{ matrix.react-native-version }}/ios
-      - name: Install app
+        working-directory: examples/${{ matrix.react-native.version }}/ios
+      - name: Install app - ${{ matrix.react-native.scheme }}
         run: |
           APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
           DEVICE_UDID=$(xcrun simctl list devices iPhone available --json | jq -r '.devices | to_entries[] | .value[] | select(.name | contains("iPhone")) | .udid' | head -n 1)
@@ -216,6 +229,8 @@ jobs:
           xcrun simctl boot "$DEVICE_UDID" || true
           echo "Installing app: $APP_PATH"
           xcrun simctl install booted "$APP_PATH"
-      - name: Run E2E tests
-        run: yarn e2e:ios
-        working-directory: examples/${{ matrix.react-native-version }}
+      - name: Run E2E tests - ${{ matrix.react-native.version }}
+        run: yarn e2e
+        working-directory: examples/${{ matrix.react-native.version }}
+        env:
+          MAESTRO_APP_ID: ${{ matrix.react-native.app-identifier }}

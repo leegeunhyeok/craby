@@ -9,8 +9,9 @@
     "prepare": "yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run build",
     "lint:all": "biome check",
     "lint:fix": "biome check --write",
-    "e2e:android": "MAESTRO_APP_ID=com.craby80 maestro test .maestro",
-    "e2e:ios": "MAESTRO_APP_ID=org.reactjs.native.example.Craby80 maestro test .maestro",
+    "e2e": "maestro test .maestro",
+    "e2e:android": "MAESTRO_APP_ID=com.craby80 yarn e2e",
+    "e2e:ios": "MAESTRO_APP_ID=org.reactjs.native.example.Craby80 yarn e2e",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
