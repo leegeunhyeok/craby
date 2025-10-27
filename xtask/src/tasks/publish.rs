@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::utils::{
     collect_packages, get_version_from_commit_message, is_main_ref, run_command,
-    validate_package_versions, PackageInfo,
+    update_cargo_workspace_version, validate_package_versions, PackageInfo,
 };
 use anyhow::Result;
 
@@ -87,6 +87,13 @@ fn publish_packages(packages: &[PackageInfo]) -> Result<()> {
     Ok(())
 }
 
+fn publish_crates() -> Result<()> {
+    env::var("CARGO_REGISTRY_TOKEN")
+        .map_err(|_| anyhow::anyhow!("CARGO_REGISTRY_TOKEN is not set"))?;
+    run_command("cargo", &["publish", "--workspace"], None)?;
+    Ok(())
+}
+
 pub fn run() -> Result<()> {
     let version = match get_version_from_commit_message()? {
         Some(v) => v,
@@ -115,6 +122,11 @@ pub fn run() -> Result<()> {
         .cloned()
         .collect::<Vec<_>>();
 
+    // Crates
+    update_cargo_workspace_version(&version)?;
+    publish_crates()?;
+
+    // NPM
     setup_npm()?;
     publish_napi_package(napi_package)?;
     publish_packages(&general_packages)?;

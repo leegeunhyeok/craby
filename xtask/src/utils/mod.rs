@@ -11,6 +11,11 @@ pub struct PackageInfo {
     pub name: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrateInfo {
+    pub location: String,
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 struct PackageJson {
     #[serde(flatten)]
@@ -143,6 +148,55 @@ pub fn validate_package_versions(package_infos: &[PackageInfo], version: &str) -
                 version
             );
         }
+    }
+    Ok(())
+}
+
+pub fn collect_crates() -> Result<Vec<CrateInfo>> {
+    let root_dir = std::env::current_dir()?;
+    let crates = fs::read_dir("crates")?
+        .filter_map(|entry| -> Option<CrateInfo> {
+            let entry = entry.unwrap();
+            let file_type = entry.file_type().unwrap();
+
+            if file_type.is_dir() {
+                Some(CrateInfo {
+                    location: root_dir
+                        .join("crates")
+                        .join(entry.file_name())
+                        .to_string_lossy()
+                        .to_string(),
+                })
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<_>>();
+
+    Ok(crates)
+}
+
+pub fn update_cargo_workspace_version(version: &str) -> Result<()> {
+    println!("Updating cargo workspace version...");
+    let cargo_toml_path = std::env::current_dir()?.join("Cargo.toml");
+    let raw_cargo_toml = fs::read_to_string(&cargo_toml_path)?;
+    let mut doc = raw_cargo_toml.parse::<toml_edit::DocumentMut>()?;
+    doc["workspace"]["package"]["version"] = toml_edit::value(version);
+    fs::write(&cargo_toml_path, doc.to_string())?;
+    Ok(())
+}
+
+pub fn update_cargo_crate_versions(version: &str) -> Result<()> {
+    let pattern =
+        regex::Regex::new(r#"(craby[a-zA-Z0-9_]*\s*=\s*\{\s*version\s*=\s*")[^"]+(")"#).unwrap();
+    for crate_info in collect_crates()? {
+        println!("Updating cargo crate version: {}", crate_info.location);
+        let cargo_toml_path = Path::new(&crate_info.location).join("Cargo.toml");
+        let raw_cargo_toml = fs::read_to_string(&cargo_toml_path)?;
+        let updated_cargo_toml = pattern
+            .replace_all(&raw_cargo_toml, format!(r#"${{1}}{}${{2}}"#, version))
+            .to_string();
+        fs::write(&cargo_toml_path, updated_cargo_toml)?;
     }
     Ok(())
 }

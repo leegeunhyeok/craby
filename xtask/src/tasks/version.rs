@@ -1,4 +1,7 @@
-use crate::utils::{collect_packages, is_valid_version, run_command, update_package_version};
+use crate::utils::{
+    collect_packages, is_valid_version, run_command, update_cargo_crate_versions,
+    update_cargo_workspace_version, update_package_version,
+};
 use anyhow::Result;
 use std::env;
 
@@ -12,14 +15,9 @@ pub fn run() -> Result<()> {
     }
 
     println!("Updating version to {}", version);
-
-    let packages = collect_packages()?;
-    for package_info in &packages {
-        update_package_version(package_info, &version)?;
-    }
-
-    println!("Building napi package for prebuilt JS bundles...");
-    run_command("yarn", &["workspace", "@craby/cli-bindings", "build"], None)?;
+    update_npm_package_version(&version)?;
+    update_cargo_workspace_version(&version)?;
+    update_cargo_crate_versions(&version)?;
 
     println!(
         r#"
@@ -31,5 +29,17 @@ git commit -m "chore: release v{}"
         version
     );
 
+    Ok(())
+}
+
+fn update_npm_package_version(version: &str) -> Result<()> {
+    let packages = collect_packages()?;
+    for package_info in &packages {
+        println!("Updating package version: {}", package_info.name);
+        update_package_version(package_info, version)?;
+    }
+
+    println!("Building napi package for prebuilt JS bundles...");
+    run_command("yarn", &["workspace", "@craby/cli-bindings", "build"], None)?;
     Ok(())
 }

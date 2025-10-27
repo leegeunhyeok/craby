@@ -13,3 +13,4 @@ serde_json   = { workspace = true, features = ["preserve_order"] }
 serde_derive = { workspace = true }
 indexmap     = { version = "2.0.0", features = ["serde"] }
 regex        = "1.0"
+toml_edit    = "0.23.7"

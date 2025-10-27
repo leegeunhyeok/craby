@@ -8,9 +8,9 @@ license = "MIT"
 repository = "https://github.com/leegeunhyeok/craby"
 
 [dependencies]
-craby_build    = { path = "../craby_build" }
-craby_codegen  = { path = "../craby_codegen" }
-craby_common   = { path = "../craby_common" }
+craby_build    = { version = "0.0.0", path = "../craby_build" }
+craby_codegen  = { version = "0.0.0", path = "../craby_codegen" }
+craby_common   = { version = "0.0.0", path = "../craby_common" }
 anyhow         = { workspace = true }
 log            = { workspace = true }
 owo-colors     = { workspace = true }
