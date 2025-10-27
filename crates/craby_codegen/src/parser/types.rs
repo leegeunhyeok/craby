@@ -72,10 +72,7 @@ impl TypeAnnotation {
     }
 
     pub fn is_nullable(&self) -> bool {
-        match self {
-            TypeAnnotation::Nullable(..) => true,
-            _ => false,
-        }
+        matches!(self, TypeAnnotation::Nullable(..))
     }
 }
 

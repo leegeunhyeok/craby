@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
+    common::IntoCode,
     parser::types::{EnumTypeAnnotation, ObjectTypeAnnotation, TypeAnnotation},
     types::Schema,
 };
@@ -49,7 +50,7 @@ pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
                         .push(enum_name.clone());
                 }
                 nullable @ TypeAnnotation::Nullable(type_annotation) => {
-                    let rs_type = nullable.as_rs_bridge_type()?.0;
+                    let rs_type = nullable.as_rs_bridge_type()?.into_code();
                     dependencies.entry(rs_type.clone()).or_insert(vec![]);
 
                     match &**type_annotation {
@@ -131,13 +132,7 @@ mod tests {
 
     #[test]
     fn test_indent_str() {
-        assert_eq!(
-            indent_str("Hello\nWorld", 2),
-            "  Hello\n  World"
-        );
-        assert_eq!(
-            indent_str("Hello\nWorld", 4),
-            "    Hello\n    World"
-        );
+        assert_eq!(indent_str("Hello\nWorld", 2), "  Hello\n  World");
+        assert_eq!(indent_str("Hello\nWorld", 4), "    Hello\n    World");
     }
 }

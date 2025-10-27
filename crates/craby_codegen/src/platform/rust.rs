@@ -20,13 +20,31 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct RsType(pub String);
+pub struct RsType(String);
+
+impl IntoCode for RsType {
+    fn into_code(self) -> String {
+        self.0
+    }
+}
 
 #[derive(Debug)]
-pub struct RsBridgeType(pub String);
+pub struct RsBridgeType(String);
+
+impl IntoCode for RsBridgeType {
+    fn into_code(self) -> String {
+        self.0
+    }
+}
 
 #[derive(Debug)]
 pub struct RsImplType(pub String);
+
+impl IntoCode for RsImplType {
+    fn into_code(self) -> String {
+        self.0
+    }
+}
 
 /// Collection of Rust code for FFI.
 #[derive(Debug, Clone)]
@@ -106,12 +124,15 @@ impl TypeAnnotation {
                         element_type
                     ));
                 }
-                format!("Vec<{}>", element_type.as_rs_type()?.0)
+                format!("Vec<{}>", element_type.as_rs_type()?.into_code())
             }
             TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => name.clone(),
             TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => name.clone(),
             TypeAnnotation::Promise(resolve_type) => {
-                format!("Result<{}, anyhow::Error>", resolve_type.as_rs_type()?.0)
+                format!(
+                    "Result<{}, anyhow::Error>",
+                    resolve_type.as_rs_type()?.into_code()
+                )
             }
             TypeAnnotation::Nullable(type_annotation) => match &**type_annotation {
                 TypeAnnotation::Boolean => "NullableBoolean".to_string(),
@@ -177,9 +198,9 @@ impl TypeAnnotation {
     pub fn as_rs_bridge_type(&self) -> Result<RsBridgeType, anyhow::Error> {
         let extern_type = match self {
             TypeAnnotation::Promise(resolve_type) => {
-                format!("Result<{}>", resolve_type.as_rs_type()?.0)
+                format!("Result<{}>", resolve_type.as_rs_type()?.into_code())
             }
-            _ => self.as_rs_type()?.0,
+            _ => self.as_rs_type()?.into_code(),
         };
 
         Ok(RsBridgeType(extern_type))
@@ -210,15 +231,15 @@ impl TypeAnnotation {
                         element_type
                     ));
                 }
-                format!("Array<{}>", element_type.as_rs_impl_type()?.0)
+                format!("Array<{}>", element_type.as_rs_impl_type()?.into_code())
             }
             TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => name.clone(),
             TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => name.clone(),
             TypeAnnotation::Promise(resolved_type) => {
-                format!("Promise<{}>", resolved_type.as_rs_impl_type()?.0)
+                format!("Promise<{}>", resolved_type.as_rs_impl_type()?.into_code())
             }
             TypeAnnotation::Nullable(type_annotation) => {
-                let type_annotation = type_annotation.as_rs_impl_type()?.0;
+                let type_annotation = type_annotation.as_rs_impl_type()?.into_code();
                 format!("Nullable<{}>", type_annotation)
             }
             TypeAnnotation::Ref(..) => unreachable!(),
@@ -252,7 +273,7 @@ impl TypeAnnotation {
                 format!("{}::default()", name)
             }
             TypeAnnotation::Nullable(..) => {
-                let nullable_type = self.as_rs_type()?.0;
+                let nullable_type = self.as_rs_type()?.into_code();
                 format!("{}::default()", nullable_type)
             }
             _ => {
@@ -277,7 +298,7 @@ impl Method {
     /// fn add_async(&mut self, a: Number, b: Number) -> Promise<Number>
     /// ```
     pub fn try_into_impl_sig(&self) -> Result<String, anyhow::Error> {
-        let return_type = self.ret_type.as_rs_impl_type()?.0;
+        let return_type = self.ret_type.as_rs_impl_type()?.into_code();
         let params_sig = std::iter::once("&mut self".to_string())
             .chain(
                 self.params
@@ -313,7 +334,7 @@ impl Param {
         let param_type = if let TypeAnnotation::String = &self.type_annotation {
             "&str".to_string()
         } else {
-            self.type_annotation.as_rs_type()?.0
+            self.type_annotation.as_rs_type()?.into_code()
         };
         Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
@@ -331,7 +352,7 @@ impl Param {
         let param_type = if let TypeAnnotation::String = &self.type_annotation {
             "&str".to_string()
         } else {
-            self.type_annotation.as_rs_impl_type()?.0
+            self.type_annotation.as_rs_impl_type()?.into_code()
         };
         Ok(format!("{}: {}", snake_case(&self.name), param_type))
     }
@@ -412,12 +433,12 @@ impl Schema {
                 }
             }
 
-            let ret_type = method_spec.ret_type.as_rs_type()?.0;
+            let ret_type = method_spec.ret_type.as_rs_type()?.into_code();
             let ret_type = match method_spec.ret_type {
                 TypeAnnotation::Promise(_) => ret_type,
                 _ => format!("Result<{}, anyhow::Error>", ret_type),
             };
-            let ret_extern_type = method_spec.ret_type.as_rs_bridge_type()?.0;
+            let ret_extern_type = method_spec.ret_type.as_rs_bridge_type()?.into_code();
             let ret_extern_type = match method_spec.ret_type {
                 TypeAnnotation::Promise(_) => ret_extern_type,
                 _ => format!("Result<{}>", ret_extern_type),
@@ -689,7 +710,7 @@ pub mod template {
                 props.push(format!(
                     "{}: {},",
                     snake_case(&prop.name),
-                    prop.type_annotation.as_rs_bridge_type()?.0
+                    prop.type_annotation.as_rs_bridge_type()?.into_code()
                 ));
             }
 
@@ -717,9 +738,9 @@ pub mod template {
 
         fn try_from(nullable_type: &TypeAnnotation) -> Result<Self, Self::Error> {
             if let TypeAnnotation::Nullable(type_annotation) = nullable_type {
-                let struct_type = nullable_type.as_rs_bridge_type()?.0;
-                let base_type = type_annotation.as_rs_type()?.0;
-                let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
+                let struct_type = nullable_type.as_rs_bridge_type()?.into_code();
+                let base_type = type_annotation.as_rs_type()?.into_code();
+                let rs_impl_type = type_annotation.as_rs_impl_type()?.into_code();
                 let default_val = type_annotation.as_rs_default_val()?;
 
                 let struct_def = formatdoc! {
