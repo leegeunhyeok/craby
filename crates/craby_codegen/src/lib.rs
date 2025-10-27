@@ -7,6 +7,7 @@ pub mod parser;
 pub mod types;
 pub mod utils;
 
+pub(crate) mod common;
 pub(crate) mod platform;
 
 #[cfg(test)]

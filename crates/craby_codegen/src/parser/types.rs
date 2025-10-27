@@ -70,6 +70,13 @@ impl TypeAnnotation {
             _ => None,
         }
     }
+
+    pub fn is_nullable(&self) -> bool {
+        match self {
+            TypeAnnotation::Nullable(..) => true,
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Hash)]

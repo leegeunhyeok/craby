@@ -569,11 +569,6 @@ impl Schema {
     /// };
     /// ```
     pub fn collect_nullable_types(&self) -> Result<BTreeMap<String, String>, anyhow::Error> {
-        // {
-        //   "craby::bridging::NullableFoo": "(code)",
-        //   "craby::bridging::NullableBar": "(code)",
-        //   "craby::bridging::NullableBaz": "(code)",
-        // }
         let mut nullable_bridging_templates = BTreeMap::new();
 
         for method in &self.methods {
