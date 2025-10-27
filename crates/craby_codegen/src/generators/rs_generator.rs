@@ -105,7 +105,7 @@ impl RsTemplate {
             extern "Rust" {{
             {cxx_extern}
             }}"#,
-            cxx_extern = indent_str([impl_types, cxx_externs].concat().join("\n\n"), 4),
+            cxx_extern = indent_str(&[impl_types, cxx_externs].concat().join("\n\n"), 4),
         };
 
         let cxx_signal_manager = if has_signals {
@@ -140,7 +140,7 @@ impl RsTemplate {
             pub mod bridging {{
             {code}
             }}"#,
-            code = indent_str(code, 4),
+            code = indent_str(&code, 4),
         }
     }
 
@@ -223,7 +223,7 @@ impl RsTemplate {
                     }}
                 }}"#,
                 signal_enum_name = signal_enum_name,
-                pattern_matches = indent_str(pattern_matches.join("\n"), 8),
+                pattern_matches = indent_str(&pattern_matches.join("\n"), 8),
             };
 
             methods.insert(0, emit_impl);
@@ -241,7 +241,7 @@ impl RsTemplate {
             {methods}
             }}"#,
             trait_name = trait_name,
-            methods = indent_str(methods.join("\n"), 4),
+            methods = indent_str(&methods.join("\n"), 4),
         };
 
         let content = [Some(spec_trait), signal_enum]
@@ -351,7 +351,7 @@ impl RsTemplate {
             }}"#,
             trait_name = trait_name,
             mod_name= mod_name,
-            methods = indent_str([default_methods, methods].concat().join("\n\n"), 4),
+            methods = indent_str(&[default_methods, methods].concat().join("\n\n"), 4),
         };
 
         Ok(content)
@@ -396,7 +396,7 @@ impl RsTemplate {
     /// use crate::my_module_impl::*;
     /// use crate::context::*;
     /// use crate::generated::*;
-    /// 
+    ///
     /// use bridging::*;
     ///
     /// #[cxx::bridge(namespace = "craby::mymodule")]

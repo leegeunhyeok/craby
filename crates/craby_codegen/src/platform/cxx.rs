@@ -6,11 +6,10 @@ use log::debug;
 use template::{cxx_arg_ref, cxx_arg_var};
 
 use crate::{
+    common::IntoCode,
     constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
     parser::types::{EnumTypeAnnotation, Method, ObjectTypeAnnotation, TypeAnnotation},
-    platform::cxx::template::{
-        cxx_enum_bridging_template, cxx_nullable_bridging_template, cxx_struct_bridging_template,
-    },
+    platform::cxx::template::CxxBridgingTemplate,
     types::Schema,
     utils::{calc_deps_order, indent_str},
 };
@@ -374,7 +373,7 @@ impl Method {
 
                     return {ret};"#,
                     bind_args = bind_args.join(", "),
-                    ret_stmts = indent_str(ret_stmts, 4),
+                    ret_stmts = indent_str(&ret_stmts, 4),
                     ret_type = resolve_type.as_cxx_type(mod_name)?,
                     ret = self.ret_type.as_cxx_to_js(&"promise".to_string())?.expr,
                 }
@@ -454,7 +453,7 @@ impl Method {
             fn_name = camel_case(&self.name),
             cxx_mod = cxx_mod,
             args_count = args_count,
-            invoke_stmts = indent_str(invoke_stmts, 4),
+            invoke_stmts = indent_str(&invoke_stmts, 4),
             plural = if args_count > 1 { "s" } else { "" },
         };
 
@@ -504,7 +503,8 @@ impl Schema {
             let alias_spec = type_annotation.as_object().unwrap();
             bridging_templates.insert(
                 alias_spec.name.clone(),
-                cxx_struct_bridging_template(&self.module_name, alias_spec)?,
+                CxxBridgingTemplate::try_into_struct_template(&self.module_name, alias_spec)?
+                    .into_code(),
             );
         }
 
@@ -512,7 +512,7 @@ impl Schema {
             let enum_spec = type_annotation.as_enum().unwrap();
             enum_bridging_templates.insert(
                 enum_spec.name.clone(),
-                cxx_enum_bridging_template(enum_spec)?,
+                CxxBridgingTemplate::try_into_enum_template(enum_spec)?.into_code(),
             );
         }
 
@@ -578,11 +578,12 @@ impl Schema {
                 {
                     let key = nullable_type.as_cxx_type(&self.module_name)?;
                     if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
-                        let bridging_template = cxx_nullable_bridging_template(
+                        let bridging_template = CxxBridgingTemplate::try_into_nullable_template(
                             &self.module_name,
                             &nullable_type.as_cxx_type(&self.module_name)?,
                             type_annotation,
-                        )?;
+                        )?
+                        .into_code();
                         e.insert(bridging_template);
                     }
                 }
@@ -591,11 +592,12 @@ impl Schema {
             if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &method.ret_type {
                 let key = nullable_type.as_cxx_type(&self.module_name)?;
                 if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
-                    let bridging_template = cxx_nullable_bridging_template(
+                    let bridging_template = CxxBridgingTemplate::try_into_nullable_template(
                         &self.module_name,
                         &nullable_type.as_cxx_type(&self.module_name)?,
                         type_annotation,
-                    )?;
+                    )?
+                    .into_code();
                     e.insert(bridging_template);
                 }
             }
@@ -608,11 +610,12 @@ impl Schema {
                 {
                     let key = nullable_type.as_cxx_type(&self.module_name)?;
                     if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
-                        let bridging_template = cxx_nullable_bridging_template(
+                        let bridging_template = CxxBridgingTemplate::try_into_nullable_template(
                             &self.module_name,
                             &nullable_type.as_cxx_type(&self.module_name)?,
                             type_annotation,
-                        )?;
+                        )?
+                        .into_code();
                         e.insert(bridging_template);
                     }
                 }
@@ -628,6 +631,7 @@ pub mod template {
     use indoc::formatdoc;
 
     use crate::{
+        common::IntoCode,
         parser::types::{
             EnumMemberValue as ParserEnumMemberValue, EnumTypeAnnotation, ObjectTypeAnnotation,
             TypeAnnotation,
@@ -635,401 +639,417 @@ pub mod template {
         utils::indent_str,
     };
 
-    /// Generates C++ bridging template for struct/object types.
-    ///
-    /// # Generated Code
-    ///
-    /// ```cpp
-    /// template <>
-    /// struct Bridging<craby::bridging::MyStruct> {
-    ///   static craby::bridging::MyStruct fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    ///     auto obj = value.asObject(rt);
-    ///     auto obj$foo = obj.getProperty(rt, "foo");
-    ///
-    ///     auto _obj$foo = react::bridging::fromJs<rust::String>(rt, value.foo, callInvoker);
-    ///
-    ///     craby::bridging::MyStruct ret = {
-    ///       _obj$foo
-    ///     };
-    ///
-    ///     return ret;
-    ///   }
-    ///
-    ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyStruct value) {
-    ///     jsi::Object obj = jsi::Object(rt);
-    ///     auto _obj$foo = react::bridging::toJs(rt, value.foo);
-    ///
-    ///     obj.setProperty(rt, "foo", _obj$foo);
-    ///
-    ///     return jsi::Value(rt, obj);
-    ///   }
-    /// };
-    /// ```
-    pub fn cxx_struct_bridging_template(
-        mod_name: &String,
-        obj: &ObjectTypeAnnotation,
-    ) -> Result<String, anyhow::Error> {
-        let struct_namespace = format!("craby::bridging::{}", obj.name);
-        let mut get_props = vec![];
-        let mut set_props = vec![];
-        let mut from_js_stmts = vec![];
-        let mut from_js_ident = vec![];
-        let mut to_js_stmts = vec![];
+    pub struct CxxBridgingTemplate {
+        pub namespace: String,
+        pub from_js: String,
+        pub to_js: String,
+    }
 
-        for prop in &obj.props {
-            let ident = format!("obj${}", camel_case(&prop.name));
-            let converted_ident = format!("_{}", ident);
-            let from_js = prop.type_annotation.as_cxx_from_js(mod_name, &ident)?;
-            let to_js = prop
-                .type_annotation
-                .as_cxx_to_js(&format!("value.{}", snake_case(&prop.name)))?;
+    impl IntoCode for CxxBridgingTemplate {
+        fn into_code(self) -> String {
+            self.cxx_bridging_template()
+        }
+    }
 
-            // ```cpp
-            // auto obj$name = obj.getProperty(rt, "name");
-            // ```
-            let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
-
-            // ```cpp
-            // obj.setProperty(rt, "name", _obj$name);
-            // ```
-            let set_prop = format!(
-                "obj.setProperty(rt, \"{}\", {});",
-                prop.name, converted_ident
-            );
-
-            // ```cpp
-            // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
-            // ```
-            let from_js_stmt = format!("auto {} = {};", converted_ident, from_js.expr);
-
-            // ```cpp
-            // auto _obj$name = react::bridging::toJs(rt, value.name);
-            // ```
-            let to_js_stmt = format!("auto {} = {};", converted_ident, to_js.expr);
-
-            get_props.push(get_prop);
-            from_js_stmts.push(from_js_stmt);
-            from_js_ident.push(converted_ident);
-            set_props.push(set_prop);
-            to_js_stmts.push(to_js_stmt);
+    impl CxxBridgingTemplate {
+        /// Generates a generic C++ JSI bridging template.
+        ///
+        /// # Generated Code
+        ///
+        /// ```cpp
+        /// template <>
+        /// struct Bridging<TargetType> {
+        ///   static TargetType fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+        ///     // fromJs implementation
+        ///   }
+        ///
+        ///   static jsi::Value toJs(jsi::Runtime &rt, TargetType value) {
+        ///     // toJs implementation
+        ///   }
+        /// };
+        /// ```
+        fn cxx_bridging_template(&self) -> String {
+            formatdoc! {
+                r#"
+                template <>
+                struct Bridging<{namespace}> {{
+                  static {namespace} fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
+                {from_js_impl}
+                  }}
+    
+                  static jsi::Value toJs(jsi::Runtime &rt, {namespace} value) {{
+                {to_js_impl}
+                  }}
+                }};"#,
+                namespace = self.namespace,
+                from_js_impl = indent_str(&self.from_js, 4),
+                to_js_impl = indent_str(&self.to_js, 4),
+            }
         }
 
-        let from_js_impl = formatdoc! {
-            r#"
-            auto obj = value.asObject(rt);
-            {get_props}
+        /// Generates C++ bridging template for struct/object types.
+        ///
+        /// # Generated Code
+        ///
+        /// ```cpp
+        /// template <>
+        /// struct Bridging<craby::bridging::MyStruct> {
+        ///   static craby::bridging::MyStruct fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+        ///     auto obj = value.asObject(rt);
+        ///     auto obj$foo = obj.getProperty(rt, "foo");
+        ///
+        ///     auto _obj$foo = react::bridging::fromJs<rust::String>(rt, value.foo, callInvoker);
+        ///
+        ///     craby::bridging::MyStruct ret = {
+        ///       _obj$foo
+        ///     };
+        ///
+        ///     return ret;
+        ///   }
+        ///
+        ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyStruct value) {
+        ///     jsi::Object obj = jsi::Object(rt);
+        ///     auto _obj$foo = react::bridging::toJs(rt, value.foo);
+        ///
+        ///     obj.setProperty(rt, "foo", _obj$foo);
+        ///
+        ///     return jsi::Value(rt, obj);
+        ///   }
+        /// };
+        /// ```
+        pub fn try_into_struct_template(
+            mod_name: &String,
+            obj: &ObjectTypeAnnotation,
+        ) -> Result<CxxBridgingTemplate, anyhow::Error> {
+            let struct_namespace = format!("craby::bridging::{}", obj.name);
+            let mut get_props = vec![];
+            let mut set_props = vec![];
+            let mut from_js_stmts = vec![];
+            let mut from_js_ident = vec![];
+            let mut to_js_stmts = vec![];
 
-            {from_js_stmts}
-
-            {struct_namespace} ret = {{
-            {from_js_ident}
-            }};
-
-            return ret;"#,
-            struct_namespace = struct_namespace,
-            get_props = get_props.join("\n"),
-            from_js_stmts = from_js_stmts.join("\n"),
-            from_js_ident = indent_str(from_js_ident.join(",\n"), 2),
-        };
-
-        let to_js_impl = formatdoc! {
-            r#"
-            jsi::Object obj = jsi::Object(rt);
-            {to_js_stmts}
-
-            {set_props}
-
-            return jsi::Value(rt, obj);"#,
-            to_js_stmts = to_js_stmts.join("\n"),
-            set_props = set_props.join("\n"),
-        };
-
-        let template = cxx_bridging_template(&struct_namespace, from_js_impl, to_js_impl);
-
-        Ok(template)
-    }
-
-    /// Generates C++ bridging template for enum types.
-    ///
-    /// # Generated Code
-    ///
-    /// ```cpp
-    /// template <>
-    /// struct Bridging<craby::bridging::MyEnum> {
-    ///   static craby::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    ///     auto raw = value.asString(rt).utf8(rt);
-    ///     if (raw == "foo") {
-    ///       return craby::bridging::MyEnum::Foo;
-    ///     } else if (raw == "bar") {
-    ///       return craby::bridging::MyEnum::Bar;
-    ///     } else {
-    ///       throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-    ///     }
-    ///   }
-    ///
-    ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyEnum value) {
-    ///     switch (value) {
-    ///       case craby::bridging::MyEnum::Foo:
-    ///         return react::bridging::toJs(rt, "foo");
-    ///       case craby::bridging::MyEnum::Bar:
-    ///         return react::bridging::toJs(rt, "bar");
-    ///       default:
-    ///         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-    ///     }
-    ///   }
-    /// };
-    /// ```
-    pub fn cxx_enum_bridging_template(
-        enum_spec: &EnumTypeAnnotation,
-    ) -> Result<String, anyhow::Error> {
-        let enum_namespace = format!("craby::bridging::{}", enum_spec.name);
-
-        let is_str = match enum_spec.members.first().unwrap().value {
-            ParserEnumMemberValue::String { .. } => true,
-            ParserEnumMemberValue::Number { .. } => false,
-        };
-
-        let as_raw = if is_str {
-            "value.asString(rt).utf8(rt)"
-        } else {
-            "value.asNumber()"
-        };
-
-        let to_raw_member = |value: &String| -> String {
-            if is_str {
-                // "value"
-                format!("\"{}\"", value)
-            } else {
-                // 123
-                value.clone()
-            }
-        };
-
-        let mut from_js_conds = vec![];
-        let mut to_js_conds = vec![];
-
-        enum_spec.members.iter().enumerate().try_for_each(
-            |(idx, member)| -> Result<(), anyhow::Error> {
-                let enum_namespace = format!("{}::{}", enum_namespace, member.name);
-                let raw_member = match &member.value {
-                    ParserEnumMemberValue::String(val) => to_raw_member(val),
-                    ParserEnumMemberValue::Number(val) => to_raw_member(&val.to_string()),
-                };
-
-                let from_js_cond = if idx == 0 {
-                    // ```cpp
-                    // if (raw == "value") {
-                    //   return craby::mymodule::MyEnum::Value;
-                    // }
-                    // ```
-                    formatdoc! {
-                        r#"
-                        if (raw == {raw_member}) {{
-                          return {enum_namespace};
-                        }}"#,
-                        raw_member = raw_member,
-                        enum_namespace = enum_namespace,
-                    }
-                } else {
-                    // ```cpp
-                    // else if (raw == "value2") {
-                    //   return craby::mymodule::MyEnum::Value2;
-                    // }
-                    // ```
-                    formatdoc! {
-                        r#"
-                        else if (raw == {raw_member}) {{
-                          return {enum_namespace};
-                        }}"#,
-                        raw_member = raw_member,
-                        enum_namespace = enum_namespace,
-                    }
-                };
+            for prop in &obj.props {
+                let ident = format!("obj${}", camel_case(&prop.name));
+                let converted_ident = format!("_{}", ident);
+                let from_js = prop.type_annotation.as_cxx_from_js(mod_name, &ident)?;
+                let to_js = prop
+                    .type_annotation
+                    .as_cxx_to_js(&format!("value.{}", snake_case(&prop.name)))?;
 
                 // ```cpp
-                // case craby::mymodule::MyEnum::Value:
-                //   return react::bridging::toJs(rt, "value");
+                // auto obj$name = obj.getProperty(rt, "name");
                 // ```
-                let to_js_cond = formatdoc! {
-                    r#"
-                    case {enum_namespace}:
-                      return react::bridging::toJs(rt, {raw_member});"#,
-                    enum_namespace = enum_namespace,
-                    raw_member = raw_member,
-                };
+                let get_prop = format!("auto {} = obj.getProperty(rt, \"{}\");", ident, prop.name);
 
-                from_js_conds.push(from_js_cond);
-                to_js_conds.push(to_js_cond);
+                // ```cpp
+                // obj.setProperty(rt, "name", _obj$name);
+                // ```
+                let set_prop = format!(
+                    "obj.setProperty(rt, \"{}\", {});",
+                    prop.name, converted_ident
+                );
 
-                Ok(())
-            },
-        )?;
+                // ```cpp
+                // auto _obj$name = react::bridging::fromJs<T>(rt, value.name, callInvoker);
+                // ```
+                let from_js_stmt = format!("auto {} = {};", converted_ident, from_js.expr);
 
-        // ```cpp
-        // else {
-        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-        // }
-        // ```
-        from_js_conds.push(formatdoc! {
-            r#"
-            else {{
-              throw jsi::JSError(rt, "Invalid enum value ({name})");
-            }}"#,
-            name = enum_spec.name,
-        });
+                // ```cpp
+                // auto _obj$name = react::bridging::toJs(rt, value.name);
+                // ```
+                let to_js_stmt = format!("auto {} = {};", converted_ident, to_js.expr);
 
-        // ```cpp
-        // default:
-        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-        // ```
-        to_js_conds.push(formatdoc! {
-            r#"
-            default:
-              throw jsi::JSError(rt, "Invalid enum value ({name})");"#,
-            name = enum_spec.name,
-        });
+                get_props.push(get_prop);
+                from_js_stmts.push(from_js_stmt);
+                from_js_ident.push(converted_ident);
+                set_props.push(set_prop);
+                to_js_stmts.push(to_js_stmt);
+            }
 
-        // ```cpp
-        // auto raw = value.asString(rt).utf8(rt);
-        // if (raw == "value") {
-        //   return craby::mymodule::MyEnum::Value;
-        // } else if (raw == "value2") {
-        //   return craby::mymodule::MyEnum::Value2;
-        // } else {
-        //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-        // }
-        // ```
-        let from_js = formatdoc! {
-            r#"
-            auto raw = {as_raw};
-            {from_js_conds}"#,
-            as_raw = as_raw,
-            from_js_conds = from_js_conds.join(" "),
-        };
+            let from_js_impl = formatdoc! {
+                r#"
+                auto obj = value.asObject(rt);
+                {get_props}
+    
+                {from_js_stmts}
+    
+                {struct_namespace} ret = {{
+                {from_js_ident}
+                }};
+    
+                return ret;"#,
+                struct_namespace = struct_namespace,
+                get_props = get_props.join("\n"),
+                from_js_stmts = from_js_stmts.join("\n"),
+                from_js_ident = indent_str(&from_js_ident.join(",\n"), 2),
+            };
 
-        // ```cpp
-        // switch (value) {{
-        //   case craby::mymodule::MyEnum::Value:
-        //     return react::bridging::toJs(rt, "value");
-        //   case craby::mymodule::MyEnum::Value2:
-        //     return react::bridging::toJs(rt, "value2");
-        //   default:
-        //     throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
-        // }}
-        // ```
-        let to_js = formatdoc! {
-            r#"
-            switch (value) {{
-            {to_js_conds}
-            }}"#,
-            to_js_conds = indent_str(to_js_conds.join("\n"), 2),
-        };
+            let to_js_impl = formatdoc! {
+                r#"
+                jsi::Object obj = jsi::Object(rt);
+                {to_js_stmts}
+    
+                {set_props}
+    
+                return jsi::Value(rt, obj);"#,
+                to_js_stmts = to_js_stmts.join("\n"),
+                set_props = set_props.join("\n"),
+            };
 
-        let template = cxx_bridging_template(&enum_namespace, from_js, to_js);
+            Ok(CxxBridgingTemplate {
+                namespace: struct_namespace,
+                from_js: from_js_impl,
+                to_js: to_js_impl,
+            })
+        }
 
-        Ok(template)
-    }
+        /// Generates C++ bridging template for enum types.
+        ///
+        /// # Generated Code
+        ///
+        /// ```cpp
+        /// template <>
+        /// struct Bridging<craby::bridging::MyEnum> {
+        ///   static craby::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+        ///     auto raw = value.asString(rt).utf8(rt);
+        ///     if (raw == "foo") {
+        ///       return craby::bridging::MyEnum::Foo;
+        ///     } else if (raw == "bar") {
+        ///       return craby::bridging::MyEnum::Bar;
+        ///     } else {
+        ///       throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        ///     }
+        ///   }
+        ///
+        ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyEnum value) {
+        ///     switch (value) {
+        ///       case craby::bridging::MyEnum::Foo:
+        ///         return react::bridging::toJs(rt, "foo");
+        ///       case craby::bridging::MyEnum::Bar:
+        ///         return react::bridging::toJs(rt, "bar");
+        ///       default:
+        ///         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+        ///     }
+        ///   }
+        /// };
+        /// ```
+        pub fn try_into_enum_template(
+            enum_spec: &EnumTypeAnnotation,
+        ) -> Result<CxxBridgingTemplate, anyhow::Error> {
+            let enum_namespace = format!("craby::bridging::{}", enum_spec.name);
 
-    /// Generates C++ bridging template for nullable types.
-    ///
-    /// # Generated Code
-    ///
-    /// ```cpp
-    /// template <>
-    /// struct Bridging<craby::bridging::NullableNumber> {
-    ///   static craby::bridging::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    ///     if (value.isNull()) {
-    ///       return craby::bridging::NullableNumber{true, 0.0};
-    ///     }
-    ///
-    ///     auto val = react::bridging::fromJs<double>(rt, value, callInvoker);
-    ///     auto ret = craby::bridging::NullableNumber{false, val};
-    ///
-    ///     return ret;
-    ///   }
-    ///
-    ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::NullableNumber value) {
-    ///     if (value.null) {
-    ///       return jsi::Value::null();
-    ///     }
-    ///
-    ///     return react::bridging::toJs(rt, value.val);
-    ///   }
-    /// };
-    /// ```
-    pub fn cxx_nullable_bridging_template(
-        mod_name: &String,
-        nullable_namespace: &String,
-        type_annotation: &TypeAnnotation,
-    ) -> Result<String, anyhow::Error> {
-        let origin_namespace = type_annotation.as_cxx_type(mod_name)?;
-        let default_value = type_annotation.as_cxx_default_val(mod_name)?;
+            let is_str = match enum_spec.members.first().unwrap().value {
+                ParserEnumMemberValue::String { .. } => true,
+                ParserEnumMemberValue::Number { .. } => false,
+            };
 
-        let from_js_impl = formatdoc! {
-            r#"
-            if (value.isNull()) {{
-              return {nullable_namespace}{{true, {default_value}}};
-            }}
+            let as_raw = if is_str {
+                "value.asString(rt).utf8(rt)"
+            } else {
+                "value.asNumber()"
+            };
 
-            auto val = react::bridging::fromJs<{origin_namespace}>(rt, value, callInvoker);
-            auto ret = {nullable_namespace}{{false, val}};
+            let to_raw_member = |value: &String| -> String {
+                if is_str {
+                    // "value"
+                    format!("\"{}\"", value)
+                } else {
+                    // 123
+                    value.clone()
+                }
+            };
 
-            return ret;"#,
-            origin_namespace =  origin_namespace,
-            nullable_namespace = nullable_namespace,
-            default_value = default_value,
-        };
+            let mut from_js_conds = vec![];
+            let mut to_js_conds = vec![];
 
-        let to_js_impl = formatdoc! {
-            r#"
-            if (value.null) {{
-              return jsi::Value::null();
-            }}
+            enum_spec.members.iter().enumerate().try_for_each(
+                |(idx, member)| -> Result<(), anyhow::Error> {
+                    let enum_namespace = format!("{}::{}", enum_namespace, member.name);
+                    let raw_member = match &member.value {
+                        ParserEnumMemberValue::String(val) => to_raw_member(val),
+                        ParserEnumMemberValue::Number(val) => to_raw_member(&val.to_string()),
+                    };
 
-            return react::bridging::toJs(rt, value.val);"#,
-        };
+                    let from_js_cond = if idx == 0 {
+                        // ```cpp
+                        // if (raw == "value") {
+                        //   return craby::mymodule::MyEnum::Value;
+                        // }
+                        // ```
+                        formatdoc! {
+                            r#"
+                            if (raw == {raw_member}) {{
+                              return {enum_namespace};
+                            }}"#,
+                            raw_member = raw_member,
+                            enum_namespace = enum_namespace,
+                        }
+                    } else {
+                        // ```cpp
+                        // else if (raw == "value2") {
+                        //   return craby::mymodule::MyEnum::Value2;
+                        // }
+                        // ```
+                        formatdoc! {
+                            r#"
+                            else if (raw == {raw_member}) {{
+                              return {enum_namespace};
+                            }}"#,
+                            raw_member = raw_member,
+                            enum_namespace = enum_namespace,
+                        }
+                    };
 
-        let template = cxx_bridging_template(nullable_namespace, from_js_impl, to_js_impl);
+                    // ```cpp
+                    // case craby::mymodule::MyEnum::Value:
+                    //   return react::bridging::toJs(rt, "value");
+                    // ```
+                    let to_js_cond = formatdoc! {
+                        r#"
+                        case {enum_namespace}:
+                          return react::bridging::toJs(rt, {raw_member});"#,
+                        enum_namespace = enum_namespace,
+                        raw_member = raw_member,
+                    };
 
-        Ok(template)
-    }
+                    from_js_conds.push(from_js_cond);
+                    to_js_conds.push(to_js_cond);
 
-    /// Generates a generic C++ JSI bridging template.
-    ///
-    /// # Generated Code
-    ///
-    /// ```cpp
-    /// template <>
-    /// struct Bridging<TargetType> {
-    ///   static TargetType fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
-    ///     // fromJs implementation
-    ///   }
-    ///
-    ///   static jsi::Value toJs(jsi::Runtime &rt, TargetType value) {
-    ///     // toJs implementation
-    ///   }
-    /// };
-    /// ```
-    pub fn cxx_bridging_template(
-        target_type: &String,
-        from_js_impl: String,
-        to_js_impl: String,
-    ) -> String {
-        formatdoc! {
-            r#"
-            template <>
-            struct Bridging<{target_type}> {{
-              static {target_type} fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {{
-            {from_js_impl}
-              }}
+                    Ok(())
+                },
+            )?;
 
-              static jsi::Value toJs(jsi::Runtime &rt, {target_type} value) {{
-            {to_js_impl}
-              }}
-            }};"#,
-            target_type = target_type,
-            from_js_impl = indent_str(from_js_impl, 4),
-            to_js_impl = indent_str(to_js_impl, 4),
+            // ```cpp
+            // else {
+            //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+            // }
+            // ```
+            from_js_conds.push(formatdoc! {
+                r#"
+                else {{
+                  throw jsi::JSError(rt, "Invalid enum value ({name})");
+                }}"#,
+                name = enum_spec.name,
+            });
+
+            // ```cpp
+            // default:
+            //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+            // ```
+            to_js_conds.push(formatdoc! {
+                r#"
+                default:
+                  throw jsi::JSError(rt, "Invalid enum value ({name})");"#,
+                name = enum_spec.name,
+            });
+
+            // ```cpp
+            // auto raw = value.asString(rt).utf8(rt);
+            // if (raw == "value") {
+            //   return craby::mymodule::MyEnum::Value;
+            // } else if (raw == "value2") {
+            //   return craby::mymodule::MyEnum::Value2;
+            // } else {
+            //   throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+            // }
+            // ```
+            let from_js_impl = formatdoc! {
+                r#"
+                auto raw = {as_raw};
+                {from_js_conds}"#,
+                as_raw = as_raw,
+                from_js_conds = from_js_conds.join(" "),
+            };
+
+            // ```cpp
+            // switch (value) {{
+            //   case craby::mymodule::MyEnum::Value:
+            //     return react::bridging::toJs(rt, "value");
+            //   case craby::mymodule::MyEnum::Value2:
+            //     return react::bridging::toJs(rt, "value2");
+            //   default:
+            //     throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
+            // }}
+            // ```
+            let to_js_impl = formatdoc! {
+                r#"
+                switch (value) {{
+                {to_js_conds}
+                }}"#,
+                to_js_conds = indent_str(&to_js_conds.join("\n"), 2),
+            };
+
+            Ok(CxxBridgingTemplate {
+                namespace: enum_namespace,
+                from_js: from_js_impl,
+                to_js: to_js_impl,
+            })
+        }
+
+        /// Generates C++ bridging template for nullable types.
+        ///
+        /// # Generated Code
+        ///
+        /// ```cpp
+        /// template <>
+        /// struct Bridging<craby::bridging::NullableNumber> {
+        ///   static craby::bridging::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+        ///     if (value.isNull()) {
+        ///       return craby::bridging::NullableNumber{true, 0.0};
+        ///     }
+        ///
+        ///     auto val = react::bridging::fromJs<double>(rt, value, callInvoker);
+        ///     auto ret = craby::bridging::NullableNumber{false, val};
+        ///
+        ///     return ret;
+        ///   }
+        ///
+        ///   static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::NullableNumber value) {
+        ///     if (value.null) {
+        ///       return jsi::Value::null();
+        ///     }
+        ///
+        ///     return react::bridging::toJs(rt, value.val);
+        ///   }
+        /// };
+        /// ```
+        pub fn try_into_nullable_template(
+            mod_name: &String,
+            nullable_namespace: &String,
+            type_annotation: &TypeAnnotation,
+        ) -> Result<CxxBridgingTemplate, anyhow::Error> {
+            let origin_namespace = type_annotation.as_cxx_type(mod_name)?;
+            let default_value = type_annotation.as_cxx_default_val(mod_name)?;
+
+            let from_js_impl = formatdoc! {
+                r#"
+                if (value.isNull()) {{
+                  return {nullable_namespace}{{true, {default_value}}};
+                }}
+
+                auto val = react::bridging::fromJs<{origin_namespace}>(rt, value, callInvoker);
+                auto ret = {nullable_namespace}{{false, val}};
+
+                return ret;"#,
+                origin_namespace =  origin_namespace,
+                nullable_namespace = nullable_namespace,
+                default_value = default_value,
+            };
+
+            let to_js_impl = formatdoc! {
+                r#"
+                if (value.null) {{
+                  return jsi::Value::null();
+                }}
+
+                return react::bridging::toJs(rt, value.val);"#,
+            };
+
+            Ok(CxxBridgingTemplate {
+                namespace: nullable_namespace.clone(),
+                from_js: from_js_impl,
+                to_js: to_js_impl,
+            })
         }
     }
 

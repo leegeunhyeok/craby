@@ -5,7 +5,7 @@ use crate::{
     types::Schema,
 };
 
-pub fn indent_str(str: String, indent_size: usize) -> String {
+pub fn indent_str(str: &str, indent_size: usize) -> String {
     let indent_str = " ".repeat(indent_size);
     str.lines()
         .map(|line| {
@@ -132,11 +132,11 @@ mod tests {
     #[test]
     fn test_indent_str() {
         assert_eq!(
-            indent_str("Hello\nWorld".to_string(), 2),
+            indent_str("Hello\nWorld", 2),
             "  Hello\n  World"
         );
         assert_eq!(
-            indent_str("Hello\nWorld".to_string(), 4),
+            indent_str("Hello\nWorld", 4),
             "    Hello\n    World"
         );
     }

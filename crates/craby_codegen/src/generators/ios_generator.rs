@@ -143,8 +143,8 @@ impl IosTemplate {
 
             @end"#,
             cxx_includes = cxx_includes.join("\n"),
-            cxx_prepares = indent_str(cxx_prepares.join("\n"), 2),
-            cxx_registers = indent_str(cxx_registers.join("\n"), 2),
+            cxx_prepares = indent_str(&cxx_prepares.join("\n"), 2),
+            cxx_registers = indent_str(&cxx_registers.join("\n"), 2),
             objc_mod_provider_name = objc_mod_provider_name,
         };
 

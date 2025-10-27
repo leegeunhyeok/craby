@@ -13,7 +13,7 @@ use crate::{
         EnumTypeAnnotation, Method, ObjectTypeAnnotation, Param, RefTypeAnnotation, TypeAnnotation,
     },
     platform::rust::template::{
-        collect_alias_default_impls, enum_default_impl, RsNullableStruct, RsStruct,
+        collect_alias_default_impls, RsDefaultImpl, RsNullableStruct, RsStruct,
     },
     types::Schema,
     utils::indent_str,
@@ -552,8 +552,7 @@ impl Schema {
                     .members
                     .iter()
                     .map(|m| format!("{},", m.name))
-                    .collect::<Vec<_>>()
-                    .join("\n");
+                    .collect::<Vec<_>>();
 
                 formatdoc! {
                     r#"
@@ -561,7 +560,7 @@ impl Schema {
                     {members}
                     }}"#,
                     name = enum_schema.name,
-                    members = indent_str(members, 4),
+                    members = indent_str(&members.join("\n"), 4),
                 }
             })
             .collect();
@@ -634,8 +633,8 @@ impl Schema {
         for type_annotation in &self.enums {
             let id = type_annotation.to_id();
             if let BTreeMapEntry::Vacant(e) = type_impls.entry(id) {
-                let enum_schema = type_annotation.as_enum().unwrap();
-                e.insert(enum_default_impl(enum_schema)?);
+                let enum_type_annotation = type_annotation.as_enum().unwrap();
+                e.insert(RsDefaultImpl::try_from(enum_type_annotation)?.into_code());
             }
         }
 
@@ -700,7 +699,7 @@ pub mod template {
                 {props}
                 }}"#,
                 name = obj.name,
-                props = indent_str(props.join("\n"), 4),
+                props = indent_str(&props.join("\n"), 4),
             };
 
             Ok(RsStruct(struct_def))
@@ -775,11 +774,12 @@ pub mod template {
         }
     }
 
-    /// Generates Default implementation for struct types.
+    /// Default implementation for struct types.
     ///
     /// # Generated Code
     ///
     /// ```rust,ignore
+    /// // Struct
     /// impl Default for MyStruct {
     ///     fn default() -> Self {
     ///         MyStruct {
@@ -789,21 +789,83 @@ pub mod template {
     ///         }
     ///     }
     /// }
+    ///
+    /// // Enum
+    /// impl Default for MyEnum {
+    ///     fn default() -> Self {
+    ///         MyEnum::FirstMember
+    ///     }
+    /// }
     /// ```
+    pub struct RsDefaultImpl(pub String);
+
+    impl IntoCode for RsDefaultImpl {
+        fn into_code(self) -> String {
+            self.0
+        }
+    }
+
+    impl TryFrom<&ObjectTypeAnnotation> for RsDefaultImpl {
+        type Error = anyhow::Error;
+
+        fn try_from(obj: &ObjectTypeAnnotation) -> Result<Self, Self::Error> {
+            let mut props_with_default_val = Vec::with_capacity(obj.props.len());
+
+            for prop in &obj.props {
+                props_with_default_val.push(format!(
+                    "{}: {}",
+                    snake_case(&prop.name),
+                    prop.type_annotation.as_rs_default_val()?
+                ));
+            }
+
+            let default_impl = formatdoc! {
+                r#"
+                impl Default for {name} {{
+                    fn default() -> Self {{
+                        {name} {{
+                {props}
+                        }}
+                    }}
+                }}"#,
+                name = obj.name,
+                props = indent_str(&props_with_default_val.join(",\n"), 12),
+            };
+
+            Ok(RsDefaultImpl(default_impl))
+        }
+    }
+
+    impl TryFrom<&EnumTypeAnnotation> for RsDefaultImpl {
+        type Error = anyhow::Error;
+
+        fn try_from(enum_type_annotation: &EnumTypeAnnotation) -> Result<Self, Self::Error> {
+            let first_member = enum_type_annotation
+                .members
+                .first()
+                .ok_or_else(|| anyhow::anyhow!("Enum members are required"))?;
+
+            let default_impl = formatdoc! {
+                r#"
+                impl Default for {name} {{
+                    fn default() -> Self {{
+                        {name}::{first_member}
+                    }}
+                }}"#,
+                name = enum_type_annotation.name,
+                first_member = first_member.name
+            };
+
+            Ok(RsDefaultImpl(default_impl))
+        }
+    }
+
     pub fn collect_alias_default_impls(
         id: u64,
         obj: &ObjectTypeAnnotation,
         type_impls: &mut BTreeMap<u64, String>,
     ) -> Result<(), anyhow::Error> {
-        let mut props_with_default_val = Vec::with_capacity(obj.props.len());
-
         for prop in &obj.props {
-            props_with_default_val.push(format!(
-                "{}: {}",
-                snake_case(&prop.name),
-                prop.type_annotation.as_rs_default_val()?
-            ));
-
             if prop.type_annotation.is_nullable() {
                 let id = prop.type_annotation.to_id();
                 if let BTreeMapEntry::Vacant(e) = type_impls.entry(id) {
@@ -813,50 +875,7 @@ pub mod template {
             }
         }
 
-        let default_impl = formatdoc! {
-            r#"
-            impl Default for {name} {{
-                fn default() -> Self {{
-                    {name} {{
-            {props}
-                    }}
-                }}
-            }}"#,
-            name = obj.name,
-            props = indent_str(props_with_default_val.join(",\n"), 12),
-        };
-
-        type_impls.insert(id, default_impl);
-
+        type_impls.insert(id, RsDefaultImpl::try_from(obj)?.into_code());
         Ok(())
-    }
-
-    /// Generates Default implementation for enum types.
-    ///
-    /// # Generated Code
-    ///
-    /// ```rust,ignore
-    /// impl Default for MyEnum {
-    ///     fn default() -> Self {
-    ///         MyEnum::FirstMember
-    ///     }
-    /// }
-    /// ```
-    pub fn enum_default_impl(enum_schema: &EnumTypeAnnotation) -> Result<String, anyhow::Error> {
-        let first_member = enum_schema
-            .members
-            .first()
-            .ok_or_else(|| anyhow::anyhow!("Enum members are required"))?;
-
-        Ok(formatdoc! {
-            r#"
-            impl Default for {name} {{
-                fn default() -> Self {{
-                    {name}::{first_member}
-                }}
-            }}"#,
-            name = enum_schema.name,
-            first_member = first_member.name
-        })
     }
 }

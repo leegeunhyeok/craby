@@ -109,8 +109,8 @@ impl AndroidTemplate {
             {cxx_prepares}
             }}"#,
             cxx_includes = cxx_includes.join("\n"),
-            cxx_prepares = indent_str(cxx_prepares.join("\n"), 2),
-            cxx_registers = indent_str(cxx_registers.join("\n"), 2),
+            cxx_prepares = indent_str(&cxx_prepares.join("\n"), 2),
+            cxx_registers = indent_str(&cxx_registers.join("\n"), 2),
         };
 
         Ok(content)
@@ -233,7 +233,7 @@ impl AndroidTemplate {
             )"#,
             kebab_name = kebab_name,
             lib_name = lib_name,
-            cxx_mod_cpp_files = indent_str(cxx_mod_cpp_files.join("\n"), 2),
+            cxx_mod_cpp_files = indent_str(&cxx_mod_cpp_files.join("\n"), 2),
         }
     }
 
@@ -310,7 +310,7 @@ impl AndroidTemplate {
             lib_name = lib_name,
             flat_name = flat_name,
             pascal_name = pascal_name,
-            jni_prepare_module_names = indent_str(jni_prepare_module_names.join(",\n"), 6),
+            jni_prepare_module_names = indent_str(&jni_prepare_module_names.join(",\n"), 6),
         }
     }
 }

@@ -371,9 +371,9 @@ impl CxxTemplate {
             module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
-            register_stmt = indent_str(register_stmt, 2),
-            unregister_stmt = indent_str(unregister_stmt, 2),
-            method_maps = indent_str(method_maps.join("\n"), 2),
+            register_stmt = indent_str(&register_stmt, 2),
+            unregister_stmt = indent_str(&unregister_stmt, 2),
+            method_maps = indent_str(&method_maps.join("\n"), 2),
             method_impls = method_impls.join("\n\n"),
         };
 
@@ -410,7 +410,7 @@ impl CxxTemplate {
             module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
-            method_defs = indent_str(method_defs.join("\n\n"), 2),
+            method_defs = indent_str(&method_defs.join("\n\n"), 2),
         };
 
         // ```cpp
