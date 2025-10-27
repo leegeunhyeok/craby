@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Entry as BTreeMapEntry, BTreeMap};
 
 use craby_common::utils::string::camel_case;
 use indoc::formatdoc;
@@ -569,7 +569,7 @@ impl Schema {
     /// };
     /// ```
     pub fn collect_nullable_types(&self) -> Result<BTreeMap<String, String>, anyhow::Error> {
-        let mut nullable_bridging_templates = BTreeMap::new();
+        let mut templates = BTreeMap::new();
 
         for method in &self.methods {
             for param in &method.params {
@@ -577,63 +577,49 @@ impl Schema {
                     &param.type_annotation
                 {
                     let key = nullable_type.as_cxx_type(&self.module_name)?;
-
-                    if nullable_bridging_templates.contains_key(&key) {
-                        continue;
+                    if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
+                        let bridging_template = cxx_nullable_bridging_template(
+                            &self.module_name,
+                            &nullable_type.as_cxx_type(&self.module_name)?,
+                            type_annotation,
+                        )?;
+                        e.insert(bridging_template);
                     }
-
-                    let bridging_template = cxx_nullable_bridging_template(
-                        &self.module_name,
-                        &nullable_type.as_cxx_type(&self.module_name)?,
-                        type_annotation,
-                    )?;
-
-                    nullable_bridging_templates.insert(key, bridging_template);
                 }
             }
 
             if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &method.ret_type {
                 let key = nullable_type.as_cxx_type(&self.module_name)?;
-
-                if nullable_bridging_templates.contains_key(&key) {
-                    continue;
-                }
-
-                let bridging_template = cxx_nullable_bridging_template(
-                    &self.module_name,
-                    &nullable_type.as_cxx_type(&self.module_name)?,
-                    type_annotation,
-                )?;
-
-                nullable_bridging_templates.insert(key, bridging_template);
-            }
-        }
-
-        for type_annotation in &self.aliases {
-            let alias_spec = type_annotation.as_object().unwrap();
-
-            for prop in &alias_spec.props {
-                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
-                    &prop.type_annotation
-                {
-                    let key = nullable_type.as_cxx_type(&self.module_name)?;
-
-                    if nullable_bridging_templates.contains_key(&key) {
-                        continue;
-                    }
-
+                if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
                     let bridging_template = cxx_nullable_bridging_template(
                         &self.module_name,
                         &nullable_type.as_cxx_type(&self.module_name)?,
                         type_annotation,
                     )?;
-
-                    nullable_bridging_templates.insert(key, bridging_template);
+                    e.insert(bridging_template);
                 }
             }
         }
 
-        Ok(nullable_bridging_templates)
+        for type_annotation in &self.aliases {
+            for prop in &type_annotation.as_object().unwrap().props {
+                if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
+                    &prop.type_annotation
+                {
+                    let key = nullable_type.as_cxx_type(&self.module_name)?;
+                    if let BTreeMapEntry::Vacant(e) = templates.entry(key) {
+                        let bridging_template = cxx_nullable_bridging_template(
+                            &self.module_name,
+                            &nullable_type.as_cxx_type(&self.module_name)?,
+                            type_annotation,
+                        )?;
+                        e.insert(bridging_template);
+                    }
+                }
+            }
+        }
+
+        Ok(templates)
     }
 }
 
