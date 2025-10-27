@@ -1,3 +1,5 @@
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use oxc::{diagnostics::OxcDiagnostic, semantic::ReferenceId};
 use serde::Serialize;
 use thiserror::Error;
@@ -49,6 +51,12 @@ pub enum TypeAnnotation {
 }
 
 impl TypeAnnotation {
+    pub fn to_id(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+
     pub fn as_object(&self) -> Option<&ObjectTypeAnnotation> {
         match self {
             TypeAnnotation::Object(object) => Some(object),
@@ -104,4 +112,45 @@ pub struct RefTypeAnnotation {
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
 pub struct Signal {
     pub name: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_id() {
+        let t1 = TypeAnnotation::Object(ObjectTypeAnnotation {
+            name: "Object".to_string(),
+            props: vec![Prop {
+                name: "prop".to_string(),
+                type_annotation: TypeAnnotation::String,
+            }],
+        });
+
+        let t2 = TypeAnnotation::Object(ObjectTypeAnnotation {
+            name: "Object".to_string(),
+            props: vec![Prop {
+                name: "prop".to_string(),
+                type_annotation: TypeAnnotation::String,
+            }],
+        });
+
+        let t3 = TypeAnnotation::Object(ObjectTypeAnnotation {
+            name: "Object".to_string(),
+            props: vec![
+                Prop {
+                    name: "prop".to_string(),
+                    type_annotation: TypeAnnotation::String,
+                },
+                Prop {
+                    name: "prop2".to_string(),
+                    type_annotation: TypeAnnotation::String,
+                },
+            ],
+        });
+
+        assert_eq!(t1.to_id(), t2.to_id());
+        assert_ne!(t1.to_id(), t3.to_id());
+    }
 }

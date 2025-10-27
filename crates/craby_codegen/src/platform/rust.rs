@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Entry as BTreeMapEntry, BTreeMap};
 
 use craby_common::utils::string::{camel_case, pascal_case, snake_case};
 use indoc::formatdoc;
@@ -390,9 +390,8 @@ impl Schema {
             // Collect nullable parameters
             for param in &method_spec.params {
                 if let nullable_type @ TypeAnnotation::Nullable(..) = &param.type_annotation {
-                    let rs_type = nullable_type.as_rs_type()?.0;
-
-                    if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type)
+                    if let std::collections::hash_map::Entry::Vacant(e) =
+                        struct_defs.entry(nullable_type.to_id())
                     {
                         let def = as_nullable_struct_def(nullable_type)?;
                         e.insert(def.0);
@@ -403,9 +402,9 @@ impl Schema {
 
             // Collect nullable return type
             if let nullable_type @ TypeAnnotation::Nullable(..) = &method_spec.ret_type {
-                let rs_type = nullable_type.as_rs_type()?.0;
-
-                if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type) {
+                if let std::collections::hash_map::Entry::Vacant(e) =
+                    struct_defs.entry(nullable_type.to_id())
+                {
                     let def = as_nullable_struct_def(nullable_type)?;
                     e.insert(def.0);
                     type_impls.push(def.1);
@@ -514,17 +513,17 @@ impl Schema {
 
         // Collect alias types (struct)
         for type_annotation in &self.aliases {
-            let rs_type = type_annotation.as_rs_type()?.0;
-
-            if let std::collections::hash_map::Entry::Vacant(e) = struct_defs.entry(rs_type) {
+            if let std::collections::hash_map::Entry::Vacant(e) =
+                struct_defs.entry(type_annotation.to_id())
+            {
+                let id = type_annotation.to_id();
                 let obj = type_annotation.as_object().unwrap();
                 e.insert(as_struct_def(obj)?);
 
                 for prop in &obj.props {
                     if let nullable_type @ TypeAnnotation::Nullable(..) = &prop.type_annotation {
-                        let rs_type = nullable_type.as_rs_type()?.0;
                         if let std::collections::hash_map::Entry::Vacant(e) =
-                            struct_defs.entry(rs_type)
+                            struct_defs.entry(nullable_type.to_id())
                         {
                             let def = as_nullable_struct_def(nullable_type)?;
                             e.insert(def.0);
@@ -534,7 +533,7 @@ impl Schema {
 
                 // Collect default implementations for the alias type
                 let mut type_impls_map = BTreeMap::new();
-                collect_alias_default_impls(obj, &mut type_impls_map)?;
+                collect_alias_default_impls(id, obj, &mut type_impls_map)?;
 
                 type_impls.push(
                     type_impls_map
@@ -600,7 +599,7 @@ impl Schema {
     /// ```
     pub fn try_collect_type_impls(
         &self,
-        type_impls: &mut BTreeMap<String, String>,
+        type_impls: &mut BTreeMap<u64, String>,
     ) -> Result<(), anyhow::Error> {
         // Collect extern function signatures and implementations
         for method_spec in &self.methods {
@@ -609,9 +608,8 @@ impl Schema {
                 if let nullable_type @ TypeAnnotation::Nullable(type_annotation) =
                     &param.type_annotation
                 {
-                    let rs_type = nullable_type.as_rs_type()?.0;
-
-                    if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type)
+                    if let std::collections::btree_map::Entry::Vacant(e) =
+                        type_impls.entry(nullable_type.to_id())
                     {
                         let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                         let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
@@ -661,9 +659,9 @@ impl Schema {
 
             if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &method_spec.ret_type
             {
-                let rs_type = nullable_type.as_rs_type()?.0;
-
-                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
+                if let std::collections::btree_map::Entry::Vacant(e) =
+                    type_impls.entry(nullable_type.to_id())
+                {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;
@@ -712,16 +710,18 @@ impl Schema {
 
         // impl Default trait for the alias type
         for type_annotation in &self.aliases {
-            let obj = type_annotation.as_object().unwrap();
-            if !type_impls.contains_key(&obj.name) {
-                collect_alias_default_impls(obj, type_impls)?;
+            let id = type_annotation.to_id();
+            if !type_impls.contains_key(&id) {
+                let obj = type_annotation.as_object().unwrap();
+                collect_alias_default_impls(id, obj, type_impls)?;
             }
         }
 
         for type_annotation in &self.enums {
-            let enum_schema = type_annotation.as_enum().unwrap();
-            if !type_impls.contains_key(&enum_schema.name) {
-                type_impls.insert(enum_schema.name.clone(), enum_default_impl(enum_schema)?);
+            let id = type_annotation.to_id();
+            if let BTreeMapEntry::Vacant(e) = type_impls.entry(id) {
+                let enum_schema = type_annotation.as_enum().unwrap();
+                e.insert(enum_default_impl(enum_schema)?);
             }
         }
 
@@ -730,7 +730,7 @@ impl Schema {
 }
 
 pub mod template {
-    use std::collections::BTreeMap;
+    use std::collections::{btree_map::Entry as BTreeMapEntry, BTreeMap};
 
     use craby_common::utils::string::snake_case;
     use indoc::formatdoc;
@@ -850,8 +850,9 @@ pub mod template {
     /// }
     /// ```
     pub fn collect_alias_default_impls(
+        id: u64,
         obj: &ObjectTypeAnnotation,
-        type_impls: &mut BTreeMap<String, String>,
+        type_impls: &mut BTreeMap<u64, String>,
     ) -> Result<(), anyhow::Error> {
         let mut props_with_default_val = Vec::with_capacity(obj.props.len());
 
@@ -864,9 +865,8 @@ pub mod template {
 
             if let nullable_type @ TypeAnnotation::Nullable(type_annotation) = &prop.type_annotation
             {
-                let rs_type = nullable_type.as_rs_type()?.0;
-
-                if let std::collections::btree_map::Entry::Vacant(e) = type_impls.entry(rs_type) {
+                let id = nullable_type.to_id();
+                if let BTreeMapEntry::Vacant(e) = type_impls.entry(id) {
                     let nullable_type = nullable_type.as_rs_bridge_type()?.0;
                     let rs_impl_type = type_annotation.as_rs_impl_type()?.0;
                     let default_val = type_annotation.as_rs_default_val()?;
@@ -926,7 +926,7 @@ pub mod template {
             props = indent_str(props_with_default_val.join(",\n"), 12),
         };
 
-        type_impls.insert(obj.name.clone(), default_impl);
+        type_impls.insert(id, default_impl);
 
         Ok(())
     }

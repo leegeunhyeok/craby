@@ -25,6 +25,22 @@ use bridging::*;
 
 #[cxx::bridge(namespace = "craby::bridging")]
 pub mod bridging {
+    struct NullableNumber {
+        null: bool,
+        val: f64,
+    }
+
+    struct NullableString {
+        null: bool,
+        val: String,
+    }
+
+    struct SubObject {
+        a: NullableString,
+        b: f64,
+        c: bool,
+    }
+
     struct TestObject {
         foo: String,
         bar: f64,
@@ -35,25 +51,9 @@ pub mod bridging {
         snake_case: f64,
     }
 
-    struct NullableNumber {
-        null: bool,
-        val: f64,
-    }
-
     struct NullableSubObject {
         null: bool,
         val: SubObject,
-    }
-
-    struct SubObject {
-        a: NullableString,
-        b: f64,
-        c: bool,
-    }
-
-    struct NullableString {
-        null: bool,
-        val: String,
     }
 
     enum MyEnum {
@@ -234,6 +234,52 @@ pub enum CrabyTestSignal {
     OnSignal,
 }
 
+impl Default for SwitchState {
+    fn default() -> Self {
+        SwitchState::Off
+    }
+}
+
+impl Default for NullableString {
+    fn default() -> Self {
+        NullableString {
+            null: true,
+            val: String::default(),
+        }
+    }
+}
+
+impl From<NullableString> for Nullable<String> {
+    fn from(val: NullableString) -> Self {
+        Nullable::new(if val.null { None } else { Some(val.val) })
+    }
+}
+
+impl From<Nullable<String>> for NullableString {
+    fn from(val: Nullable<String>) -> Self {
+        let val = val.into_value();
+        let null = val.is_none();
+        NullableString {
+            val: val.unwrap_or(String::default()),
+            null,
+        }
+    }
+}
+
+impl Default for TestObject {
+    fn default() -> Self {
+        TestObject {
+            foo: String::default(),
+            bar: 0.0,
+            baz: false,
+            sub: NullableSubObject::default(),
+            camel_case: 0.0,
+            pascal_case: 0.0,
+            snake_case: 0.0
+        }
+    }
+}
+
 impl Default for MyEnum {
     fn default() -> Self {
         MyEnum::Foo
@@ -261,32 +307,6 @@ impl From<Nullable<Number>> for NullableNumber {
         let null = val.is_none();
         NullableNumber {
             val: val.unwrap_or(0.0),
-            null,
-        }
-    }
-}
-
-impl Default for NullableString {
-    fn default() -> Self {
-        NullableString {
-            null: true,
-            val: String::default(),
-        }
-    }
-}
-
-impl From<NullableString> for Nullable<String> {
-    fn from(val: NullableString) -> Self {
-        Nullable::new(if val.null { None } else { Some(val.val) })
-    }
-}
-
-impl From<Nullable<String>> for NullableString {
-    fn from(val: Nullable<String>) -> Self {
-        let val = val.into_value();
-        let null = val.is_none();
-        NullableString {
-            val: val.unwrap_or(String::default()),
             null,
         }
     }
@@ -324,26 +344,6 @@ impl Default for SubObject {
             a: NullableString::default(),
             b: 0.0,
             c: false
-        }
-    }
-}
-
-impl Default for SwitchState {
-    fn default() -> Self {
-        SwitchState::Off
-    }
-}
-
-impl Default for TestObject {
-    fn default() -> Self {
-        TestObject {
-            foo: String::default(),
-            bar: 0.0,
-            baz: false,
-            sub: NullableSubObject::default(),
-            camel_case: 0.0,
-            pascal_case: 0.0,
-            snake_case: 0.0
         }
     }
 }
