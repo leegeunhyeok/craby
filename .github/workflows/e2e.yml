@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') }}
     runs-on: macos-latest
     name: Build
     steps:
@@ -53,6 +54,10 @@ jobs:
           if-no-files-found: error
 
   e2e-android:
+    strategy:
+      fail-fast: false
+      matrix:
+        react-native-version: ['0.76', '0.80']
     runs-on: ubuntu-latest
     name: E2E Android
     needs:
@@ -136,7 +141,7 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
       - name: Build Android app
         run: ./gradlew assembleRelease
-        working-directory: examples/0.80/android
+        working-directory: examples/${{ matrix.react-native-version }}/android
       - name: Run E2E tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -145,12 +150,16 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            cd "$GITHUB_WORKSPACE/examples/0.80/android"
+            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native-version }}/android"
             adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
-            cd "$GITHUB_WORKSPACE/examples/0.80"
+            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native-version }}"
             yarn e2e:android
 
   e2e-ios:
+    strategy:
+      fail-fast: false
+      matrix:
+        react-native-version: ['0.76', '0.80']
     runs-on: macos-latest
     name: E2E iOS
     needs:
@@ -188,7 +197,7 @@ jobs:
         run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
       - name: Install CocoaPods dependencies
         run: pod install
-        working-directory: examples/0.80/ios
+        working-directory: examples/${{ matrix.react-native-version }}/ios
       - name: Build iOS app
         run: |
           xcodebuild \
@@ -198,7 +207,7 @@ jobs:
             -sdk iphonesimulator \
             -derivedDataPath "$HOME/DerivedData" \
             -quiet
-        working-directory: examples/0.80/ios
+        working-directory: examples/${{ matrix.react-native-version }}/ios
       - name: Install app
         run: |
           APP_PATH=$(find "$HOME/DerivedData/Build/Products/Release-iphonesimulator" -name "*.app" | head -n 1)
@@ -209,4 +218,4 @@ jobs:
           xcrun simctl install booted "$APP_PATH"
       - name: Run E2E tests
         run: yarn e2e:ios
-        working-directory: examples/0.80
+        working-directory: examples/${{ matrix.react-native-version }}
