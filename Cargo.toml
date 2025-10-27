@@ -7,7 +7,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0-dev.20251027103419"
+version = "0.1.0-dev.20251027103756"
 edition = "2021"
 authors = ["Geunhyeok LEE <dev.ghlee@gmail.com>"]
 
