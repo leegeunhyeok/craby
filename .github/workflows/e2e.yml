@@ -234,3 +234,12 @@ jobs:
         run: yarn e2e
         env:
           MAESTRO_APP_ID: ${{ matrix.react-native.app-identifier }}
+
+  e2e-pass-report:
+    runs-on: ubuntu-latest
+    name: E2E Pass Report
+    needs:
+      - e2e-android
+      - e2e-ios
+    steps:
+      - run: echo "✅ All E2E tests passed"
