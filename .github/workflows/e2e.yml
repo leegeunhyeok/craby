@@ -130,7 +130,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-29
+          key: avd-29-${{ matrix.react-native.version }}
       - name: Setup ADB
         run: |
           /usr/local/lib/android/sdk/platform-tools/adb kill-server
@@ -139,6 +139,7 @@ jobs:
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          avd-name: avd-29-${{ matrix.react-native.version }}
           api-level: 29
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -150,6 +151,7 @@ jobs:
       - name: Run E2E tests - ${{ matrix.react-native.version }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          avd-name: avd-29-${{ matrix.react-native.version }}
           api-level: 29
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
