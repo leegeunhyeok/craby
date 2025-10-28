@@ -673,6 +673,9 @@ impl<'a> NativeModuleAnalyzer<'a> {
             TypeAnnotation::Nullable(base_type) => {
                 NativeModuleAnalyzer::resolve_refs(base_type, scoping, decls);
             }
+            TypeAnnotation::Promise(t) => {
+                NativeModuleAnalyzer::resolve_refs(&mut *t, scoping, decls);
+            }
             _ => {}
         }
     }
@@ -1020,6 +1023,29 @@ mod tests {
 
         assert!(schemas.len() == 1);
         assert!(schemas[0].signals.len() == 1);
+        assert_debug_snapshot!(schemas);
+    }
+
+    #[test]
+    fn test_ref_type() {
+        let src = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        interface Foo {
+            bar: string;
+        }
+
+        export interface Spec extends NativeModule {
+            getFoo(): Promise<Foo>;
+        }
+
+        export const Foo = NativeModuleRegistry.getEnforcing<Spec>('TestModule');
+        ";
+        let schemas = try_parse_schema(src).unwrap();
+
+        assert!(schemas.len() == 1);
+        assert!(schemas[0].aliases.len() == 1);
         assert_debug_snapshot!(schemas);
     }
 

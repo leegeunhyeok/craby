@@ -1,0 +1,43 @@
+---
+source: crates/craby_codegen/src/parser/native_spec_parser.rs
+expression: schemas
+---
+[
+    Schema {
+        module_name: "TestModule",
+        aliases: [
+            Object(
+                ObjectTypeAnnotation {
+                    name: "Foo",
+                    props: [
+                        Prop {
+                            name: "bar",
+                            type_annotation: String,
+                        },
+                    ],
+                },
+            ),
+        ],
+        enums: [],
+        methods: [
+            Method {
+                name: "getFoo",
+                params: [],
+                ret_type: Promise(
+                    Object(
+                        ObjectTypeAnnotation {
+                            name: "Foo",
+                            props: [
+                                Prop {
+                                    name: "bar",
+                                    type_annotation: String,
+                                },
+                            ],
+                        },
+                    ),
+                ),
+            },
+        ],
+        signals: [],
+    },
+]
