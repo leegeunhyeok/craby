@@ -160,7 +160,7 @@ jobs:
             export MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }}
             cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}/android"
             adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
-            cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}"
+            cd $GITHUB_WORKSPACE
             yarn e2e
 
   e2e-ios:
@@ -233,6 +233,5 @@ jobs:
           xcrun simctl install booted "$APP_PATH"
       - name: Run E2E tests - ${{ matrix.react-native.version }}
         run: yarn e2e
-        working-directory: examples/${{ matrix.react-native.version }}
         env:
           MAESTRO_APP_ID: ${{ matrix.react-native.app-identifier }}
