@@ -157,11 +157,10 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            export MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }}
             cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}/android"
             adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
             cd $GITHUB_WORKSPACE
-            yarn e2e
+            MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }} yarn e2e
 
   e2e-ios:
     strategy:
