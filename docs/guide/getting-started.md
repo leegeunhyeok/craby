@@ -87,7 +87,6 @@ your-module/
 │       └── src/
 │           ├── lib.rs            # Module entry
 │           ├── ffi.rs            # Generated FFI layer
-│           ├── types.rs          # Helper types
 │           └── generated.rs      # Generated traits
 ├── cpp/                          # C++ implementations
 ├── android/                      # Android native setup
@@ -156,24 +155,17 @@ The default implementation file is only generated once to prevent overwriting yo
 :::
 
 ```rust
+use craby::prelude::*;
+
 use crate::ffi::bridging::*;
 use crate::generated::*;
-use crate::context::*;
-use crate::types::*;
 
 pub struct Calculator {
     ctx: Context,
 }
 
+#[craby_module]
 impl CalculatorSpec for Calculator {
-    fn new(ctx: Context) -> Self {
-        Calculator { ctx }
-    }
-
-    fn id(&self) -> usize {
-        self.ctx.id
-    }
-
     fn add(&mut self, a: Number, b: Number) -> Number {
         a + b
     }

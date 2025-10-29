@@ -14,6 +14,7 @@ struct Storage {
     data: Option<Number>,
 }
 
+#[craby_module]
 impl StorageSpec for Storage {
     fn set_data(&mut self, data: Number) -> Void {
         self.data = Some(data);

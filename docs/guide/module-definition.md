@@ -95,6 +95,7 @@ pub struct User {
 You just implement the generated trait!
 
 ```rust
+#[craby_module]
 impl MyModuleSpec for MyModule {
     fn square(&mut self, n: Number) -> Number {
         n * n
@@ -107,6 +108,27 @@ impl MyModuleSpec for MyModule {
 
     fn get_something(&mut self) -> Something {
         Something::default()
+    }
+}
+```
+
+## Required Module Methods
+
+Every module must implement two required methods:
+- `fn new(ctx: Context) -> Self` - Constructor that receives a Context
+- `fn id(&self) -> usize` - Returns a unique identifier for the module instance
+
+The `#[craby_module]` procedural macro automatically provides default implementations for these methods. However, you can override them if needed.
+
+```rust
+#[craby_module]
+impl MyModuleSpec for MyModule {
+    fn new(ctx: Context) -> Self {
+        Self { ctx, count: 0 }
+    }
+
+    fn square(&mut self, n: Number) -> Number {
+        n * n
     }
 }
 ```

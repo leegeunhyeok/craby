@@ -11,6 +11,7 @@ Craby modules can access and store files within the application's data directory
 Every Craby module receives a context (`ctx`) that includes `data_path`:
 
 ```rust
+#[craby_module]
 impl MyModule {
     fn get_file_path(&self) -> String {
         // `self.ctx.data_path` is application's data path
@@ -29,6 +30,7 @@ The `data_path` points to the application's designated data storage directory, w
 Here's a complete example of a module that reads and writes data:
 
 ```rust
+#[craby_module]
 impl StorageSpec for Storage {
     fn get_data_path(&mut self) -> String {
         self.ctx.data_path.clone()

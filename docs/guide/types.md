@@ -48,6 +48,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl CalculatorSpec for Calculator {
     fn add(&mut self, a: Number, b: Number) -> Number {
         a + b
@@ -68,6 +69,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl GreeterSpec for Greeter {
     fn greet(&mut self, name: &str) -> String {
         format!("Hello, {}!", name)
@@ -86,6 +88,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl ValidatorSpec for Validator {
     fn is_valid(&mut self, value: Boolean) -> Boolean {
         !value
@@ -118,12 +121,13 @@ pub struct User {
     pub email: String,
 }
 
+#[craby_module]
 impl UserManagerSpec for UserManager {
     fn create_user(&mut self, name: &str, age: Number, email: &str) -> User {
         User {
-            name,
+            name: name.to_string(),
+            email: email.to_string(),
             age,
-            email,
         }
     }
 }
@@ -173,6 +177,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl ArrayProcessorSpec for ArrayProcessor {
     fn sum(&mut self, numbers: Array<Number>) -> Number {
         numbers.iter().sum()
@@ -180,7 +185,9 @@ impl ArrayProcessorSpec for ArrayProcessor {
 
     fn reverse(&mut self, mut items: Array<&str>) -> Array<String> {
         items.reverse();
-        items
+        items.into_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 }
 ```
@@ -221,6 +228,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl UserServiceSpec for UserService {
     fn find_user(&mut self, id: Number) -> Nullable<User> {
         if id > 0.0 {
@@ -281,6 +289,7 @@ pub enum Priority {
     High = 2,
 }
 
+#[craby_module]
 impl TaskManagerSpec for TaskManager {
     fn set_priority(&mut self, priority: Priority) -> Void {
         match priority {
@@ -316,6 +325,7 @@ pub enum Status {
     Pending,
 }
 
+#[craby_module]
 impl StatusCheckerSpec for StatusChecker {
     fn get_status(&mut self, status: Status) -> String {
         match status {
@@ -341,6 +351,7 @@ export interface Spec extends NativeModule {
 
 **Rust:**
 ```rust
+#[craby_module]
 impl AsyncServiceSpec for AsyncService {
     fn process_async(&mut self, value: Number) -> Promise<Number> {
         // Runs in separate thread (managed by C++ layer)

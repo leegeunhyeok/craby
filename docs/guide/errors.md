@@ -24,6 +24,7 @@ Panic occurred → `std::panic::catch_unwind()` → C++ Exception → `jsi::JSEr
 ### Throwing Exceptions for Synchronous Errors
 
 ```rust
+#[craby_module]
 impl CalculatorSpec for Calculator {
     fn divide(&mut self, a: Number, b: Number) -> Number {
         if b == 0.0 {
@@ -57,6 +58,7 @@ export interface Spec extends NativeModule {
 ```
 
 ```rust
+#[craby_module]
 impl DataParserSpec for DataParser {
     fn parse_large_data(&mut self, data: &str) -> Promise<Void> {
         if data.is_empty() {

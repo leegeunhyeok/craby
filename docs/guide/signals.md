@@ -38,6 +38,7 @@ The property name (e.g., `onDataReceived`) becomes the signal name. Use descript
 In your Rust implementation, emit signals using the `emit()` method:
 
 ```rust
+#[craby_module]
 impl MyModuleSpec for MyModule {
     fn start_process(&mut self) -> Void {
         // Emit a signal to notify JavaScript

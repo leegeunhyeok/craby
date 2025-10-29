@@ -67,6 +67,7 @@ Craby ensures type consistency across the entire stack:
 With Craby, you focus on what matters—your implementation:
 
 ```rust
+#[craby_module]
 impl CalculatorSpec for Calculator {
     fn add(&mut self, a: Number, b: Number) -> Number {
         // Focus on what matters!

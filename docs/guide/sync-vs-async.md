@@ -25,6 +25,7 @@ export interface Spec extends NativeModule {
 ### Implementation
 
 ```rust
+#[craby_module]
 impl LightComputeSpec for LightCompute {
     fn add(&mut self, a: Number, b: Number) -> Number {
         a + b  // Returns immediately
@@ -81,6 +82,7 @@ export interface Spec extends NativeModule {
 ### Implementation
 
 ```rust
+#[craby_module]
 impl HeavyComputeSpec for HeavyCompute {
     fn calculate_prime(&mut self, n: Number) -> Promise<Number> {
         if n <= 0.0 {
