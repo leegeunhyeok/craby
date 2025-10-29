@@ -1,5 +1,34 @@
-import { defineConfig } from 'vitepress';
+import { defineConfig, type HeadConfig } from 'vitepress';
 import { withMermaid } from 'vitepress-plugin-mermaid';
+
+function getGAScripts(): HeadConfig[] {
+  const gaId = process.env.GA_ID;
+
+  if (gaId == null) {
+    console.warn('GA_ID is not set');
+    return [];
+  }
+
+  return [
+    [
+      'script',
+      {
+        async: 'true',
+        src: `https://www.googletagmanager.com/gtag/js?id=${gaId}`,
+      },
+    ],
+    [
+      'script',
+      {},
+      [
+        `window.dataLayer = window.dataLayer || [];`,
+        `function gtag(){dataLayer.push(arguments);}`,
+        `gtag('js', new Date());`,
+        `gtag('config', '${gaId}');`,
+      ].join('\n'),
+    ],
+  ];
+}
 
 // https://vitepress.dev/reference/site-config
 export default withMermaid(
@@ -10,6 +39,7 @@ export default withMermaid(
       ['link', { rel: 'icon', href: '/favicon.ico' }],
       ['meta', { property: 'og:image', content: '/banner.png' }],
       ['meta', { name: 'twitter:image', content: '/banner.png' }],
+      ...getGAScripts(),
     ],
     themeConfig: {
       // https://vitepress.dev/reference/default-theme-config
