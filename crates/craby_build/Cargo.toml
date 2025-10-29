@@ -22,7 +22,7 @@ cxx = ["dep:cxx-build"]
 [dependencies]
 craby_codegen = { version = "0.0.0", path = "../craby_codegen", optional = true }
 craby_common  = { version = "0.0.0", path = "../craby_common", optional = true }
-cxx-build     = { version = "1.0.180", optional = true }
+cxx-build     = { version = "1.0.187", optional = true }
 indoc         = { version = "2.0.6", optional = true }
 log           = { workspace = true, optional = true }
 anyhow        = { workspace = true, optional = true }
