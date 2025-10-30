@@ -544,41 +544,31 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
             })
             .collect::<Vec<_>>();
 
-        let cmake_res = template
-            .render(ctx, &AndroidFileType::CmakeLists)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: android_base_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
+        let android_base_path_targets = [
+            AndroidFileType::CmakeLists,
+            AndroidFileType::BuildGradle,
+            AndroidFileType::GradleProps,
+        ];
+
+        for target in &android_base_path_targets {
+            let res = template
+                .render(ctx, target)?
+                .into_iter()
+                .map(|(path, content)| GenerateResult {
+                    path: android_base_path.join(path),
+                    content,
+                    overwrite: true,
+                })
+                .collect::<Vec<_>>();
+
+            files.extend(res);
+        }
 
         let manifest_xml_res = template
             .render(ctx, &AndroidFileType::ManifestXml)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: android_src_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        let build_gradle_res = template
-            .render(ctx, &AndroidFileType::BuildGradle)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: android_base_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        let gradle_props_res = template
-            .render(ctx, &AndroidFileType::GradleProps)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: android_base_path.join(path),
                 content,
                 overwrite: true,
             })
@@ -595,10 +585,7 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
             .collect::<Vec<_>>();
 
         files.extend(jni_res);
-        files.extend(cmake_res);
         files.extend(manifest_xml_res);
-        files.extend(build_gradle_res);
-        files.extend(gradle_props_res);
         files.extend(rct_package_res);
 
         Ok(files)
