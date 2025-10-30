@@ -1,4 +1,4 @@
-package rs.craby.testmodule
+package rs.craby.crabytest
 
 import com.facebook.react.BaseReactPackage
 import com.facebook.react.bridge.NativeModule

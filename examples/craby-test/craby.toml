@@ -3,4 +3,4 @@ name = "craby_test"
 source_dir = "src"
 
 [android]
-package_name = "rs.craby.testmodule"
+package_name = "rs.craby.crabytest"

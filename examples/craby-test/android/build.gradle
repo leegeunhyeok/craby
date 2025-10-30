@@ -29,7 +29,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "rs.craby.testmodule"
+  namespace "rs.craby.crabytest"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
@@ -127,5 +127,5 @@ dependencies {
 react {
   jsRootDir = file("../src/")
   libraryName = "CrabyTest_stub"
-  codegenJavaPackageName = "rs.craby.testmodule"
+  codegenJavaPackageName = "rs.craby.crabytest"
 }
