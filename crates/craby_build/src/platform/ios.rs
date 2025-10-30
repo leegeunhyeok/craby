@@ -11,7 +11,7 @@ use crate::{
 };
 
 use craby_common::{
-    config::CompleteCrabyConfig,
+    config::CompleteConfig,
     constants::{crate_target_dir, dest_lib_name, ios_base_path, lib_base_name},
     utils::string::SanitizedString,
 };
@@ -24,7 +24,7 @@ const IOS_TARGETS: [Target; 3] = [
     Target::Ios(Identifier::X86_64Simulator),
 ];
 
-pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
+pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
     let ios_base_path = ios_base_path(&config.project_root);
 
     let (sims, devices): (Vec<_>, Vec<_>) = IOS_TARGETS.iter().partition(|target| {
@@ -134,7 +134,7 @@ fn create_sim_lib(project_root: &Path, sims: Vec<Artifacts>) -> Result<Artifacts
     })
 }
 
-fn create_xcframework(config: &CompleteCrabyConfig) -> Result<PathBuf, anyhow::Error> {
+fn create_xcframework(config: &CompleteConfig) -> Result<PathBuf, anyhow::Error> {
     let name = SanitizedString::from(&config.project.name);
     let lib_base_name = lib_base_name(&name);
     let info_plist_content = info_plist(&config.project.name)?;

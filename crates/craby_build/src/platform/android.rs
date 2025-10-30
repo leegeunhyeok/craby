@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use craby_common::{config::CompleteCrabyConfig, constants::jni_base_path};
+use craby_common::{config::CompleteConfig, constants::jni_base_path};
 use log::debug;
 
 use crate::{
@@ -16,7 +16,7 @@ pub const ANDROID_TARGETS: [Target; 4] = [
     Target::Android(Abi::X86),
 ];
 
-pub fn crate_libs(config: &CompleteCrabyConfig) -> Result<(), anyhow::Error> {
+pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
     let jni_base_path = jni_base_path(&config.project_root);
 
     for target in ANDROID_TARGETS {

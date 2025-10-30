@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use craby_common::{
-    config::CompleteCrabyConfig,
+    config::CompleteConfig,
     constants::{crate_target_dir, cxx_bridge_dir, cxx_bridge_include_dir, lib_base_name},
     utils::{fs::collect_files, string::SanitizedString},
 };
@@ -29,7 +29,7 @@ const CXX_HEADER_EXTS: &[&str] = &["h", "hh"];
 
 impl Artifacts {
     pub fn get_artifacts(
-        config: &CompleteCrabyConfig,
+        config: &CompleteConfig,
         target: &Target,
     ) -> Result<Artifacts, anyhow::Error> {
         let cxx_bridge_dir = cxx_bridge_dir(&config.project_root, target.to_str());

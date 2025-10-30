@@ -19,19 +19,19 @@ pub struct LibConfig {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CrabyConfig {
-    pub project: CodegenContextConfig,
+pub struct Config {
+    pub project: ProjectConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CodegenContextConfig {
+pub struct ProjectConfig {
     pub name: String,
     pub source_dir: String,
 }
 
 #[derive(Debug)]
-pub struct CompleteCrabyConfig {
-    pub project: CodegenContextConfig,
+pub struct CompleteConfig {
+    pub project: ProjectConfig,
     pub project_root: PathBuf,
     pub source_dir: PathBuf,
 }
