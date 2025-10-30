@@ -8,6 +8,6 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_{{ flat_name }}_{{ pascal_name }}Package_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
+Java_rs_craby_{{ flat_name }}_{{ pascal_name }}Package_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
   auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
 }

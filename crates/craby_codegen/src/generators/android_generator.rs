@@ -63,9 +63,16 @@ impl AndroidTemplate {
         let mut cxx_includes = vec![];
         let mut cxx_prepares = Vec::with_capacity(ctx.schemas.len());
         let mut cxx_registers = Vec::with_capacity(ctx.schemas.len());
+        let jni_extern_fn_name = ctx
+            .android_package_name
+            .split('.')
+            .map(flat_case)
+            .collect::<Vec<_>>()
+            .join("_");
+
         let jni_fn_name = format!(
-            "Java_com_{}_{}Package_nativeSetDataPath",
-            flat_case(&ctx.name),
+            "Java_{}_{}Package_nativeSetDataPath",
+            jni_extern_fn_name,
             pascal_case(&ctx.name)
         );
 
