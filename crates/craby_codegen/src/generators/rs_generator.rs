@@ -146,7 +146,7 @@ impl RsTemplate {
     /// }
     ///
     /// fn my_module_multiply(it_: &mut MyModule, a: f64, b: f64) -> Result<f64> {
-    ///     catch_panic!({
+    ///     craby::catch_panic!({
     ///         let ret = it_.multiply(a, b);
     ///         ret
     ///     })
@@ -481,14 +481,14 @@ impl Template for RsTemplate {
 
     fn render(
         &self,
-        project: &CodegenContext,
+        ctx: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let path = self.file_path(file_type);
         let content = match file_type {
-            RsFileType::CrateEntry => self.lib_rs(&project.schemas),
-            RsFileType::FFIEntry => self.ffi_rs(&project.schemas),
-            RsFileType::Generated => self.generated_rs(&project.schemas),
+            RsFileType::CrateEntry => self.lib_rs(&ctx.schemas),
+            RsFileType::FFIEntry => self.ffi_rs(&ctx.schemas),
+            RsFileType::Generated => self.generated_rs(&ctx.schemas),
         }?;
 
         Ok(vec![(path, content)])
@@ -512,13 +512,13 @@ impl Generator<RsTemplate> for RsGenerator {
         Ok(())
     }
 
-    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let base_path = crate_dir(&project.root).join("src");
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let base_path = crate_dir(&ctx.root).join("src");
         let template = self.template_ref();
         let mut res = [
-            template.render(project, &RsFileType::CrateEntry)?,
-            template.render(project, &RsFileType::FFIEntry)?,
-            template.render(project, &RsFileType::Generated)?,
+            template.render(ctx, &RsFileType::CrateEntry)?,
+            template.render(ctx, &RsFileType::FFIEntry)?,
+            template.render(ctx, &RsFileType::Generated)?,
         ]
         .into_iter()
         .flatten()
@@ -530,8 +530,7 @@ impl Generator<RsTemplate> for RsGenerator {
         .collect::<Vec<_>>();
 
         res.extend(
-            project
-                .schemas
+            ctx.schemas
                 .iter()
                 .map(|schema| -> Result<GenerateResult, anyhow::Error> {
                     let impl_code = template.rs_impl(schema)?;
@@ -554,11 +553,8 @@ impl Generator<RsTemplate> for RsGenerator {
 }
 
 impl GeneratorInvoker for RsGenerator {
-    fn invoke_generate(
-        &self,
-        project: &CodegenContext,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project)
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(ctx)
     }
 }
 

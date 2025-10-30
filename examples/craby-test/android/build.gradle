@@ -22,7 +22,6 @@ buildscript {
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
-
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
@@ -30,7 +29,7 @@ def getExtOrIntegerDefault(name) {
 }
 
 android {
-  namespace "com.crabytest"
+  namespace "rs.craby.testmodule"
 
   compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
 
@@ -110,15 +109,6 @@ android {
     sourceCompatibility JavaVersion.VERSION_1_8
     targetCompatibility JavaVersion.VERSION_1_8
   }
-
-  sourceSets {
-    main {
-      java.srcDirs += [
-        "generated/java",
-        "generated/jni"
-      ]
-    }
-  }
 }
 
 repositories {
@@ -137,5 +127,5 @@ dependencies {
 react {
   jsRootDir = file("../src/")
   libraryName = "CrabyTest_stub"
-  codegenJavaPackageName = "com.crabytest"
+  codegenJavaPackageName = "rs.craby.testmodule"
 }

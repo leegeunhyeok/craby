@@ -83,22 +83,42 @@ pub fn android_path(project_root: &Path) -> PathBuf {
     project_root.join("android")
 }
 
-pub fn jni_base_path(project_root: &Path) -> PathBuf {
-    android_path(project_root)
-        .join("src")
-        .join("main")
-        .join("jni")
+pub fn android_src_main_path(project_root: &Path) -> PathBuf {
+    android_path(project_root).join("src").join("main")
 }
 
-pub fn java_base_path(project_root: &Path, project_name: &str) -> PathBuf {
-    android_path(project_root)
-        .join("src")
-        .join("main")
-        .join("java")
-        .join("com")
-        .join(flat_case(project_name))
+pub fn jni_base_path(project_root: &Path) -> PathBuf {
+    android_src_main_path(project_root).join("jni")
+}
+
+pub fn java_base_path(project_root: &Path, android_package_name: &str) -> PathBuf {
+    let base_path = android_src_main_path(project_root).join("java");
+    android_package_name
+        .split('.')
+        .fold(base_path, |mut p, dir| {
+            p.push(dir);
+            p
+        })
 }
 
 pub fn ios_base_path(project_root: &Path) -> PathBuf {
     project_root.join("ios")
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use crate::constants::java_base_path;
+
+    #[test]
+    fn test_java_base_path() {
+        let project_root = Path::new("/root/project");
+        let package_name = String::from("rs.craby.testmodule");
+
+        assert_eq!(
+            java_base_path(project_root, &package_name),
+            Path::new("/root/project/android/src/main/java/rs/craby/testmodule")
+        );
+    }
 }

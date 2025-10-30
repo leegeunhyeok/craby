@@ -36,7 +36,7 @@ impl IosTemplate {
     /// + (void)load {
     ///   const char *cDataPath = [[self getDataPath] UTF8String];
     ///   std::string dataPath(cDataPath);
-    /// 
+    ///
     ///   craby::mymodule::CxxMyTestModule::dataPath = dataPath;
     ///
     ///   facebook::react::registerCxxModuleToGlobalModuleMap(
@@ -71,13 +71,13 @@ impl IosTemplate {
     ///
     /// @end
     /// ```
-    fn module_provider(&self, project: &CodegenContext) -> Result<String, anyhow::Error> {
+    fn module_provider(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
-        let mut cxx_prepares = Vec::with_capacity(project.schemas.len());
-        let mut cxx_registers = Vec::with_capacity(project.schemas.len());
-        let objc_mod_provider_name = objc_mod_provider_name(&project.name);
+        let mut cxx_prepares = Vec::with_capacity(ctx.schemas.len());
+        let mut cxx_registers = Vec::with_capacity(ctx.schemas.len());
+        let objc_mod_provider_name = objc_mod_provider_name(&ctx.name);
 
-        project.schemas.iter().for_each(|schema| {
+        ctx.schemas.iter().for_each(|schema| {
             let flat_name = flat_case(&schema.module_name);
             let cxx_mod = cxx_mod_cls_name(&schema.module_name);
             let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
@@ -157,14 +157,14 @@ impl Template for IosTemplate {
 
     fn render(
         &self,
-        project: &CodegenContext,
+        ctx: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let res = match file_type {
             IosFileType::ModuleProvider => {
                 vec![(
-                    PathBuf::from(format!("{}.mm", objc_mod_provider_name(&project.name))),
-                    self.module_provider(project)?,
+                    PathBuf::from(format!("{}.mm", objc_mod_provider_name(&ctx.name))),
+                    self.module_provider(ctx)?,
                 )]
             }
         };
@@ -205,13 +205,13 @@ impl Generator<IosTemplate> for IosGenerator {
         Ok(())
     }
 
-    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let ios_base_path = ios_base_path(&project.root);
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let ios_base_path = ios_base_path(&ctx.root);
         let template = self.template_ref();
         let mut files = vec![];
 
         let provider_res = template
-            .render(project, &IosFileType::ModuleProvider)?
+            .render(ctx, &IosFileType::ModuleProvider)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: ios_base_path.join(path),
@@ -231,11 +231,8 @@ impl Generator<IosTemplate> for IosGenerator {
 }
 
 impl GeneratorInvoker for IosGenerator {
-    fn invoke_generate(
-        &self,
-        project: &CodegenContext,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project)
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(ctx)
     }
 }
 

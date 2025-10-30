@@ -589,7 +589,7 @@ impl CxxTemplate {
     /// #include <queue>
     /// #include <thread>
     /// #include <vector>
-    /// 
+    ///
     /// namespace craby {
     /// namespace utils {
     ///
@@ -664,7 +664,7 @@ impl CxxTemplate {
     ///   const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
     ///   return std::string(rs_err ? rs_err->what() : err.what());
     /// }
-    /// 
+    ///
     /// } // namespace utils
     /// } // namespace craby
     /// ```
@@ -876,17 +876,17 @@ impl Template for CxxTemplate {
 
     fn render(
         &self,
-        project: &CodegenContext,
+        ctx: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
         let res = match file_type {
-            CxxFileType::Mod => project
+            CxxFileType::Mod => ctx
                 .schemas
                 .iter()
                 .map(|schema| -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
                     let (cpp, hpp) = self.cxx_mod(schema)?;
                     let cxx_mod = cxx_mod_cls_name(&schema.module_name);
-                    let cxx_base_path = cxx_dir(&project.root);
+                    let cxx_base_path = cxx_dir(&ctx.root);
                     let files = vec![
                         (cxx_base_path.join(format!("{}.cpp", cxx_mod)), cpp),
                         (cxx_base_path.join(format!("{}.hpp", cxx_mod)), hpp),
@@ -896,24 +896,18 @@ impl Template for CxxTemplate {
                 .collect::<Result<Vec<_>, _>>()
                 .map(|v| v.into_iter().flatten().collect())?,
             CxxFileType::BridgingHpp => vec![(
-                cxx_dir(&project.root).join("bridging-generated.hpp"),
-                self.cxx_bridging(&project.schemas)?,
+                cxx_dir(&ctx.root).join("bridging-generated.hpp"),
+                self.cxx_bridging(&ctx.schemas)?,
             )],
             CxxFileType::UtilsHpp => {
-                vec![(
-                    cxx_dir(&project.root).join("CrabyUtils.hpp"),
-                    self.cxx_utils(),
-                )]
+                vec![(cxx_dir(&ctx.root).join("CrabyUtils.hpp"), self.cxx_utils())]
             }
             CxxFileType::SignalsH => {
-                let has_signals = project
-                    .schemas
-                    .iter()
-                    .any(|schema| !schema.signals.is_empty());
+                let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
 
                 if has_signals {
                     vec![(
-                        cxx_bridge_include_dir(&project.root).join("CrabySignals.h"),
+                        cxx_bridge_include_dir(&ctx.root).join("CrabySignals.h"),
                         self.cxx_signals()?,
                     )]
                 } else {
@@ -960,13 +954,13 @@ impl Generator<CxxTemplate> for CxxGenerator {
         Ok(())
     }
 
-    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
         let template = self.template_ref();
         let res = [
-            template.render(project, &CxxFileType::Mod)?,
-            template.render(project, &CxxFileType::BridgingHpp)?,
-            template.render(project, &CxxFileType::UtilsHpp)?,
-            template.render(project, &CxxFileType::SignalsH)?,
+            template.render(ctx, &CxxFileType::Mod)?,
+            template.render(ctx, &CxxFileType::BridgingHpp)?,
+            template.render(ctx, &CxxFileType::UtilsHpp)?,
+            template.render(ctx, &CxxFileType::SignalsH)?,
         ]
         .into_iter()
         .flatten()
@@ -986,11 +980,8 @@ impl Generator<CxxTemplate> for CxxGenerator {
 }
 
 impl GeneratorInvoker for CxxGenerator {
-    fn invoke_generate(
-        &self,
-        project: &CodegenContext,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project)
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(ctx)
     }
 }
 

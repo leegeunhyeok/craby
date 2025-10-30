@@ -21,6 +21,7 @@ pub struct LibConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     pub project: ProjectConfig,
+    pub android: AndroidConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -29,9 +30,15 @@ pub struct ProjectConfig {
     pub source_dir: String,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AndroidConfig {
+    pub package_name: String,
+}
+
 #[derive(Debug)]
 pub struct CompleteConfig {
     pub project: ProjectConfig,
+    pub android: AndroidConfig,
     pub project_root: PathBuf,
     pub source_dir: PathBuf,
 }

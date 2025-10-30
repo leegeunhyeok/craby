@@ -61,6 +61,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
         name: config.project.name,
         root: opts.project_root,
         schemas,
+        android_package_name: config.android.package_name,
     };
 
     debug!("Cleaning up...");

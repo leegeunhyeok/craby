@@ -1,16 +1,14 @@
 use std::path::PathBuf;
 
 use craby_common::{
-    constants::{android_path, dest_lib_name, java_base_path, jni_base_path},
+    constants::{
+        android_path, android_src_main_path, dest_lib_name, java_base_path, jni_base_path,
+    },
     utils::string::{flat_case, kebab_case, pascal_case, SanitizedString},
 };
 use indoc::formatdoc;
 
-use crate::{
-    constants::cxx_mod_cls_name,
-    types::{CodegenContext, Schema},
-    utils::indent_str,
-};
+use crate::{constants::cxx_mod_cls_name, types::CodegenContext, utils::indent_str};
 
 use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
@@ -20,6 +18,9 @@ pub struct AndroidGenerator;
 pub enum AndroidFileType {
     JNIEntry,
     CmakeLists,
+    ManifestXml,
+    BuildGradle,
+    GradleProps,
     RctPackage,
 }
 
@@ -28,6 +29,9 @@ impl AndroidTemplate {
         match file_type {
             AndroidFileType::JNIEntry => PathBuf::from("OnLoad.cpp"),
             AndroidFileType::CmakeLists => PathBuf::from("CMakeLists.txt"),
+            AndroidFileType::ManifestXml => PathBuf::from("AndroidManifest.xml"),
+            AndroidFileType::BuildGradle => PathBuf::from("build.gradle"),
+            AndroidFileType::GradleProps => PathBuf::from("gradle.properties"),
             AndroidFileType::RctPackage => {
                 PathBuf::from(format!("{}Package.kt", pascal_case(project_name)))
             }
@@ -55,21 +59,17 @@ impl AndroidTemplate {
     ///     craby::mymodule::MyTestModule::dataPath = dataPath;
     /// }
     /// ```
-    fn jni_entry(
-        &self,
-        schemas: &Vec<Schema>,
-        project_name: &str,
-    ) -> Result<String, anyhow::Error> {
+    fn jni_entry(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
         let mut cxx_includes = vec![];
-        let mut cxx_prepares = Vec::with_capacity(schemas.len());
-        let mut cxx_registers = Vec::with_capacity(schemas.len());
+        let mut cxx_prepares = Vec::with_capacity(ctx.schemas.len());
+        let mut cxx_registers = Vec::with_capacity(ctx.schemas.len());
         let jni_fn_name = format!(
             "Java_com_{}_{}Package_nativeSetDataPath",
-            flat_case(project_name),
-            pascal_case(project_name)
+            flat_case(&ctx.name),
+            pascal_case(&ctx.name)
         );
 
-        for schema in schemas {
+        for schema in &ctx.schemas {
             let cxx_mod = cxx_mod_cls_name(&schema.module_name);
             let flat_name = flat_case(&schema.module_name);
 
@@ -114,6 +114,171 @@ impl AndroidTemplate {
         };
 
         Ok(content)
+    }
+
+    /// Generates the Android.manifest.
+    fn manifest_xml(&self, ctx: &CodegenContext) -> String {
+        formatdoc! {
+            r#"
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="{package_name}">
+            </manifest>"#,
+            package_name = ctx.android_package_name,
+        }
+    }
+
+    /// Generates the build.gradle.
+    fn build_gradle(&self, ctx: &CodegenContext) -> String {
+        formatdoc! {
+            r#"
+            def reactNativeArchitectures() {{
+              def value = rootProject.getProperties().get("reactNativeArchitectures")
+              return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+            }}
+
+            buildscript {{
+              ext.getExtOrDefault = {{name ->
+                return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['{pascal_name}_' + name]
+              }}
+
+              repositories {{
+                google()
+                mavenCentral()
+              }}
+
+              dependencies {{
+                classpath "com.android.tools.build:gradle:8.7.2"
+                // noinspection DifferentKotlinGradleVersion
+                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${{getExtOrDefault('kotlinVersion')}}"
+              }}
+            }}
+
+            apply plugin: "com.android.library"
+            apply plugin: "kotlin-android"
+            apply plugin: "com.facebook.react"
+
+            def getExtOrIntegerDefault(name) {{
+              return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["{pascal_name}_" + name]).toInteger()
+            }}
+
+            android {{
+              namespace "{package_name}"
+
+              compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+
+              defaultConfig {{
+                minSdkVersion getExtOrIntegerDefault("minSdkVersion")
+                targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+
+                externalNativeBuild {{
+                  cmake {{
+                    targets "cxx-{kebab_name}"
+                    cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
+                    arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                    abiFilters (*reactNativeArchitectures())
+                    buildTypes {{
+                      debug {{
+                        cppFlags "-O1 -g"
+                      }}
+                      release {{
+                        cppFlags "-O2"
+                      }}
+                    }}
+                  }}
+                }}
+              }}
+
+              externalNativeBuild {{
+                cmake {{
+                  path "CMakeLists.txt"
+                }}
+              }}
+
+              packagingOptions {{
+                excludes = [
+                  "META-INF",
+                  "META-INF/**",
+                  "**/libc++_shared.so",
+                  "**/libfbjni.so",
+                  "**/libjsi.so",
+                  "**/libfolly_json.so",
+                  "**/libfolly_runtime.so",
+                  "**/libglog.so",
+                  "**/libhermes.so",
+                  "**/libhermes-executor-debug.so",
+                  "**/libhermes_executor.so",
+                  "**/libreactnative.so",
+                  "**/libreactnativejni.so",
+                  "**/libturbomodulejsijni.so",
+                  "**/libreact_nativemodule_core.so",
+                  "**/libjscexecutor.so"
+                ]
+              }}
+
+              buildFeatures {{
+                buildConfig true
+                prefab true
+              }}
+
+              buildTypes {{
+                debug {{
+                  jniDebuggable true
+                }}
+                release {{
+                  minifyEnabled false
+                  externalNativeBuild {{
+                    cmake {{
+                      arguments "-DCMAKE_BUILD_TYPE=Release"
+                    }}
+                  }}
+                }}
+              }}
+
+              lintOptions {{
+                disable "GradleCompatible"
+              }}
+
+              compileOptions {{
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+              }}
+            }}
+
+            repositories {{
+              mavenCentral()
+              google()
+            }}
+
+            def kotlin_version = getExtOrDefault("kotlinVersion")
+
+            dependencies {{
+              implementation "com.facebook.react:react-android"
+              implementation "com.facebook.react:hermes-engine"
+              implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+            }}
+
+            react {{
+              jsRootDir = file("../src/")
+              libraryName = "{pascal_name}_stub"
+              codegenJavaPackageName = "{package_name}"
+            }}"#,
+            pascal_name = pascal_case(&ctx.name),
+            kebab_name = kebab_case(&ctx.name),
+            package_name = ctx.android_package_name,
+        }
+    }
+
+    /// Generates the gradle.properties.
+    fn grable_props(&self, ctx: &CodegenContext) -> String {
+        formatdoc! {
+            r#"
+            {pascal_name}_kotlinVersion=2.0.21
+            {pascal_name}_minSdkVersion=24
+            {pascal_name}_targetSdkVersion=34
+            {pascal_name}_compileSdkVersion=35
+            {pascal_name}_ndkVersion=27.1.12297006"#,
+            pascal_name = pascal_case(&ctx.name)
+        }
     }
 
     /// Generates the CMakeLists.txt for Android native module build configuration.
@@ -171,10 +336,10 @@ impl AndroidTemplate {
     ///   -DFOLLY_HAVE_XSI_STRERROR_R=1
     /// )
     /// ```
-    fn cmakelists(&self, project: &CodegenContext) -> String {
-        let kebab_name = kebab_case(&project.name);
-        let lib_name = dest_lib_name(&SanitizedString::from(&project.name));
-        let cxx_mod_cpp_files = project
+    fn cmakelists(&self, ctx: &CodegenContext) -> String {
+        let kebab_name = kebab_case(&ctx.name);
+        let lib_name = dest_lib_name(&SanitizedString::from(&ctx.name));
+        let cxx_mod_cpp_files = ctx
             .schemas
             .iter()
             .map(|schema| format!("../cpp/{}.cpp", cxx_mod_cls_name(&schema.module_name)))
@@ -237,18 +402,18 @@ impl AndroidTemplate {
         }
     }
 
-    fn rct_package(&self, schemas: &[Schema], project_name: &str) -> String {
-        let lib_name = format!("cxx-{}", kebab_case(project_name));
-        let flat_name = flat_case(project_name);
-        let pascal_name = pascal_case(project_name);
-        let jni_prepare_module_names = schemas
+    fn rct_package(&self, ctx: &CodegenContext) -> String {
+        let lib_name = format!("cxx-{}", kebab_case(&ctx.name));
+        let pascal_name = pascal_case(&ctx.name);
+        let jni_prepare_module_names = ctx
+            .schemas
             .iter()
             .map(|schema| format!("\"__craby{}_JNI_prepare__\"", schema.module_name))
             .collect::<Vec<_>>();
 
         formatdoc! {
             r#"
-            package com.{flat_name}
+            package {package_name}
 
             import com.facebook.react.BaseReactPackage
             import com.facebook.react.bridge.NativeModule
@@ -307,8 +472,8 @@ impl AndroidTemplate {
                 }}
               }}
             }}"#,
+            package_name = ctx.android_package_name,
             lib_name = lib_name,
-            flat_name = flat_name,
             pascal_name = pascal_name,
             jni_prepare_module_names = indent_str(&jni_prepare_module_names.join(",\n"), 6),
         }
@@ -320,14 +485,17 @@ impl Template for AndroidTemplate {
 
     fn render(
         &self,
-        project: &CodegenContext,
+        ctx: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-        let path = self.file_path(file_type, &project.name);
+        let path = self.file_path(file_type, &ctx.name);
         let content = match file_type {
-            AndroidFileType::JNIEntry => self.jni_entry(&project.schemas, &project.name),
-            AndroidFileType::CmakeLists => Ok(self.cmakelists(project)),
-            AndroidFileType::RctPackage => Ok(self.rct_package(&project.schemas, &project.name)),
+            AndroidFileType::JNIEntry => self.jni_entry(ctx),
+            AndroidFileType::CmakeLists => Ok(self.cmakelists(ctx)),
+            AndroidFileType::ManifestXml => Ok(self.manifest_xml(ctx)),
+            AndroidFileType::BuildGradle => Ok(self.build_gradle(ctx)),
+            AndroidFileType::GradleProps => Ok(self.grable_props(ctx)),
+            AndroidFileType::RctPackage => Ok(self.rct_package(ctx)),
         }?;
 
         Ok(vec![(path, content)])
@@ -351,15 +519,16 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
         Ok(())
     }
 
-    fn generate(&self, project: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let android_base_path = android_path(&project.root);
-        let jni_base_path = jni_base_path(&project.root);
-        let java_base_path = java_base_path(&project.root, &project.name);
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        let android_base_path = android_path(&ctx.root);
+        let android_src_path = android_src_main_path(&ctx.root);
+        let jni_base_path = jni_base_path(&ctx.root);
+        let java_base_path = java_base_path(&ctx.root, &ctx.android_package_name);
         let template = self.template_ref();
         let mut files = vec![];
 
         let jni_res = template
-            .render(project, &AndroidFileType::JNIEntry)?
+            .render(ctx, &AndroidFileType::JNIEntry)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: jni_base_path.join(path),
@@ -369,7 +538,37 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
             .collect::<Vec<_>>();
 
         let cmake_res = template
-            .render(project, &AndroidFileType::CmakeLists)?
+            .render(ctx, &AndroidFileType::CmakeLists)?
+            .into_iter()
+            .map(|(path, content)| GenerateResult {
+                path: android_base_path.join(path),
+                content,
+                overwrite: true,
+            })
+            .collect::<Vec<_>>();
+
+        let manifest_xml_res = template
+            .render(ctx, &AndroidFileType::ManifestXml)?
+            .into_iter()
+            .map(|(path, content)| GenerateResult {
+                path: android_src_path.join(path),
+                content,
+                overwrite: true,
+            })
+            .collect::<Vec<_>>();
+
+        let build_gradle_res = template
+            .render(ctx, &AndroidFileType::BuildGradle)?
+            .into_iter()
+            .map(|(path, content)| GenerateResult {
+                path: android_base_path.join(path),
+                content,
+                overwrite: true,
+            })
+            .collect::<Vec<_>>();
+
+        let gradle_props_res = template
+            .render(ctx, &AndroidFileType::GradleProps)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: android_base_path.join(path),
@@ -379,7 +578,7 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
             .collect::<Vec<_>>();
 
         let rct_package_res = template
-            .render(project, &AndroidFileType::RctPackage)?
+            .render(ctx, &AndroidFileType::RctPackage)?
             .into_iter()
             .map(|(path, content)| GenerateResult {
                 path: java_base_path.join(path),
@@ -390,6 +589,9 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
 
         files.extend(jni_res);
         files.extend(cmake_res);
+        files.extend(manifest_xml_res);
+        files.extend(build_gradle_res);
+        files.extend(gradle_props_res);
         files.extend(rct_package_res);
 
         Ok(files)
@@ -401,11 +603,8 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
 }
 
 impl GeneratorInvoker for AndroidGenerator {
-    fn invoke_generate(
-        &self,
-        project: &CodegenContext,
-    ) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        self.generate(project)
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+        self.generate(ctx)
     }
 }
 

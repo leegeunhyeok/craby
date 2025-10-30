@@ -61,5 +61,6 @@ pub fn get_codegen_context() -> CodegenContext {
         name: "test_module".to_string(),
         root: PathBuf::from("."),
         schemas,
+        android_package_name: "rs.craby.testmodule".to_string(),
     }
 }

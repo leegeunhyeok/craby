@@ -9,6 +9,7 @@ pub struct CodegenContext {
     pub name: String,
     pub root: PathBuf,
     pub schemas: Vec<Schema>,
+    pub android_package_name: String,
 }
 
 #[derive(Debug, Serialize)]
