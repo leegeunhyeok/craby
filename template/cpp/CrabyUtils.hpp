@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace craby {
+namespace {{ flat_name }} {
 namespace utils {
 
 class ThreadPool {
@@ -93,4 +94,5 @@ inline std::string errorMessage(const std::exception &err) {
 }
 
 } // namespace utils
+} // namespace {{ flat_name }}
 } // namespace craby

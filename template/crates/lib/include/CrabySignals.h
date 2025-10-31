@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 namespace craby {
+namespace {{ flat_name }} {
 namespace signals {
 
 using Delegate = std::function<void(const std::string& signalName)>;
@@ -48,4 +49,5 @@ inline const SignalManager& getSignalManager() {
 }
 
 } // namespace signals
+} // namespace {{ flat_name }}
 } // namespace craby

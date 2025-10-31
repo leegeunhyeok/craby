@@ -7,6 +7,7 @@
 
 namespace craby {
 namespace {{ flat_name }} {
+namespace modules {
 
 class JSI_EXPORT {{ cxx_name }} : public facebook::react::TurboModule {
 public:
@@ -19,5 +20,6 @@ protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
 };
 
+} // namespace modules
 } // namespace {{ flat_name }}
 } // namespace craby
