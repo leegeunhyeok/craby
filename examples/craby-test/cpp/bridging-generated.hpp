@@ -63,27 +63,27 @@ struct Bridging<rust::Vec<T>> {
 };
 
 template <>
-struct Bridging<craby::bridging::MyEnum> {
-  static craby::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::MyEnum> {
+  static craby::crabytest::bridging::MyEnum fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto raw = value.asString(rt).utf8(rt);
     if (raw == "foo") {
-      return craby::bridging::MyEnum::Foo;
+      return craby::crabytest::bridging::MyEnum::Foo;
     } else if (raw == "bar") {
-      return craby::bridging::MyEnum::Bar;
+      return craby::crabytest::bridging::MyEnum::Bar;
     } else if (raw == "baz") {
-      return craby::bridging::MyEnum::Baz;
+      return craby::crabytest::bridging::MyEnum::Baz;
     } else {
       throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::MyEnum value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::MyEnum value) {
     switch (value) {
-      case craby::bridging::MyEnum::Foo:
+      case craby::crabytest::bridging::MyEnum::Foo:
         return react::bridging::toJs(rt, "foo");
-      case craby::bridging::MyEnum::Bar:
+      case craby::crabytest::bridging::MyEnum::Bar:
         return react::bridging::toJs(rt, "bar");
-      case craby::bridging::MyEnum::Baz:
+      case craby::crabytest::bridging::MyEnum::Baz:
         return react::bridging::toJs(rt, "baz");
       default:
         throw jsi::JSError(rt, "Invalid enum value (MyEnum)");
@@ -92,23 +92,23 @@ struct Bridging<craby::bridging::MyEnum> {
 };
 
 template <>
-struct Bridging<craby::bridging::SwitchState> {
-  static craby::bridging::SwitchState fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::SwitchState> {
+  static craby::crabytest::bridging::SwitchState fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto raw = value.asNumber();
     if (raw == 0) {
-      return craby::bridging::SwitchState::Off;
+      return craby::crabytest::bridging::SwitchState::Off;
     } else if (raw == 1) {
-      return craby::bridging::SwitchState::On;
+      return craby::crabytest::bridging::SwitchState::On;
     } else {
       throw jsi::JSError(rt, "Invalid enum value (SwitchState)");
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::SwitchState value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::SwitchState value) {
     switch (value) {
-      case craby::bridging::SwitchState::Off:
+      case craby::crabytest::bridging::SwitchState::Off:
         return react::bridging::toJs(rt, 0);
-      case craby::bridging::SwitchState::On:
+      case craby::crabytest::bridging::SwitchState::On:
         return react::bridging::toJs(rt, 1);
       default:
         throw jsi::JSError(rt, "Invalid enum value (SwitchState)");
@@ -117,19 +117,19 @@ struct Bridging<craby::bridging::SwitchState> {
 };
 
 template <>
-struct Bridging<craby::bridging::NullableString> {
-  static craby::bridging::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::NullableString> {
+  static craby::crabytest::bridging::NullableString fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     if (value.isNull()) {
-      return craby::bridging::NullableString{true, rust::String()};
+      return craby::crabytest::bridging::NullableString{true, rust::String()};
     }
 
     auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
-    auto ret = craby::bridging::NullableString{false, val};
+    auto ret = craby::crabytest::bridging::NullableString{false, val};
 
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::NullableString value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::NullableString value) {
     if (value.null) {
       return jsi::Value::null();
     }
@@ -139,18 +139,18 @@ struct Bridging<craby::bridging::NullableString> {
 };
 
 template <>
-struct Bridging<craby::bridging::SubObject> {
-  static craby::bridging::SubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::SubObject> {
+  static craby::crabytest::bridging::SubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
     auto obj$a = obj.getProperty(rt, "a");
     auto obj$b = obj.getProperty(rt, "b");
     auto obj$c = obj.getProperty(rt, "c");
 
-    auto _obj$a = react::bridging::fromJs<craby::bridging::NullableString>(rt, obj$a, callInvoker);
+    auto _obj$a = react::bridging::fromJs<craby::crabytest::bridging::NullableString>(rt, obj$a, callInvoker);
     auto _obj$b = react::bridging::fromJs<double>(rt, obj$b, callInvoker);
     auto _obj$c = react::bridging::fromJs<bool>(rt, obj$c, callInvoker);
 
-    craby::bridging::SubObject ret = {
+    craby::crabytest::bridging::SubObject ret = {
       _obj$a,
       _obj$b,
       _obj$c
@@ -159,7 +159,7 @@ struct Bridging<craby::bridging::SubObject> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::SubObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::SubObject value) {
     jsi::Object obj = jsi::Object(rt);
     auto _obj$a = react::bridging::toJs(rt, value.a);
     auto _obj$b = react::bridging::toJs(rt, value.b);
@@ -174,19 +174,19 @@ struct Bridging<craby::bridging::SubObject> {
 };
 
 template <>
-struct Bridging<craby::bridging::NullableSubObject> {
-  static craby::bridging::NullableSubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::NullableSubObject> {
+  static craby::crabytest::bridging::NullableSubObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     if (value.isNull()) {
-      return craby::bridging::NullableSubObject{true, craby::bridging::SubObject{}};
+      return craby::crabytest::bridging::NullableSubObject{true, craby::crabytest::bridging::SubObject{}};
     }
 
-    auto val = react::bridging::fromJs<craby::bridging::SubObject>(rt, value, callInvoker);
-    auto ret = craby::bridging::NullableSubObject{false, val};
+    auto val = react::bridging::fromJs<craby::crabytest::bridging::SubObject>(rt, value, callInvoker);
+    auto ret = craby::crabytest::bridging::NullableSubObject{false, val};
 
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::NullableSubObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::NullableSubObject value) {
     if (value.null) {
       return jsi::Value::null();
     }
@@ -196,8 +196,8 @@ struct Bridging<craby::bridging::NullableSubObject> {
 };
 
 template <>
-struct Bridging<craby::bridging::TestObject> {
-  static craby::bridging::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::TestObject> {
+  static craby::crabytest::bridging::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
     auto obj$foo = obj.getProperty(rt, "foo");
     auto obj$bar = obj.getProperty(rt, "bar");
@@ -210,12 +210,12 @@ struct Bridging<craby::bridging::TestObject> {
     auto _obj$foo = react::bridging::fromJs<rust::String>(rt, obj$foo, callInvoker);
     auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
     auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
-    auto _obj$sub = react::bridging::fromJs<craby::bridging::NullableSubObject>(rt, obj$sub, callInvoker);
+    auto _obj$sub = react::bridging::fromJs<craby::crabytest::bridging::NullableSubObject>(rt, obj$sub, callInvoker);
     auto _obj$camelCase = react::bridging::fromJs<double>(rt, obj$camelCase, callInvoker);
     auto _obj$pascalCase = react::bridging::fromJs<double>(rt, obj$pascalCase, callInvoker);
     auto _obj$snakeCase = react::bridging::fromJs<double>(rt, obj$snakeCase, callInvoker);
 
-    craby::bridging::TestObject ret = {
+    craby::crabytest::bridging::TestObject ret = {
       _obj$foo,
       _obj$bar,
       _obj$baz,
@@ -228,7 +228,7 @@ struct Bridging<craby::bridging::TestObject> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::TestObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::TestObject value) {
     jsi::Object obj = jsi::Object(rt);
     auto _obj$foo = react::bridging::toJs(rt, value.foo);
     auto _obj$bar = react::bridging::toJs(rt, value.bar);
@@ -251,19 +251,19 @@ struct Bridging<craby::bridging::TestObject> {
 };
 
 template <>
-struct Bridging<craby::bridging::NullableNumber> {
-  static craby::bridging::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+struct Bridging<craby::crabytest::bridging::NullableNumber> {
+  static craby::crabytest::bridging::NullableNumber fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     if (value.isNull()) {
-      return craby::bridging::NullableNumber{true, 0.0};
+      return craby::crabytest::bridging::NullableNumber{true, 0.0};
     }
 
     auto val = react::bridging::fromJs<double>(rt, value, callInvoker);
-    auto ret = craby::bridging::NullableNumber{false, val};
+    auto ret = craby::crabytest::bridging::NullableNumber{false, val};
 
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::bridging::NullableNumber value) {
+  static jsi::Value toJs(jsi::Runtime &rt, craby::crabytest::bridging::NullableNumber value) {
     if (value.null) {
       return jsi::Value::null();
     }

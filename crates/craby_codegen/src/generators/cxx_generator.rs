@@ -7,7 +7,7 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
-    constants::{cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
+    constants::{cxx_base_ns, cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
     platform::cxx::CxxMethod,
     types::{CodegenContext, Schema},
     utils::indent_str,
@@ -36,11 +36,17 @@ impl CxxTemplate {
     ///
     /// ```
     /// ```
-    fn cxx_methods(&self, schema: &Schema) -> Result<Vec<CxxMethod>, anyhow::Error> {
+    fn cxx_methods(
+        &self,
+        project_name: &str,
+        schema: &Schema,
+    ) -> Result<Vec<CxxMethod>, anyhow::Error> {
+        let base_ns = cxx_base_ns(project_name);
+        let mod_name = cxx_mod_cls_name(&schema.module_name);
         let res = schema
             .methods
             .iter()
-            .map(|spec| spec.as_cxx_method(&schema.module_name))
+            .map(|spec| spec.as_cxx_method(&base_ns, &mod_name))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)
@@ -128,16 +134,21 @@ impl CxxTemplate {
     ///
     /// protected:
     ///   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-    ///   std::shared_ptr<craby::bridging::MyTestModule> module_;
+    ///   std::shared_ptr<craby::mymodule::bridging::MyTestModule> module_;
     /// };
     ///
     /// } // namespace mymodule
     /// } // namespace craby
     /// ```
-    fn cxx_mod(&self, schema: &Schema) -> Result<(String, String), anyhow::Error> {
+    fn cxx_mod(
+        &self,
+        schema: &Schema,
+        project_name: &str,
+    ) -> Result<(String, String), anyhow::Error> {
+        let base_ns = cxx_base_ns(project_name);
         let flat_name = flat_case(&schema.module_name);
         let cxx_mod = cxx_mod_cls_name(&schema.module_name);
-        let cxx_methods = self.cxx_methods(schema)?;
+        let cxx_methods = self.cxx_methods(project_name, schema)?;
         let include_stmt = format!("#include \"{}.hpp\"", cxx_mod);
 
         // Assign method metadata with function pointer to the TurboModule's method map
@@ -174,11 +185,12 @@ impl CxxTemplate {
             let register_stmt = formatdoc! {
                 r#"
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
-                auto& manager = craby::signals::SignalManager::getInstance();
+                auto& manager = {base_ns}::signals::SignalManager::getInstance();
                 manager.registerDelegate(id,
                                          std::bind(&{cxx_mod}::emit,
                                          this,
                                          std::placeholders::_1));"#,
+                base_ns = base_ns,
                 cxx_mod = cxx_mod,
             };
 
@@ -186,8 +198,9 @@ impl CxxTemplate {
                 r#"
                 // Unregister from signal manager
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
-                auto& manager = craby::signals::SignalManager::getInstance();
+                auto& manager = {base_ns}::signals::SignalManager::getInstance();
                 manager.unregisterDelegate(id);"#,
+                base_ns = base_ns,
             };
 
             for signal in &schema.signals {
@@ -262,11 +275,12 @@ impl CxxTemplate {
                       }} catch (const jsi::JSError &err) {{
                         throw err;
                       }} catch (const std::exception &err) {{
-                        throw jsi::JSError(rt, craby::utils::errorMessage(err));
+                        throw jsi::JSError(rt, {base_ns}::utils::errorMessage(err));
                       }}
                     }}"#,
                     cxx_mod = cxx_mod,
                     it = RESERVED_ARG_NAME_MODULE,
+                    base_ns = base_ns,
                     signal_name = signal.name,
                     cxx_signal_name = cxx_signal_name,
                 });
@@ -337,13 +351,13 @@ impl CxxTemplate {
                 : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
             {register_stmt}
               callInvoker_ = std::move(jsInvoker);
-              module_ = std::shared_ptr<craby::bridging::{module_name}>(
-                craby::bridging::create{module_name}(
+              module_ = std::shared_ptr<{base_ns}::bridging::{module_name}>(
+                {base_ns}::bridging::create{module_name}(
                   reinterpret_cast<uintptr_t>(this),
                   rust::Str(dataPath.data(), dataPath.size())).into_raw(),
-                [](craby::bridging::{module_name} *ptr) {{ rust::Box<craby::bridging::{module_name}>::from_raw(ptr); }}
+                []({base_ns}::bridging::{module_name} *ptr) {{ rust::Box<{base_ns}::bridging::{module_name}>::from_raw(ptr); }}
               );
-              threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
+              threadPool_ = std::make_shared<{base_ns}::utils::ThreadPool>(10);
             {method_maps}
             }}
 
@@ -368,6 +382,7 @@ impl CxxTemplate {
             {method_impls}
             
             }} // namespace {flat_name}"#,
+            base_ns = base_ns,
             module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
             cxx_mod = cxx_mod,
@@ -394,7 +409,7 @@ impl CxxTemplate {
 
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-              std::shared_ptr<craby::bridging::{module_name}> module_;
+              std::shared_ptr<{base_ns}::bridging::{module_name}> module_;
               std::atomic<bool> invalidated_{{false}};
               std::atomic<size_t> nextListenerId_{{0}};
               std::mutex listenersMutex_;
@@ -402,10 +417,11 @@ impl CxxTemplate {
                 std::string,
                 std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
                 listenersMap_;
-              std::shared_ptr<craby::utils::ThreadPool> threadPool_;
+              std::shared_ptr<{base_ns}::utils::ThreadPool> threadPool_;
             }};
 
             }} // namespace {flat_name}"#,
+            base_ns = base_ns,
             turbo_module_name = schema.module_name,
             module_name = pascal_case(&schema.module_name),
             flat_name = flat_name,
@@ -494,10 +510,11 @@ impl CxxTemplate {
     /// } // namespace react
     /// } // namespace facebook
     /// ```
-    fn cxx_bridging(&self, schemas: &[Schema]) -> Result<String, anyhow::Error> {
-        let bridging_templates = schemas
+    fn cxx_bridging(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
+        let bridging_templates = ctx
+            .schemas
             .iter()
-            .flat_map(|schema| schema.as_cxx_bridging_templates())
+            .flat_map(|schema| schema.as_cxx_bridging_templates(&ctx.name))
             .flatten()
             .collect::<Vec<_>>();
 
@@ -591,6 +608,7 @@ impl CxxTemplate {
     /// #include <vector>
     ///
     /// namespace craby {
+    /// namespace mymodule {
     /// namespace utils {
     ///
     /// class ThreadPool {
@@ -666,10 +684,13 @@ impl CxxTemplate {
     /// }
     ///
     /// } // namespace utils
+    /// } // namespace mymodule
     /// } // namespace craby
     /// ```
-    fn cxx_utils(&self) -> String {
-        formatdoc! {
+    fn cxx_utils(&self, project_name: &str) -> Result<String, anyhow::Error> {
+        let flat_name = flat_case(project_name);
+
+        Ok(formatdoc! {
             r#"
             #pragma once
 
@@ -683,6 +704,7 @@ impl CxxTemplate {
             #include <vector>
 
             namespace craby {{
+            namespace {flat_name} {{
             namespace utils {{
 
             class ThreadPool {{
@@ -756,10 +778,12 @@ impl CxxTemplate {
               const auto* rs_err = dynamic_cast<const rust::Error*>(&err);
               return std::string(rs_err ? rs_err->what() : err.what());
             }}
-            
+
             }} // namespace utils
-            }} // namespace craby"#
-        }
+            }} // namespace {flat_name}
+            }} // namespace craby"#,
+            flat_name = flat_name,
+        })
     }
 
     /// Generates the signal manager header file for event emission.
@@ -776,6 +800,7 @@ impl CxxTemplate {
     /// #include <unordered_map>
     ///
     /// namespace craby {
+    /// namespace mymodule {
     /// namespace signals {
     ///
     /// using Delegate = std::function<void(const std::string& signalName)>;
@@ -812,9 +837,12 @@ impl CxxTemplate {
     /// };
     ///
     /// } // namespace signals
+    /// } // namespace mymodule
     /// } // namespace craby
     /// ```
-    fn cxx_signals(&self) -> Result<String, anyhow::Error> {
+    fn cxx_signals(&self, project_name: &str) -> Result<String, anyhow::Error> {
+        let flat_name = flat_case(project_name);
+
         Ok(formatdoc! {
             r#"
             #pragma once
@@ -826,6 +854,7 @@ impl CxxTemplate {
             #include <unordered_map>
 
             namespace craby {{
+            namespace {flat_name} {{
             namespace signals {{
 
             using Delegate = std::function<void(const std::string& signalName)>;
@@ -866,7 +895,9 @@ impl CxxTemplate {
             }}
 
             }} // namespace signals
+            }} // namespace {flat_name}
             }} // namespace craby"#,
+            flat_name = flat_name,
         })
     }
 }
@@ -884,7 +915,7 @@ impl Template for CxxTemplate {
                 .schemas
                 .iter()
                 .map(|schema| -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-                    let (cpp, hpp) = self.cxx_mod(schema)?;
+                    let (cpp, hpp) = self.cxx_mod(schema, &ctx.name)?;
                     let cxx_mod = cxx_mod_cls_name(&schema.module_name);
                     let cxx_base_path = cxx_dir(&ctx.root);
                     let files = vec![
@@ -897,10 +928,13 @@ impl Template for CxxTemplate {
                 .map(|v| v.into_iter().flatten().collect())?,
             CxxFileType::BridgingHpp => vec![(
                 cxx_dir(&ctx.root).join("bridging-generated.hpp"),
-                self.cxx_bridging(&ctx.schemas)?,
+                self.cxx_bridging(ctx)?,
             )],
             CxxFileType::UtilsHpp => {
-                vec![(cxx_dir(&ctx.root).join("CrabyUtils.hpp"), self.cxx_utils())]
+                vec![(
+                    cxx_dir(&ctx.root).join("CrabyUtils.hpp"),
+                    self.cxx_utils(&ctx.name)?,
+                )]
             }
             CxxFileType::SignalsH => {
                 let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
@@ -908,7 +942,7 @@ impl Template for CxxTemplate {
                 if has_signals {
                     vec![(
                         cxx_bridge_include_dir(&ctx.root).join("CrabySignals.h"),
-                        self.cxx_signals()?,
+                        self.cxx_signals(&ctx.name)?,
                     )]
                 } else {
                     vec![]

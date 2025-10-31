@@ -6,7 +6,7 @@ use crate::generated::*;
 
 use bridging::*;
 
-#[cxx::bridge(namespace = "craby::bridging")]
+#[cxx::bridge(namespace = "craby::{{ flat_name }}::bridging")]
 pub mod bridging {
     extern "Rust" {
     }

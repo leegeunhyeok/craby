@@ -113,7 +113,7 @@ public:
 
 protected:
   std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-  std::shared_ptr<craby::bridging::CrabyTest> module_;
+  std::shared_ptr<craby::crabytest::bridging::CrabyTest> module_;
   std::atomic<bool> invalidated_{false};
   std::atomic<size_t> nextListenerId_{0};
   std::mutex listenersMutex_;
@@ -121,7 +121,7 @@ protected:
     std::string,
     std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
     listenersMap_;
-  std::shared_ptr<craby::utils::ThreadPool> threadPool_;
+  std::shared_ptr<craby::crabytest::utils::ThreadPool> threadPool_;
 };
 
 } // namespace crabytest

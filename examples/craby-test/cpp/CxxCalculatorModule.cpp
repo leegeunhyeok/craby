@@ -16,13 +16,13 @@ CxxCalculatorModule::CxxCalculatorModule(
     : TurboModule(CxxCalculatorModule::kModuleName, jsInvoker) {
   // No signals
   callInvoker_ = std::move(jsInvoker);
-  module_ = std::shared_ptr<craby::bridging::Calculator>(
-    craby::bridging::createCalculator(
+  module_ = std::shared_ptr<craby::crabytest::bridging::Calculator>(
+    craby::crabytest::bridging::createCalculator(
       reinterpret_cast<uintptr_t>(this),
       rust::Str(dataPath.data(), dataPath.size())).into_raw(),
-    [](craby::bridging::Calculator *ptr) { rust::Box<craby::bridging::Calculator>::from_raw(ptr); }
+    [](craby::crabytest::bridging::Calculator *ptr) { rust::Box<craby::crabytest::bridging::Calculator>::from_raw(ptr); }
   );
-  threadPool_ = std::make_shared<craby::utils::ThreadPool>(10);
+  threadPool_ = std::make_shared<craby::crabytest::utils::ThreadPool>(10);
   methodMap_["add"] = MethodMetadata{2, &CxxCalculatorModule::add};
   methodMap_["divide"] = MethodMetadata{2, &CxxCalculatorModule::divide};
   methodMap_["multiply"] = MethodMetadata{2, &CxxCalculatorModule::multiply};
@@ -62,13 +62,13 @@ jsi::Value CxxCalculatorModule::add(jsi::Runtime &rt,
 
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::add(*it_, arg0, arg1);
+    auto ret = craby::crabytest::bridging::add(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
   }
 }
 
@@ -87,13 +87,13 @@ jsi::Value CxxCalculatorModule::divide(jsi::Runtime &rt,
 
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::divide(*it_, arg0, arg1);
+    auto ret = craby::crabytest::bridging::divide(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
   }
 }
 
@@ -112,13 +112,13 @@ jsi::Value CxxCalculatorModule::multiply(jsi::Runtime &rt,
 
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::multiply(*it_, arg0, arg1);
+    auto ret = craby::crabytest::bridging::multiply(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
   }
 }
 
@@ -137,13 +137,13 @@ jsi::Value CxxCalculatorModule::subtract(jsi::Runtime &rt,
 
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
-    auto ret = craby::bridging::subtract(*it_, arg0, arg1);
+    auto ret = craby::crabytest::bridging::subtract(*it_, arg0, arg1);
 
     return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
-    throw jsi::JSError(rt, craby::utils::errorMessage(err));
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
   }
 }
 

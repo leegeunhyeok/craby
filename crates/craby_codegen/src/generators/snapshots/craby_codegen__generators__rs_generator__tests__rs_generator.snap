@@ -18,7 +18,7 @@ use crate::generated::*;
 
 use bridging::*;
 
-#[cxx::bridge(namespace = "craby::bridging")]
+#[cxx::bridge(namespace = "craby::testmodule::bridging")]
 pub mod bridging {
     struct NullableNumber {
         null: bool,
@@ -102,7 +102,7 @@ pub mod bridging {
         fn craby_test_string_method(it_: &mut CrabyTest, arg: &str) -> Result<String>;
     }
 
-    #[namespace = "craby::signals"]
+    #[namespace = "craby::testmodule::signals"]
     unsafe extern "C++" {
         include!("CrabySignals.h");
 

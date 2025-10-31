@@ -967,99 +967,102 @@ std::size_t align_of() {
 #endif
 
 namespace craby {
-  namespace bridging {
-    struct NullableNumber;
-    struct NullableString;
-    struct SubObject;
-    struct TestObject;
-    struct NullableSubObject;
-    enum class MyEnum : ::std::uint8_t;
-    enum class SwitchState : ::std::uint8_t;
-    struct Calculator;
-    struct CrabyTest;
-  }
-  namespace signals {
-    using SignalManager = ::craby::signals::SignalManager;
+  namespace crabytest {
+    namespace bridging {
+      struct NullableNumber;
+      struct NullableString;
+      struct SubObject;
+      struct TestObject;
+      struct NullableSubObject;
+      enum class MyEnum : ::std::uint8_t;
+      enum class SwitchState : ::std::uint8_t;
+      struct Calculator;
+      struct CrabyTest;
+    }
+    namespace signals {
+      using SignalManager = ::craby::crabytest::signals::SignalManager;
+    }
   }
 }
 
 namespace craby {
+namespace crabytest {
 namespace bridging {
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
-#define CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
 struct NullableNumber final {
   bool null CXX_DEFAULT_VALUE(false);
   double val CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableNumber
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableString
-#define CXXBRIDGE1_STRUCT_craby$bridging$NullableString
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableString
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableString
 struct NullableString final {
   bool null CXX_DEFAULT_VALUE(false);
   ::rust::String val;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableString
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableString
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$SubObject
-#define CXXBRIDGE1_STRUCT_craby$bridging$SubObject
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$SubObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$SubObject
 struct SubObject final {
-  ::craby::bridging::NullableString a;
+  ::craby::crabytest::bridging::NullableString a;
   double b CXX_DEFAULT_VALUE(0);
   bool c CXX_DEFAULT_VALUE(false);
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$SubObject
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$SubObject
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
-#define CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableSubObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableSubObject
 struct NullableSubObject final {
   bool null CXX_DEFAULT_VALUE(false);
-  ::craby::bridging::SubObject val;
+  ::craby::crabytest::bridging::SubObject val;
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$NullableSubObject
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableSubObject
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$TestObject
-#define CXXBRIDGE1_STRUCT_craby$bridging$TestObject
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$TestObject
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$TestObject
 struct TestObject final {
   ::rust::String foo;
   double bar CXX_DEFAULT_VALUE(0);
   bool baz CXX_DEFAULT_VALUE(false);
-  ::craby::bridging::NullableSubObject sub;
+  ::craby::crabytest::bridging::NullableSubObject sub;
   double camel_case CXX_DEFAULT_VALUE(0);
   double pascal_case CXX_DEFAULT_VALUE(0);
   double snake_case CXX_DEFAULT_VALUE(0);
 
   using IsRelocatable = ::std::true_type;
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$TestObject
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$TestObject
 
-#ifndef CXXBRIDGE1_ENUM_craby$bridging$MyEnum
-#define CXXBRIDGE1_ENUM_craby$bridging$MyEnum
+#ifndef CXXBRIDGE1_ENUM_craby$crabytest$bridging$MyEnum
+#define CXXBRIDGE1_ENUM_craby$crabytest$bridging$MyEnum
 enum class MyEnum : ::std::uint8_t {
   Foo = 0,
   Bar = 1,
   Baz = 2,
 };
-#endif // CXXBRIDGE1_ENUM_craby$bridging$MyEnum
+#endif // CXXBRIDGE1_ENUM_craby$crabytest$bridging$MyEnum
 
-#ifndef CXXBRIDGE1_ENUM_craby$bridging$SwitchState
-#define CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+#ifndef CXXBRIDGE1_ENUM_craby$crabytest$bridging$SwitchState
+#define CXXBRIDGE1_ENUM_craby$crabytest$bridging$SwitchState
 enum class SwitchState : ::std::uint8_t {
   Off = 0,
   On = 1,
 };
-#endif // CXXBRIDGE1_ENUM_craby$bridging$SwitchState
+#endif // CXXBRIDGE1_ENUM_craby$crabytest$bridging$SwitchState
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$Calculator
-#define CXXBRIDGE1_STRUCT_craby$bridging$Calculator
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$Calculator
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$Calculator
 struct Calculator final : public ::rust::Opaque {
   ~Calculator() = delete;
 
@@ -1070,10 +1073,10 @@ private:
     static ::std::size_t align() noexcept;
   };
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$Calculator
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$Calculator
 
-#ifndef CXXBRIDGE1_STRUCT_craby$bridging$CrabyTest
-#define CXXBRIDGE1_STRUCT_craby$bridging$CrabyTest
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$CrabyTest
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$CrabyTest
 struct CrabyTest final : public ::rust::Opaque {
   ~CrabyTest() = delete;
 
@@ -1084,54 +1087,55 @@ private:
     static ::std::size_t align() noexcept;
   };
 };
-#endif // CXXBRIDGE1_STRUCT_craby$bridging$CrabyTest
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$CrabyTest
 
-::rust::Box<::craby::bridging::Calculator> createCalculator(::std::size_t id, ::rust::Str data_path) noexcept;
+::rust::Box<::craby::crabytest::bridging::Calculator> createCalculator(::std::size_t id, ::rust::Str data_path) noexcept;
 
-double add(::craby::bridging::Calculator &it_, double a, double b);
+double add(::craby::crabytest::bridging::Calculator &it_, double a, double b);
 
-double divide(::craby::bridging::Calculator &it_, double a, double b);
+double divide(::craby::crabytest::bridging::Calculator &it_, double a, double b);
 
-double multiply(::craby::bridging::Calculator &it_, double a, double b);
+double multiply(::craby::crabytest::bridging::Calculator &it_, double a, double b);
 
-double subtract(::craby::bridging::Calculator &it_, double a, double b);
+double subtract(::craby::crabytest::bridging::Calculator &it_, double a, double b);
 
-::rust::Box<::craby::bridging::CrabyTest> createCrabyTest(::std::size_t id, ::rust::Str data_path) noexcept;
+::rust::Box<::craby::crabytest::bridging::CrabyTest> createCrabyTest(::std::size_t id, ::rust::Str data_path) noexcept;
 
-::rust::Vec<double> arrayMethod(::craby::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
+::rust::Vec<double> arrayMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
 
-bool booleanMethod(::craby::bridging::CrabyTest &it_, bool arg);
+bool booleanMethod(::craby::crabytest::bridging::CrabyTest &it_, bool arg);
 
-void camelMethod(::craby::bridging::CrabyTest &it_);
+void camelMethod(::craby::crabytest::bridging::CrabyTest &it_);
 
-::rust::String enumMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::MyEnum arg_0, ::craby::bridging::SwitchState arg_1);
+::rust::String enumMethod(::craby::crabytest::bridging::CrabyTest &it_, ::craby::crabytest::bridging::MyEnum arg_0, ::craby::crabytest::bridging::SwitchState arg_1);
 
-::rust::String getDataPath(::craby::bridging::CrabyTest &it_);
+::rust::String getDataPath(::craby::crabytest::bridging::CrabyTest &it_);
 
-double getState(::craby::bridging::CrabyTest &it_);
+double getState(::craby::crabytest::bridging::CrabyTest &it_);
 
-::craby::bridging::NullableNumber nullableMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::NullableNumber arg);
+::craby::crabytest::bridging::NullableNumber nullableMethod(::craby::crabytest::bridging::CrabyTest &it_, ::craby::crabytest::bridging::NullableNumber arg);
 
-double numericMethod(::craby::bridging::CrabyTest &it_, double arg);
+double numericMethod(::craby::crabytest::bridging::CrabyTest &it_, double arg);
 
-::craby::bridging::TestObject objectMethod(::craby::bridging::CrabyTest &it_, ::craby::bridging::TestObject arg);
+::craby::crabytest::bridging::TestObject objectMethod(::craby::crabytest::bridging::CrabyTest &it_, ::craby::crabytest::bridging::TestObject arg);
 
-void pascalMethod(::craby::bridging::CrabyTest &it_);
+void pascalMethod(::craby::crabytest::bridging::CrabyTest &it_);
 
-double promiseMethod(::craby::bridging::CrabyTest &it_, double arg);
+double promiseMethod(::craby::crabytest::bridging::CrabyTest &it_, double arg);
 
-::craby::bridging::NullableString readData(::craby::bridging::CrabyTest &it_);
+::craby::crabytest::bridging::NullableString readData(::craby::crabytest::bridging::CrabyTest &it_);
 
-void setState(::craby::bridging::CrabyTest &it_, double arg);
+void setState(::craby::crabytest::bridging::CrabyTest &it_, double arg);
 
-void snakeMethod(::craby::bridging::CrabyTest &it_);
+void snakeMethod(::craby::crabytest::bridging::CrabyTest &it_);
 
-::rust::String stringMethod(::craby::bridging::CrabyTest &it_, ::rust::Str arg);
+::rust::String stringMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Str arg);
 
-void triggerSignal(::craby::bridging::CrabyTest &it_);
+void triggerSignal(::craby::crabytest::bridging::CrabyTest &it_);
 
-bool writeData(::craby::bridging::CrabyTest &it_, ::rust::Str value);
+bool writeData(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Str value);
 } // namespace bridging
+} // namespace crabytest
 } // namespace craby
 
 #ifdef __clang__

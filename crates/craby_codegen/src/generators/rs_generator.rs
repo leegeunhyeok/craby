@@ -7,6 +7,7 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
+    constants::cxx_base_ns,
     platform::rust::RsCxxBridge,
     types::{CodegenContext, Schema},
     utils::indent_str,
@@ -56,7 +57,7 @@ impl RsTemplate {
     /// # Generated Code
     ///
     /// ```rust,ignore
-    /// #[cxx::bridge(namespace = "craby::bridging")]
+    /// #[cxx::bridge(namespace = "craby::mymodule::bridging")]
     /// pub mod bridging {
     ///     struct MyStruct {
     ///         foo: String,
@@ -79,7 +80,7 @@ impl RsTemplate {
     ///     }
     /// }
     /// ```
-    fn rs_cxx_extern(&self, rs_cxx_bridges: &[RsCxxBridge], has_signals: bool) -> String {
+    fn rs_cxx_extern(&self, base_ns: &str, rs_cxx_bridges: &[RsCxxBridge], has_signals: bool) -> String {
         let (impl_types, cxx_externs, struct_defs, enum_defs) = rs_cxx_bridges.iter().fold(
             (vec![], vec![], vec![], vec![]),
             |(mut impl_types, mut externs, mut structs, mut enums), bridge| {
@@ -102,7 +103,7 @@ impl RsTemplate {
         let cxx_signal_manager = if has_signals {
             formatdoc! {
                 r#"
-                #[namespace = "craby::signals"]
+                #[namespace = "{base_ns}::signals"]
                 unsafe extern "C++" {{
                     include!("CrabySignals.h");
 
@@ -112,6 +113,7 @@ impl RsTemplate {
                     #[rust_name = "get_signal_manager"]
                     fn getSignalManager() -> &'static SignalManager;
                 }}"#,
+                base_ns = base_ns,
             }
         } else {
             String::new()
@@ -127,10 +129,11 @@ impl RsTemplate {
 
         formatdoc! {
             r#"
-            #[cxx::bridge(namespace = "craby::bridging")]
+            #[cxx::bridge(namespace = "{base_ns}::bridging")]
             pub mod bridging {{
             {code}
             }}"#,
+            base_ns = base_ns,
             code = indent_str(&code, 4),
         }
     }
@@ -399,16 +402,17 @@ impl RsTemplate {
     ///     MyModule::numeric_method(arg)
     /// }
     /// ```
-    fn ffi_rs(&self, schemas: &[Schema]) -> Result<String, anyhow::Error> {
+    fn ffi_rs(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
+        let cxx_base_ns = cxx_base_ns(&ctx.name);
         let impl_mods = self
-            .impl_mods(schemas)
+            .impl_mods(&ctx.schemas)
             .iter()
             .map(|impl_mod| format!("use crate::{}::*;", impl_mod))
             .collect::<Vec<String>>();
 
-        let has_signals = schemas.iter().any(|schema| !schema.signals.is_empty());
-        let rs_cxx_bridges = self.rs_cxx_bridges(schemas)?;
-        let cxx_externs = self.rs_cxx_extern(&rs_cxx_bridges, has_signals);
+        let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
+        let rs_cxx_bridges = self.rs_cxx_bridges(&ctx.schemas)?;
+        let cxx_externs = self.rs_cxx_extern(&cxx_base_ns, &rs_cxx_bridges, has_signals);
         let cxx_impls = self.rs_cxx_impl(&rs_cxx_bridges);
 
         let content = formatdoc! {
@@ -487,7 +491,7 @@ impl Template for RsTemplate {
         let path = self.file_path(file_type);
         let content = match file_type {
             RsFileType::CrateEntry => self.lib_rs(&ctx.schemas),
-            RsFileType::FFIEntry => self.ffi_rs(&ctx.schemas),
+            RsFileType::FFIEntry => self.ffi_rs(ctx),
             RsFileType::Generated => self.generated_rs(&ctx.schemas),
         }?;
 
