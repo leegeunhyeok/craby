@@ -16,12 +16,12 @@ expression: result
   const char *cDataPath = [[self getDataPath] UTF8String];
   std::string dataPath(cDataPath);
 
-  craby::crabytest::CxxCrabyTestModule::dataPath = dataPath;
+  craby::testmodule::modules::CxxCrabyTestModule::dataPath = dataPath;
 
   facebook::react::registerCxxModuleToGlobalModuleMap(
-      craby::crabytest::CxxCrabyTestModule::kModuleName,
+      craby::testmodule::modules::CxxCrabyTestModule::kModuleName,
       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+        return std::make_shared<craby::testmodule::modules::CxxCrabyTestModule>(jsInvoker);
       });
 }
 

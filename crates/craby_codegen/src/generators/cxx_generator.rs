@@ -7,9 +7,9 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
-    constants::{cxx_base_ns, cxx_mod_cls_name, specs::RESERVED_ARG_NAME_MODULE},
+    constants::specs::RESERVED_ARG_NAME_MODULE,
     platform::cxx::CxxMethod,
-    types::{CodegenContext, Schema},
+    types::{CodegenContext, CxxModuleName, CxxNamespace, Schema},
     utils::indent_str,
 };
 
@@ -41,12 +41,12 @@ impl CxxTemplate {
         project_name: &str,
         schema: &Schema,
     ) -> Result<Vec<CxxMethod>, anyhow::Error> {
-        let base_ns = cxx_base_ns(project_name);
-        let mod_name = cxx_mod_cls_name(&schema.module_name);
+        let cxx_ns = CxxNamespace::from(project_name);
+        let mod_name = CxxModuleName::from(&schema.module_name);
         let res = schema
             .methods
             .iter()
-            .map(|spec| spec.as_cxx_method(&base_ns, &mod_name))
+            .map(|spec| spec.as_cxx_method(&cxx_ns, &mod_name))
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(res)
@@ -85,7 +85,8 @@ impl CxxTemplate {
     /// using namespace facebook;
     ///
     /// namespace craby {
-    /// namespace mymodule {
+    /// namespace myproject {
+    /// namespace modules {
     ///
     /// CxxMyTestModule::CxxMyTestModule(
     ///     std::shared_ptr<react::CallInvoker> jsInvoker)
@@ -101,7 +102,8 @@ impl CxxTemplate {
     ///   // ...
     /// }
     ///
-    /// } // namespace mymodule
+    /// } // namespace modules
+    /// } // namespace myproject
     /// } // namespace craby
     /// ```
     ///
@@ -117,7 +119,8 @@ impl CxxTemplate {
     /// #include <memory>
     ///
     /// namespace craby {
-    /// namespace mymodule {
+    /// namespace myproject {
+    /// namespace modules {
     ///
     /// class JSI_EXPORT CxxMyTestModule : public facebook::react::TurboModule {
     /// public:
@@ -137,7 +140,8 @@ impl CxxTemplate {
     ///   std::shared_ptr<craby::mymodule::bridging::MyTestModule> module_;
     /// };
     ///
-    /// } // namespace mymodule
+    /// } // namespace modules
+    /// } // namespace myproject
     /// } // namespace craby
     /// ```
     fn cxx_mod(
@@ -145,11 +149,11 @@ impl CxxTemplate {
         schema: &Schema,
         project_name: &str,
     ) -> Result<(String, String), anyhow::Error> {
-        let base_ns = cxx_base_ns(project_name);
-        let flat_name = flat_case(&schema.module_name);
-        let cxx_mod = cxx_mod_cls_name(&schema.module_name);
+        let cxx_ns = CxxNamespace::from(project_name);
+        let cxx_mod = CxxModuleName::from(&schema.module_name);
+        let project_ns = flat_case(project_name);
         let cxx_methods = self.cxx_methods(project_name, schema)?;
-        let include_stmt = format!("#include \"{}.hpp\"", cxx_mod);
+        let include_stmt = format!("#include \"{cxx_mod}.hpp\"");
 
         // Assign method metadata with function pointer to the TurboModule's method map
         //
@@ -185,32 +189,27 @@ impl CxxTemplate {
             let register_stmt = formatdoc! {
                 r#"
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
-                auto& manager = {base_ns}::signals::SignalManager::getInstance();
+                auto& manager = {cxx_ns}::signals::SignalManager::getInstance();
                 manager.registerDelegate(id,
                                          std::bind(&{cxx_mod}::emit,
                                          this,
                                          std::placeholders::_1));"#,
-                base_ns = base_ns,
-                cxx_mod = cxx_mod,
             };
 
             let unregister_stmt = formatdoc! {
                 r#"
                 // Unregister from signal manager
                 uintptr_t id = reinterpret_cast<uintptr_t>(this);
-                auto& manager = {base_ns}::signals::SignalManager::getInstance();
+                auto& manager = {cxx_ns}::signals::SignalManager::getInstance();
                 manager.unregisterDelegate(id);"#,
-                base_ns = base_ns,
             };
 
             for signal in &schema.signals {
+                let signal_name = &signal.name;
                 let cxx_signal_name = camel_case(&signal.name);
 
                 method_maps.push(formatdoc! {
                     r#"methodMap_["{signal_name}"] = MethodMetadata{{1, &{cxx_mod}::{cxx_signal_name}}};"#,
-                    signal_name = signal.name,
-                    cxx_signal_name = cxx_signal_name,
-                    cxx_mod = cxx_mod,
                 });
 
                 method_defs.push(formatdoc! {
@@ -219,7 +218,6 @@ impl CxxTemplate {
                     {signal_name}(facebook::jsi::Runtime &rt,
                         facebook::react::TurboModule &turboModule,
                         const facebook::jsi::Value args[], size_t count);"#,
-                    signal_name = signal.name,
                 });
 
                 method_impls.push(formatdoc! {
@@ -275,14 +273,10 @@ impl CxxTemplate {
                       }} catch (const jsi::JSError &err) {{
                         throw err;
                       }} catch (const std::exception &err) {{
-                        throw jsi::JSError(rt, {base_ns}::utils::errorMessage(err));
+                        throw jsi::JSError(rt, {cxx_ns}::utils::errorMessage(err));
                       }}
                     }}"#,
-                    cxx_mod = cxx_mod,
                     it = RESERVED_ARG_NAME_MODULE,
-                    base_ns = base_ns,
-                    signal_name = signal.name,
-                    cxx_signal_name = cxx_signal_name,
                 });
             }
 
@@ -342,8 +336,6 @@ impl CxxTemplate {
         // ```
         let cpp = formatdoc! {
             r#"
-            namespace {flat_name} {{
-
             std::string {cxx_mod}::dataPath = std::string();
 
             {cxx_mod}::{cxx_mod}(
@@ -351,13 +343,13 @@ impl CxxTemplate {
                 : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
             {register_stmt}
               callInvoker_ = std::move(jsInvoker);
-              module_ = std::shared_ptr<{base_ns}::bridging::{module_name}>(
-                {base_ns}::bridging::create{module_name}(
+              module_ = std::shared_ptr<{cxx_ns}::bridging::{module_name}>(
+                {cxx_ns}::bridging::create{module_name}(
                   reinterpret_cast<uintptr_t>(this),
                   rust::Str(dataPath.data(), dataPath.size())).into_raw(),
-                []({base_ns}::bridging::{module_name} *ptr) {{ rust::Box<{base_ns}::bridging::{module_name}>::from_raw(ptr); }}
+                []({cxx_ns}::bridging::{module_name} *ptr) {{ rust::Box<{cxx_ns}::bridging::{module_name}>::from_raw(ptr); }}
               );
-              threadPool_ = std::make_shared<{base_ns}::utils::ThreadPool>(10);
+              threadPool_ = std::make_shared<{cxx_ns}::utils::ThreadPool>(10);
             {method_maps}
             }}
 
@@ -379,13 +371,8 @@ impl CxxTemplate {
               threadPool_->shutdown();
             }}
             
-            {method_impls}
-            
-            }} // namespace {flat_name}"#,
-            base_ns = base_ns,
+            {method_impls}"#,
             module_name = pascal_case(&schema.module_name),
-            flat_name = flat_name,
-            cxx_mod = cxx_mod,
             register_stmt = indent_str(&register_stmt, 2),
             unregister_stmt = indent_str(&unregister_stmt, 2),
             method_maps = indent_str(&method_maps.join("\n"), 2),
@@ -394,8 +381,6 @@ impl CxxTemplate {
 
         let hpp = formatdoc! {
             r#"
-            namespace {flat_name} {{
-
             class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
             public:
               static constexpr const char *kModuleName = "{turbo_module_name}";
@@ -409,7 +394,7 @@ impl CxxTemplate {
 
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-              std::shared_ptr<{base_ns}::bridging::{module_name}> module_;
+              std::shared_ptr<{cxx_ns}::bridging::{module_name}> module_;
               std::atomic<bool> invalidated_{{false}};
               std::atomic<size_t> nextListenerId_{{0}};
               std::mutex listenersMutex_;
@@ -417,15 +402,10 @@ impl CxxTemplate {
                 std::string,
                 std::unordered_map<size_t, std::shared_ptr<facebook::jsi::Function>>>
                 listenersMap_;
-              std::shared_ptr<{base_ns}::utils::ThreadPool> threadPool_;
-            }};
-
-            }} // namespace {flat_name}"#,
-            base_ns = base_ns,
+              std::shared_ptr<{cxx_ns}::utils::ThreadPool> threadPool_;
+            }};"#,
             turbo_module_name = schema.module_name,
             module_name = pascal_case(&schema.module_name),
-            flat_name = flat_name,
-            cxx_mod = cxx_mod,
             method_defs = indent_str(&method_defs.join("\n\n"), 2),
         };
 
@@ -439,7 +419,13 @@ impl CxxTemplate {
         // using namespace facebook;
         //
         // namespace craby {
-        // // TurboModule implementations
+        // namespace myproject {
+        // namespace modules {
+        //
+        // // C++ Template
+        //
+        // } // namespace modules
+        // } // namespace myproject
         // } // namespace craby
         // ```
         let cpp_content = formatdoc! {
@@ -452,10 +438,14 @@ impl CxxTemplate {
             using namespace facebook;
 
             namespace craby {{
+            namespace {project_ns} {{
+            namespace modules {{
+
             {cpp}
+
+            }} // namespace modules
+            }} // namespace {project_ns}
             }} // namespace craby"#,
-            include_stmt = include_stmt,
-            cpp = cpp,
         };
 
         let hpp_content = formatdoc! {
@@ -469,9 +459,14 @@ impl CxxTemplate {
             #include <memory>
             
             namespace craby {{
+            namespace {project_ns} {{
+            namespace modules {{
+
             {hpp}
+
+            }} // namespace modules
+            }} // namespace {project_ns}
             }} // namespace craby"#,
-            hpp = hpp,
         };
 
         Ok((cpp_content, hpp_content))
@@ -514,7 +509,7 @@ impl CxxTemplate {
         let bridging_templates = ctx
             .schemas
             .iter()
-            .flat_map(|schema| schema.as_cxx_bridging_templates(&ctx.name))
+            .flat_map(|schema| schema.as_cxx_bridging_templates(&ctx.project_name))
             .flatten()
             .collect::<Vec<_>>();
 
@@ -915,12 +910,12 @@ impl Template for CxxTemplate {
                 .schemas
                 .iter()
                 .map(|schema| -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-                    let (cpp, hpp) = self.cxx_mod(schema, &ctx.name)?;
-                    let cxx_mod = cxx_mod_cls_name(&schema.module_name);
+                    let (cpp, hpp) = self.cxx_mod(schema, &ctx.project_name)?;
+                    let cxx_mod = CxxModuleName::from(&schema.module_name);
                     let cxx_base_path = cxx_dir(&ctx.root);
                     let files = vec![
-                        (cxx_base_path.join(format!("{}.cpp", cxx_mod)), cpp),
-                        (cxx_base_path.join(format!("{}.hpp", cxx_mod)), hpp),
+                        (cxx_base_path.join(format!("{cxx_mod}.cpp")), cpp),
+                        (cxx_base_path.join(format!("{cxx_mod}.hpp")), hpp),
                     ];
                     Ok(files)
                 })
@@ -933,7 +928,7 @@ impl Template for CxxTemplate {
             CxxFileType::UtilsHpp => {
                 vec![(
                     cxx_dir(&ctx.root).join("CrabyUtils.hpp"),
-                    self.cxx_utils(&ctx.name)?,
+                    self.cxx_utils(&ctx.project_name)?,
                 )]
             }
             CxxFileType::SignalsH => {
@@ -942,7 +937,7 @@ impl Template for CxxTemplate {
                 if has_signals {
                     vec![(
                         cxx_bridge_include_dir(&ctx.root).join("CrabySignals.h"),
-                        self.cxx_signals(&ctx.name)?,
+                        self.cxx_signals(&ctx.project_name)?,
                     )]
                 } else {
                     vec![]

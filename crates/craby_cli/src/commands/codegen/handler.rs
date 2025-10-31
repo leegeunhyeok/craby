@@ -58,7 +58,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     }
 
     let ctx = CodegenContext {
-        name: config.project.name,
+        project_name: config.project.name,
         root: opts.project_root,
         schemas,
         android_package_name: config.android.package_name,

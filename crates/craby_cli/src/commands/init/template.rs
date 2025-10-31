@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, path::Path};
 
 use chrono::Datelike;
-use craby_codegen::constants::{cxx_mod_cls_name, objc_mod_provider_name};
+use craby_codegen::types::{CxxModuleName, ObjCProviderName};
 use craby_common::utils::string::{flat_case, kebab_case, pascal_case, snake_case};
 use inquire::{validator::Validation, Text};
 use log::debug;
@@ -56,7 +56,7 @@ pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> 
         .prompt()?;
 
     // CxxFastCalculatorModule
-    let cxx_name = cxx_mod_cls_name(&crate_name);
+    let cxx_name = CxxModuleName::from(&crate_name);
 
     // fastcalculator
     let flat_name = flat_case(&crate_name);
@@ -71,7 +71,8 @@ pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> 
     let pascal_name = pascal_case(&crate_name);
 
     // FastCalculatorModuleProvider
-    let objc_provider = objc_mod_provider_name(&crate_name);
+    let objc_provider = ObjCProviderName::from(&crate_name);
+
     let current_year = chrono::Local::now().year();
 
     let template_data = BTreeMap::from([
@@ -85,8 +86,8 @@ pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> 
         ("snake_name", snake_name),
         ("kebab_name", kebab_name),
         ("pascal_name", pascal_name),
-        ("cxx_name", cxx_name),
-        ("objc_provider", objc_provider),
+        ("cxx_name", cxx_name.to_string()),
+        ("objc_provider", objc_provider.to_string()),
         ("year", current_year.to_string()),
     ]);
 

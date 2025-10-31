@@ -7,7 +7,8 @@
 using namespace facebook;
 
 namespace craby {
-namespace calculator {
+namespace crabytest {
+namespace modules {
 
 std::string CxxCalculatorModule::dataPath = std::string();
 
@@ -147,5 +148,6 @@ jsi::Value CxxCalculatorModule::subtract(jsi::Runtime &rt,
   }
 }
 
-} // namespace calculator
+} // namespace modules
+} // namespace crabytest
 } // namespace craby

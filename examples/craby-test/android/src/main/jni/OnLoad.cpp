@@ -6,14 +6,14 @@
 
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
   facebook::react::registerCxxModuleToGlobalModuleMap(
-    craby::calculator::CxxCalculatorModule::kModuleName,
+    craby::crabytest::modules::CxxCalculatorModule::kModuleName,
     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-      return std::make_shared<craby::calculator::CxxCalculatorModule>(jsInvoker);
+      return std::make_shared<craby::crabytest::modules::CxxCalculatorModule>(jsInvoker);
     });
   facebook::react::registerCxxModuleToGlobalModuleMap(
-    craby::crabytest::CxxCrabyTestModule::kModuleName,
+    craby::crabytest::modules::CxxCrabyTestModule::kModuleName,
     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-      return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+      return std::make_shared<craby::crabytest::modules::CxxCrabyTestModule>(jsInvoker);
     });
   return JNI_VERSION_1_6;
 }
@@ -22,6 +22,6 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_rs_craby_crabytest_CrabyTestPackage_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
   auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
-  craby::calculator::CxxCalculatorModule::dataPath = dataPath;
-  craby::crabytest::CxxCrabyTestModule::dataPath = dataPath;
+  craby::crabytest::modules::CxxCalculatorModule::dataPath = dataPath;
+  craby::crabytest::modules::CxxCrabyTestModule::dataPath = dataPath;
 }

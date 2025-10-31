@@ -1,11 +1,10 @@
 use std::{fs, path::PathBuf};
 
-use craby_common::{constants::ios_base_path, utils::string::flat_case};
+use craby_common::constants::ios_base_path;
 use indoc::formatdoc;
 
 use crate::{
-    constants::{cxx_mod_cls_name, objc_mod_provider_name},
-    types::CodegenContext,
+    types::{CodegenContext, CxxModuleName, CxxNamespace, ObjCProviderName},
     utils::indent_str,
 };
 
@@ -37,12 +36,12 @@ impl IosTemplate {
     ///   const char *cDataPath = [[self getDataPath] UTF8String];
     ///   std::string dataPath(cDataPath);
     ///
-    ///   craby::mymodule::CxxMyTestModule::dataPath = dataPath;
+    ///   craby::myproject::modules::CxxMyTestModule::dataPath = dataPath;
     ///
     ///   facebook::react::registerCxxModuleToGlobalModuleMap(
-    ///       craby::mymodule::CxxMyTestModule::kModuleName,
+    ///       craby::myproject::modules::CxxMyTestModule::kModuleName,
     ///       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-    ///         return std::make_shared<craby::mymodule::CxxMyTestModule>(jsInvoker);
+    ///         return std::make_shared<craby::myproject::modules::CxxMyTestModule>(jsInvoker);
     ///       });
     /// }
     ///
@@ -72,25 +71,24 @@ impl IosTemplate {
     /// @end
     /// ```
     fn module_provider(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
+        let cxx_ns = CxxNamespace::from(&ctx.project_name);
         let mut cxx_includes = vec![];
         let mut cxx_prepares = Vec::with_capacity(ctx.schemas.len());
         let mut cxx_registers = Vec::with_capacity(ctx.schemas.len());
-        let objc_mod_provider_name = objc_mod_provider_name(&ctx.name);
+        let objc_provider = ObjCProviderName::from(&ctx.project_name);
 
         ctx.schemas.iter().for_each(|schema| {
-            let flat_name = flat_case(&schema.module_name);
-            let cxx_mod = cxx_mod_cls_name(&schema.module_name);
-            let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
+            let cxx_mod = CxxModuleName::from(&schema.module_name);
             let cxx_include = format!("#import \"{cxx_mod}.hpp\"");
-            let cxx_prepare = format!("{cxx_namespace}::dataPath = dataPath;");
+            let cxx_mod_namespace = format!("{cxx_ns}::modules::{cxx_mod}");
+            let cxx_prepare = format!("{cxx_mod_namespace}::dataPath = dataPath;");
             let cxx_register = formatdoc! {
                 r#"
                 facebook::react::registerCxxModuleToGlobalModuleMap(
-                    {cxx_namespace}::kModuleName,
+                    {cxx_mod_namespace}::kModuleName,
                     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
-                      return std::make_shared<{cxx_namespace}>(jsInvoker);
+                      return std::make_shared<{cxx_mod_namespace}>(jsInvoker);
                     }});"#,
-                cxx_namespace = cxx_namespace,
             };
 
             cxx_includes.push(cxx_include);
@@ -98,16 +96,19 @@ impl IosTemplate {
             cxx_registers.push(cxx_register);
         });
 
+        let cxx_includes = cxx_includes.join("\n");
+        let cxx_prepares = indent_str(&cxx_prepares.join("\n"), 2);
+        let cxx_registers = indent_str(&cxx_registers.join("\n"), 2);
         let content = formatdoc! {
             r#"
             {cxx_includes}
             #import <ReactCommon/CxxTurboModuleUtils.h>
             #include <string>
 
-            @interface {objc_mod_provider_name} : NSObject
+            @interface {objc_provider} : NSObject
             @end
 
-            @implementation {objc_mod_provider_name}
+            @implementation {objc_provider}
 
             + (void)load {{
               const char *cDataPath = [[self getDataPath] UTF8String];
@@ -142,10 +143,6 @@ impl IosTemplate {
             }}
 
             @end"#,
-            cxx_includes = cxx_includes.join("\n"),
-            cxx_prepares = indent_str(&cxx_prepares.join("\n"), 2),
-            cxx_registers = indent_str(&cxx_registers.join("\n"), 2),
-            objc_mod_provider_name = objc_mod_provider_name,
         };
 
         Ok(content)
@@ -163,7 +160,7 @@ impl Template for IosTemplate {
         let res = match file_type {
             IosFileType::ModuleProvider => {
                 vec![(
-                    PathBuf::from(format!("{}.mm", objc_mod_provider_name(&ctx.name))),
+                    PathBuf::from(format!("{}.mm", ObjCProviderName::from(&ctx.project_name))),
                     self.module_provider(ctx)?,
                 )]
             }

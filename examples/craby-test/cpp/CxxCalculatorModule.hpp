@@ -8,7 +8,8 @@
 #include <memory>
 
 namespace craby {
-namespace calculator {
+namespace crabytest {
+namespace modules {
 
 class JSI_EXPORT CxxCalculatorModule : public facebook::react::TurboModule {
 public:
@@ -52,5 +53,6 @@ protected:
   std::shared_ptr<craby::crabytest::utils::ThreadPool> threadPool_;
 };
 
-} // namespace calculator
+} // namespace modules
+} // namespace crabytest
 } // namespace craby

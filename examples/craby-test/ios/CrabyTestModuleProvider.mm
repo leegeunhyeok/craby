@@ -13,18 +13,18 @@
   const char *cDataPath = [[self getDataPath] UTF8String];
   std::string dataPath(cDataPath);
 
-  craby::calculator::CxxCalculatorModule::dataPath = dataPath;
-  craby::crabytest::CxxCrabyTestModule::dataPath = dataPath;
+  craby::crabytest::modules::CxxCalculatorModule::dataPath = dataPath;
+  craby::crabytest::modules::CxxCrabyTestModule::dataPath = dataPath;
 
   facebook::react::registerCxxModuleToGlobalModuleMap(
-      craby::calculator::CxxCalculatorModule::kModuleName,
+      craby::crabytest::modules::CxxCalculatorModule::kModuleName,
       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::calculator::CxxCalculatorModule>(jsInvoker);
+        return std::make_shared<craby::crabytest::modules::CxxCalculatorModule>(jsInvoker);
       });
   facebook::react::registerCxxModuleToGlobalModuleMap(
-      craby::crabytest::CxxCrabyTestModule::kModuleName,
+      craby::crabytest::modules::CxxCrabyTestModule::kModuleName,
       [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-        return std::make_shared<craby::crabytest::CxxCrabyTestModule>(jsInvoker);
+        return std::make_shared<craby::crabytest::modules::CxxCrabyTestModule>(jsInvoker);
       });
 }
 

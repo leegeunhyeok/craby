@@ -7,9 +7,8 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
-    constants::cxx_base_ns,
     platform::rust::RsCxxBridge,
-    types::{CodegenContext, Schema},
+    types::{CodegenContext, CxxNamespace, Schema},
     utils::indent_str,
 };
 
@@ -80,7 +79,12 @@ impl RsTemplate {
     ///     }
     /// }
     /// ```
-    fn rs_cxx_extern(&self, base_ns: &str, rs_cxx_bridges: &[RsCxxBridge], has_signals: bool) -> String {
+    fn rs_cxx_extern(
+        &self,
+        cxx_ns: &CxxNamespace,
+        rs_cxx_bridges: &[RsCxxBridge],
+        has_signals: bool,
+    ) -> String {
         let (impl_types, cxx_externs, struct_defs, enum_defs) = rs_cxx_bridges.iter().fold(
             (vec![], vec![], vec![], vec![]),
             |(mut impl_types, mut externs, mut structs, mut enums), bridge| {
@@ -92,18 +96,19 @@ impl RsTemplate {
             },
         );
 
+        let cxx_extern_stmts = [impl_types, cxx_externs].concat().join("\n\n");
         let cxx_extern = formatdoc! {
             r#"
             extern "Rust" {{
-            {cxx_extern}
+            {cxx_extern_stmts}
             }}"#,
-            cxx_extern = indent_str(&[impl_types, cxx_externs].concat().join("\n\n"), 4),
+            cxx_extern_stmts = indent_str(&cxx_extern_stmts, 4),
         };
 
         let cxx_signal_manager = if has_signals {
             formatdoc! {
                 r#"
-                #[namespace = "{base_ns}::signals"]
+                #[namespace = "{cxx_ns}::signals"]
                 unsafe extern "C++" {{
                     include!("CrabySignals.h");
 
@@ -113,7 +118,6 @@ impl RsTemplate {
                     #[rust_name = "get_signal_manager"]
                     fn getSignalManager() -> &'static SignalManager;
                 }}"#,
-                base_ns = base_ns,
             }
         } else {
             String::new()
@@ -129,11 +133,10 @@ impl RsTemplate {
 
         formatdoc! {
             r#"
-            #[cxx::bridge(namespace = "{base_ns}::bridging")]
+            #[cxx::bridge(namespace = "{cxx_ns}::bridging")]
             pub mod bridging {{
             {code}
             }}"#,
-            base_ns = base_ns,
             code = indent_str(&code, 4),
         }
     }
@@ -403,7 +406,7 @@ impl RsTemplate {
     /// }
     /// ```
     fn ffi_rs(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
-        let cxx_base_ns = cxx_base_ns(&ctx.name);
+        let cxx_ns = CxxNamespace::from(&ctx.project_name);
         let impl_mods = self
             .impl_mods(&ctx.schemas)
             .iter()
@@ -412,9 +415,11 @@ impl RsTemplate {
 
         let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
         let rs_cxx_bridges = self.rs_cxx_bridges(&ctx.schemas)?;
-        let cxx_externs = self.rs_cxx_extern(&cxx_base_ns, &rs_cxx_bridges, has_signals);
+        let cxx_externs = self.rs_cxx_extern(&cxx_ns, &rs_cxx_bridges, has_signals);
         let cxx_impls = self.rs_cxx_impl(&rs_cxx_bridges);
 
+        let impl_mods = impl_mods.join("\n");
+        let cxx_impls = cxx_impls.join("\n\n");
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
@@ -427,10 +432,7 @@ impl RsTemplate {
 
             {cxx_externs}
 
-            {cxx_impl}"#,
-            impl_mods = impl_mods.join("\n"),
-            cxx_externs = cxx_externs,
-            cxx_impl = cxx_impls.join("\n\n"),
+            {cxx_impls}"#,
         };
 
         Ok(content)
@@ -458,17 +460,17 @@ impl RsTemplate {
         }
 
         let hash = Schema::to_hash(schemas);
+        let hash_comment = format!("{} {}", HASH_COMMAND_PREFIX, hash);
         let type_impls = type_aliases.into_values().collect::<Vec<_>>();
 
         let content = [
             vec![formatdoc! {
                 r#"
-                {hash}
+                {hash_comment}
                 #[rustfmt::skip]
                 use craby::prelude::*;
 
                 use crate::ffi::bridging::*;"#,
-                hash = format!("{} {}", HASH_COMMAND_PREFIX, hash),
             }],
             spec_codes,
             type_impls,

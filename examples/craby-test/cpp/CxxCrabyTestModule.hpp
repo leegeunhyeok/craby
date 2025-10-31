@@ -9,6 +9,7 @@
 
 namespace craby {
 namespace crabytest {
+namespace modules {
 
 class JSI_EXPORT CxxCrabyTestModule : public facebook::react::TurboModule {
 public:
@@ -124,5 +125,6 @@ protected:
   std::shared_ptr<craby::crabytest::utils::ThreadPool> threadPool_;
 };
 
+} // namespace modules
 } // namespace crabytest
 } // namespace craby

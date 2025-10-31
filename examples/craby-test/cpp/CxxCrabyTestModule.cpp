@@ -8,6 +8,7 @@ using namespace facebook;
 
 namespace craby {
 namespace crabytest {
+namespace modules {
 
 std::string CxxCrabyTestModule::dataPath = std::string();
 
@@ -562,5 +563,6 @@ jsi::Value CxxCrabyTestModule::onSignal(jsi::Runtime &rt,
   }
 }
 
+} // namespace modules
 } // namespace crabytest
 } // namespace craby

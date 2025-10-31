@@ -8,7 +8,10 @@ use craby_common::{
 };
 use indoc::formatdoc;
 
-use crate::{constants::cxx_mod_cls_name, types::CodegenContext, utils::indent_str};
+use crate::{
+    types::{CodegenContext, CxxModuleName, CxxNamespace},
+    utils::indent_str,
+};
 
 use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
 
@@ -45,9 +48,9 @@ impl AndroidTemplate {
     /// ```cpp
     /// jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     ///   facebook::react::registerCxxModuleToGlobalModuleMap(
-    ///     craby::mymodule::MyTestModule::kModuleName,
+    ///     craby::myproject::modules::MyTestModule::kModuleName,
     ///     [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {
-    ///       return std::make_shared<craby::mymodule::MyTestModule>(jsInvoker);
+    ///       return std::make_shared<craby::myproject::modules::mymodule::MyTestModule>(jsInvoker);
     ///     });
     ///   return JNI_VERSION_1_6;
     /// }
@@ -56,10 +59,11 @@ impl AndroidTemplate {
     /// JNIEXPORT void JNICALL
     /// Java_com_mymodule_MyTestModulePackage_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
     ///     auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
-    ///     craby::mymodule::MyTestModule::dataPath = dataPath;
+    ///     craby::myproject::modules::MyTestModule::dataPath = dataPath;
     /// }
     /// ```
     fn jni_entry(&self, ctx: &CodegenContext) -> Result<String, anyhow::Error> {
+        let cxx_ns = CxxNamespace::from(&ctx.project_name);
         let mut cxx_includes = vec![];
         let mut cxx_prepares = Vec::with_capacity(ctx.schemas.len());
         let mut cxx_registers = Vec::with_capacity(ctx.schemas.len());
@@ -73,24 +77,21 @@ impl AndroidTemplate {
         let jni_fn_name = format!(
             "Java_{}_{}Package_nativeSetDataPath",
             jni_extern_fn_name,
-            pascal_case(&ctx.name)
+            pascal_case(&ctx.project_name)
         );
 
         for schema in &ctx.schemas {
-            let cxx_mod = cxx_mod_cls_name(&schema.module_name);
-            let flat_name = flat_case(&schema.module_name);
-
-            let cxx_namespace = format!("craby::{}::{}", flat_name, cxx_mod);
+            let cxx_mod = CxxModuleName::from(&schema.module_name);
             let cxx_include = format!("#include <{cxx_mod}.hpp>");
-            let cxx_prepare = format!("{cxx_namespace}::dataPath = dataPath;");
+            let cxx_mod_namespace = format!("{cxx_ns}::modules::{cxx_mod}");
+            let cxx_prepare = format!("{cxx_mod_namespace}::dataPath = dataPath;");
             let cxx_register = formatdoc! {
                 r#"
                 facebook::react::registerCxxModuleToGlobalModuleMap(
-                  {cxx_namespace}::kModuleName,
+                  {cxx_mod_namespace}::kModuleName,
                   [](std::shared_ptr<facebook::react::CallInvoker> jsInvoker) {{
-                    return std::make_shared<{cxx_namespace}>(jsInvoker);
+                    return std::make_shared<{cxx_mod_namespace}>(jsInvoker);
                   }});"#,
-                cxx_namespace = cxx_namespace
             };
 
             cxx_includes.push(cxx_include);
@@ -248,8 +249,8 @@ impl AndroidTemplate {
               libraryName = "{pascal_name}_stub"
               codegenJavaPackageName = "{package_name}"
             }}"#,
-            pascal_name = pascal_case(&ctx.name),
-            kebab_name = kebab_case(&ctx.name),
+            pascal_name = pascal_case(&ctx.project_name),
+            kebab_name = kebab_case(&ctx.project_name),
             package_name = ctx.android_package_name,
         }
     }
@@ -263,7 +264,7 @@ impl AndroidTemplate {
             {pascal_name}_targetSdkVersion=34
             {pascal_name}_compileSdkVersion=35
             {pascal_name}_ndkVersion=27.1.12297006"#,
-            pascal_name = pascal_case(&ctx.name)
+            pascal_name = pascal_case(&ctx.project_name)
         }
     }
 
@@ -323,12 +324,12 @@ impl AndroidTemplate {
     /// )
     /// ```
     fn cmakelists(&self, ctx: &CodegenContext) -> String {
-        let kebab_name = kebab_case(&ctx.name);
-        let lib_name = dest_lib_name(&SanitizedString::from(&ctx.name));
+        let kebab_name = kebab_case(&ctx.project_name);
+        let lib_name = dest_lib_name(&SanitizedString::from(&ctx.project_name));
         let cxx_mod_cpp_files = ctx
             .schemas
             .iter()
-            .map(|schema| format!("../cpp/{}.cpp", cxx_mod_cls_name(&schema.module_name)))
+            .map(|schema| format!("../cpp/{}.cpp", CxxModuleName::from(&schema.module_name)))
             .collect::<Vec<_>>();
 
         formatdoc! {
@@ -389,8 +390,8 @@ impl AndroidTemplate {
     }
 
     fn rct_package(&self, ctx: &CodegenContext) -> String {
-        let lib_name = format!("cxx-{}", kebab_case(&ctx.name));
-        let pascal_name = pascal_case(&ctx.name);
+        let lib_name = format!("cxx-{}", kebab_case(&ctx.project_name));
+        let pascal_name = pascal_case(&ctx.project_name);
         let jni_prepare_module_names = ctx
             .schemas
             .iter()
@@ -474,7 +475,7 @@ impl Template for AndroidTemplate {
         ctx: &CodegenContext,
         file_type: &Self::FileType,
     ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-        let path = self.file_path(file_type, &ctx.name);
+        let path = self.file_path(file_type, &ctx.project_name);
         let content = match file_type {
             AndroidFileType::JNIEntry => self.jni_entry(ctx),
             AndroidFileType::CmakeLists => Ok(self.cmakelists(ctx)),
