@@ -353,15 +353,8 @@ pub struct CrabyTest {
     ctx: Context,
 }
 
+#[craby_module]
 impl CrabyTestSpec for CrabyTest {
-    fn new(ctx: Context) -> Self {
-        CrabyTest { ctx }
-    }
-
-    fn id(&self) -> usize {
-        self.ctx.id
-    }
-
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number> {
         unimplemented!();
     }

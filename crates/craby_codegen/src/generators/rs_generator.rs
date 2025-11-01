@@ -96,13 +96,12 @@ impl RsTemplate {
             },
         );
 
-        let cxx_extern_stmts = [impl_types, cxx_externs].concat().join("\n\n");
+        let cxx_extern_stmts = indent_str(&[impl_types, cxx_externs].concat().join("\n\n"), 4);
         let cxx_extern = formatdoc! {
             r#"
             extern "Rust" {{
             {cxx_extern_stmts}
             }}"#,
-            cxx_extern_stmts = indent_str(&cxx_extern_stmts, 4),
         };
 
         let cxx_signal_manager = if has_signals {
@@ -123,13 +122,16 @@ impl RsTemplate {
             String::new()
         };
 
-        let code = [
-            struct_defs.join("\n\n"),
-            enum_defs.join("\n\n"),
-            cxx_extern,
-            cxx_signal_manager,
-        ]
-        .join("\n\n");
+        let code = indent_str(
+            &[
+                struct_defs.join("\n\n"),
+                enum_defs.join("\n\n"),
+                cxx_extern,
+                cxx_signal_manager,
+            ]
+            .join("\n\n"),
+            4,
+        );
 
         formatdoc! {
             r#"
@@ -137,7 +139,6 @@ impl RsTemplate {
             pub mod bridging {{
             {code}
             }}"#,
-            code = indent_str(&code, 4),
         }
     }
 
@@ -179,7 +180,7 @@ impl RsTemplate {
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
                 let sig = spec.try_into_impl_sig()?;
-                Ok(format!("{};", sig))
+                Ok(format!("{sig};"))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -193,8 +194,6 @@ impl RsTemplate {
                     let enum_member = format!("{},", member_name);
                     let enum_pattern_match = formatdoc! {
                         r#"{signal_enum_name}::{member_name} => manager.emit(self.id(), "{raw}"),"#,
-                        signal_enum_name = signal_enum_name,
-                        member_name = member_name,
                         raw = signal.name,
                     };
 
@@ -202,25 +201,23 @@ impl RsTemplate {
                 })
                 .unzip();
 
+            let signal_members_exprs = indent_str(&signal_members.join("\n"), 4);
             let signal_enum = formatdoc! {
                 r#"
                 pub enum {signal_enum_name} {{
-                    {signal_members}
+                {signal_members_exprs}
                 }}"#,
-                signal_enum_name = signal_enum_name,
-                signal_members = signal_members.join("\n"),
             };
 
+            let pattern_match_stmts = indent_str(&pattern_matches.join("\n"), 8);
             let emit_impl = formatdoc! {
                 r#"
                 fn emit(&self, signal_name: {signal_enum_name}) {{
                     let manager = crate::ffi::bridging::get_signal_manager();
                     match signal_name {{
-                {pattern_matches}
+                {pattern_match_stmts}
                     }}
                 }}"#,
-                signal_enum_name = signal_enum_name,
-                pattern_matches = indent_str(&pattern_matches.join("\n"), 8),
             };
 
             methods.insert(0, emit_impl);
@@ -230,15 +227,14 @@ impl RsTemplate {
             None
         };
 
+        let method_defs = indent_str(&methods.join("\n"), 4);
         let spec_trait = formatdoc! {
             r#"
             pub trait {trait_name} {{
                 fn new(ctx: Context) -> Self;
                 fn id(&self) -> usize;
-            {methods}
-            }}"#,
-            trait_name = trait_name,
-            methods = indent_str(&methods.join("\n"), 4),
+            {method_defs}
+            }}"#
         };
 
         let content = [Some(spec_trait), signal_enum]
@@ -279,60 +275,25 @@ impl RsTemplate {
     /// }
     /// ```
     fn rs_impl(&self, schema: &Schema) -> Result<String, anyhow::Error> {
-        let mod_name = pascal_case(schema.module_name.as_str());
-        let trait_name = pascal_case(format!("{}Spec", schema.module_name).as_str());
-        let default_methods = vec![
-            formatdoc! {
-                r#"
-                fn new(ctx: Context) -> Self {{
-                    {mod_name} {{ ctx }}
-                }}"#,
-                mod_name = mod_name,
-            },
-            formatdoc! {
-                r#"
-                fn id(&self) -> usize {{
-                    self.ctx.id
-                }}"#,
-            },
-        ];
+        let struct_name = pascal_case(&schema.module_name);
+        let trait_name = pascal_case(&format!("{}Spec", schema.module_name));
         let methods = schema
             .methods
             .iter()
             .map(|spec| -> Result<String, anyhow::Error> {
                 let func_sig = spec.try_into_impl_sig()?;
-
-                // ```rust,ignore
-                // fn multiply(a: Number, b: Number) -> Number {
-                //     unimplemented!();
-                // }
-                // ```
                 let code = formatdoc! {
                   r#"
                   {func_sig} {{
                       unimplemented!();
                   }}"#,
-                  func_sig = func_sig,
                 };
 
                 Ok(code)
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        // ```rust,ignore
-        // use craby::{prelude::*, throw};
-        //
-        // use crate::ffi::bridging::*;
-        // use crate::generated::*;
-        //
-        // pub struct MyModule;
-        //
-        // impl MyModuleSpec for MyModule {
-        //     fn multiply(a: f64, b: f64) -> f64 {
-        //         unimplemented!();
-        //     }
-        // }
-        // ```
+        let method_impls = indent_str(&methods.join("\n\n"), 4);
         let content = formatdoc! {
             r#"
             use craby::{{prelude::*, throw}};
@@ -340,16 +301,14 @@ impl RsTemplate {
             use crate::ffi::bridging::*;
             use crate::generated::*;
 
-            pub struct {mod_name} {{
+            pub struct {struct_name} {{
                 ctx: Context,
             }}
 
-            impl {trait_name} for {mod_name} {{
-            {methods}
+            #[craby_module]
+            impl {trait_name} for {struct_name} {{
+            {method_impls}
             }}"#,
-            trait_name = trait_name,
-            mod_name= mod_name,
-            methods = indent_str(&[default_methods, methods].concat().join("\n\n"), 4),
         };
 
         Ok(content)
@@ -370,14 +329,14 @@ impl RsTemplate {
             .map(|impl_mod| format!("pub(crate) mod {};", impl_mod))
             .collect::<Vec<String>>();
 
+        let impl_mod_defs = impl_mods.join("\n");
         let content = formatdoc! {
             r#"
             #[rustfmt::skip]
             pub(crate) mod ffi;
             pub(crate) mod generated;
 
-            {impl_mods}"#,
-            impl_mods = impl_mods.join("\n"),
+            {impl_mod_defs}"#,
         };
 
         Ok(content)
@@ -415,9 +374,8 @@ impl RsTemplate {
 
         let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
         let rs_cxx_bridges = self.rs_cxx_bridges(&ctx.schemas)?;
-        let cxx_externs = self.rs_cxx_extern(&cxx_ns, &rs_cxx_bridges, has_signals);
         let cxx_impls = self.rs_cxx_impl(&rs_cxx_bridges);
-
+        let cxx_externs = self.rs_cxx_extern(&cxx_ns, &rs_cxx_bridges, has_signals);
         let impl_mods = impl_mods.join("\n");
         let cxx_impls = cxx_impls.join("\n\n");
         let content = formatdoc! {

@@ -61,13 +61,13 @@ impl CxxTemplate {
     ///        const facebook::jsi::Value args[], size_t count);
     /// ```
     fn cxx_method_def(&self, name: &str) -> String {
+        let method_name = camel_case(name);
         formatdoc! {
             r#"
             static facebook::jsi::Value
-            {name}(facebook::jsi::Runtime &rt,
+            {method_name}(facebook::jsi::Runtime &rt,
                 facebook::react::TurboModule &turboModule,
                 const facebook::jsi::Value args[], size_t count);"#,
-            name = camel_case(name),
         }
     }
 
@@ -316,24 +316,11 @@ impl CxxTemplate {
             (String::from("// No signals"), String::from("// No signals"))
         };
 
-        // ```cpp
-        // namespace mymodule {
-        //
-        // std::string CxxMyTestModule::dataPath = std::string();
-        //
-        // CxxMyTestModule::CxxMyTestModule(
-        //     std::shared_ptr<react::CallInvoker> jsInvoker)
-        //     : TurboModule(CxxMyTestModule::kModuleName, jsInvoker) {
-        //   callInvoker_ = std::move(jsInvoker);
-        //   module_ = std::shared_ptr(...);
-        //
-        //   // Method maps
-        // }
-        //
-        // /* Method implementations */
-        //
-        // } // namespace mymodule
-        // ```
+        let rs_module_name = pascal_case(&schema.module_name);
+        let register_stmts = indent_str(&register_stmt, 2);
+        let unregister_stmts = indent_str(&unregister_stmt, 2);
+        let method_mapping_stmts = indent_str(&method_maps.join("\n"), 2);
+        let method_impls = method_impls.join("\n\n");
         let cpp = formatdoc! {
             r#"
             std::string {cxx_mod}::dataPath = std::string();
@@ -341,16 +328,16 @@ impl CxxTemplate {
             {cxx_mod}::{cxx_mod}(
                 std::shared_ptr<react::CallInvoker> jsInvoker)
                 : TurboModule({cxx_mod}::kModuleName, jsInvoker) {{
-            {register_stmt}
+            {register_stmts}
               callInvoker_ = std::move(jsInvoker);
-              module_ = std::shared_ptr<{cxx_ns}::bridging::{module_name}>(
-                {cxx_ns}::bridging::create{module_name}(
+              module_ = std::shared_ptr<{cxx_ns}::bridging::{rs_module_name}>(
+                {cxx_ns}::bridging::create{rs_module_name}(
                   reinterpret_cast<uintptr_t>(this),
                   rust::Str(dataPath.data(), dataPath.size())).into_raw(),
-                []({cxx_ns}::bridging::{module_name} *ptr) {{ rust::Box<{cxx_ns}::bridging::{module_name}>::from_raw(ptr); }}
+                []({cxx_ns}::bridging::{rs_module_name} *ptr) {{ rust::Box<{cxx_ns}::bridging::{rs_module_name}>::from_raw(ptr); }}
               );
               threadPool_ = std::make_shared<{cxx_ns}::utils::ThreadPool>(10);
-            {method_maps}
+            {method_mapping_stmts}
             }}
 
             {cxx_mod}::~{cxx_mod}() {{
@@ -365,20 +352,16 @@ impl CxxTemplate {
               invalidated_.store(true);
               listenersMap_.clear();
             
-            {unregister_stmt}
+            {unregister_stmts}
 
               // Shutdown thread pool
               threadPool_->shutdown();
             }}
             
             {method_impls}"#,
-            module_name = pascal_case(&schema.module_name),
-            register_stmt = indent_str(&register_stmt, 2),
-            unregister_stmt = indent_str(&unregister_stmt, 2),
-            method_maps = indent_str(&method_maps.join("\n"), 2),
-            method_impls = method_impls.join("\n\n"),
         };
 
+        let method_defs = indent_str(&method_defs.join("\n\n"), 2);
         let hpp = formatdoc! {
             r#"
             class JSI_EXPORT {cxx_mod} : public facebook::react::TurboModule {{
@@ -394,7 +377,7 @@ impl CxxTemplate {
 
             protected:
               std::shared_ptr<facebook::react::CallInvoker> callInvoker_;
-              std::shared_ptr<{cxx_ns}::bridging::{module_name}> module_;
+              std::shared_ptr<{cxx_ns}::bridging::{rs_module_name}> module_;
               std::atomic<bool> invalidated_{{false}};
               std::atomic<size_t> nextListenerId_{{0}};
               std::mutex listenersMutex_;
@@ -405,29 +388,8 @@ impl CxxTemplate {
               std::shared_ptr<{cxx_ns}::utils::ThreadPool> threadPool_;
             }};"#,
             turbo_module_name = schema.module_name,
-            module_name = pascal_case(&schema.module_name),
-            method_defs = indent_str(&method_defs.join("\n\n"), 2),
         };
 
-        // ```cpp
-        // #include "my_module.hpp"
-        // #include "cxx.h"
-        // #include "bridging-generated.hpp"
-        // #include <thread>
-        // #include <react/bridging/Bridging.h>
-        //
-        // using namespace facebook;
-        //
-        // namespace craby {
-        // namespace myproject {
-        // namespace modules {
-        //
-        // // C++ Template
-        //
-        // } // namespace modules
-        // } // namespace myproject
-        // } // namespace craby
-        // ```
         let cpp_content = formatdoc! {
             r#"
             {include_stmt}
@@ -777,7 +739,6 @@ impl CxxTemplate {
             }} // namespace utils
             }} // namespace {flat_name}
             }} // namespace craby"#,
-            flat_name = flat_name,
         })
     }
 
@@ -892,7 +853,6 @@ impl CxxTemplate {
             }} // namespace signals
             }} // namespace {flat_name}
             }} // namespace craby"#,
-            flat_name = flat_name,
         })
     }
 }

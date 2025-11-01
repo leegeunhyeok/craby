@@ -142,26 +142,26 @@ impl TypeAnnotation {
                 TypeAnnotation::Number => "NullableNumber".to_string(),
                 TypeAnnotation::String => "NullableString".to_string(),
                 TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => {
-                    format!("Nullable{}", name)
+                    format!("Nullable{name}")
                 }
                 TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => {
-                    format!("Nullable{}", name)
+                    format!("Nullable{name}")
                 }
                 TypeAnnotation::Ref(RefTypeAnnotation { name, .. }) => {
-                    format!("Nullable{}", name)
+                    format!("Nullable{name}")
                 }
                 TypeAnnotation::Array(element_type) => match &**element_type {
                     TypeAnnotation::Boolean => "NullableBooleanArray".to_string(),
                     TypeAnnotation::Number => "NullableNumberArray".to_string(),
                     TypeAnnotation::String => "NullableStringArray".to_string(),
                     TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => {
-                        format!("Nullable{}Array", name)
+                        format!("Nullable{name}Array")
                     }
                     TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => {
-                        format!("Nullable{}Array", name)
+                        format!("Nullable{name}Array")
                     }
                     TypeAnnotation::Ref(RefTypeAnnotation { name, .. }) => {
-                        format!("Nullable{}Array", name)
+                        format!("Nullable{name}Array")
                     }
                     _ => {
                         return Err(anyhow::anyhow!(
@@ -243,7 +243,7 @@ impl TypeAnnotation {
             }
             TypeAnnotation::Nullable(type_annotation) => {
                 let type_annotation = type_annotation.as_rs_impl_type()?.into_code();
-                format!("Nullable<{}>", type_annotation)
+                format!("Nullable<{type_annotation}>")
             }
             TypeAnnotation::Ref(..) => unreachable!(),
         };
@@ -270,14 +270,14 @@ impl TypeAnnotation {
             TypeAnnotation::String => "String::default()".to_string(),
             TypeAnnotation::Array(..) => "Vec::default()".to_string(),
             TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => {
-                format!("{}::default()", name)
+                format!("{name}::default()")
             }
             TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => {
-                format!("{}::default()", name)
+                format!("{name}::default()")
             }
             TypeAnnotation::Nullable(..) => {
                 let nullable_type = self.as_rs_type()?.into_code();
-                format!("{}::default()", nullable_type)
+                format!("{nullable_type}::default()")
             }
             _ => {
                 return Err(anyhow::anyhow!(
@@ -316,10 +316,10 @@ impl Method {
         let ret_annotation = if return_type == "()" {
             String::new()
         } else {
-            format!(" -> {}", return_type)
+            format!(" -> {return_type}")
         };
 
-        Ok(format!("fn {}({}){}", fn_name, params_sig, ret_annotation))
+        Ok(format!("fn {fn_name}({params_sig}){ret_annotation}"))
     }
 }
 
@@ -389,6 +389,9 @@ impl Schema {
     /// }
     /// ```
     pub fn as_rs_cxx_bridge(&self) -> Result<RsCxxBridge, anyhow::Error> {
+        let module_name = pascal_case(&self.module_name);
+        let snake_module_name = snake_case(&self.module_name);
+
         let mut func_extern_sigs = Vec::with_capacity(self.methods.len() + 1);
         let mut func_impls = Vec::with_capacity(self.methods.len() + 1);
         let mut type_impls = vec![];
@@ -397,19 +400,15 @@ impl Schema {
         func_extern_sigs.push(formatdoc! {
             r#"
             #[cxx_name = "create{module_name}"]
-            fn create_{snake_cake}(id: usize, data_path: &str) -> Box<{module_name}>;"#,
-            module_name = pascal_case(&self.module_name),
-            snake_cake = snake_case(&self.module_name),
+            fn create_{snake_module_name}(id: usize, data_path: &str) -> Box<{module_name}>;"#,
         });
 
         func_impls.push(formatdoc! {
             r#"
-            fn create_{snake_cake}(id: usize, data_path: &str) -> Box<{module_name}> {{
+            fn create_{snake_module_name}(id: usize, data_path: &str) -> Box<{module_name}> {{
                 let ctx = Context::new(id, data_path);
                 Box::new({module_name}::new(ctx))
             }}"#,
-            module_name = pascal_case(&self.module_name),
-            snake_cake = snake_case(&self.module_name),
         });
 
         // Collect extern function signatures and implementations
@@ -439,12 +438,12 @@ impl Schema {
             let ret_type = method_spec.ret_type.as_rs_type()?.into_code();
             let ret_type = match method_spec.ret_type {
                 TypeAnnotation::Promise(_) => ret_type,
-                _ => format!("Result<{}, anyhow::Error>", ret_type),
+                _ => format!("Result<{ret_type}, anyhow::Error>"),
             };
             let ret_extern_type = method_spec.ret_type.as_rs_bridge_type()?.into_code();
             let ret_extern_type = match method_spec.ret_type {
                 TypeAnnotation::Promise(_) => ret_extern_type,
-                _ => format!("Result<{}>", ret_extern_type),
+                _ => format!("Result<{ret_extern_type}>"),
             };
 
             let params_sig = method_spec
@@ -456,8 +455,7 @@ impl Schema {
                     params.insert(
                         0,
                         format!(
-                            "{}: &mut {}",
-                            RESERVED_ARG_NAME_MODULE,
+                            "{RESERVED_ARG_NAME_MODULE}: &mut {}",
                             pascal_case(&self.module_name)
                         ),
                     );
@@ -472,23 +470,21 @@ impl Schema {
                 .map(|param| {
                     let name = snake_case(&param.name);
                     if let TypeAnnotation::Nullable(..) = &param.type_annotation {
-                        format!("{}.into()", name)
+                        format!("{name}.into()")
                     } else {
                         name
                     }
                 })
                 .collect::<Vec<_>>();
-            let prefixed_fn_name = format!("{}_{}", mod_name, fn_name);
-            let ret_extern_annotation = format!(" -> {}", ret_extern_type);
-            let ret_annotation = format!(" -> {}", ret_type);
+
+            let cxx_extern_fn_name = camel_case(&method_spec.name);
+            let prefixed_fn_name = format!("{mod_name}_{fn_name}");
+            let ret_extern_annotation = format!(" -> {ret_extern_type}");
+            let ret_annotation = format!(" -> {ret_type}");
             let extern_func = formatdoc! {
                 r#"
                 #[cxx_name = "{cxx_extern_fn_name}"]
-                fn {prefixed_fn_name}({params_sig}){ret};"#,
-                cxx_extern_fn_name = camel_case(&method_spec.name),
-                prefixed_fn_name = prefixed_fn_name,
-                params_sig = params_sig,
-                ret = ret_extern_annotation,
+                fn {prefixed_fn_name}({params_sig}){ret_extern_annotation};"#,
             };
 
             let ret = if let TypeAnnotation::Nullable(..) = &method_spec.ret_type {
@@ -497,38 +493,27 @@ impl Schema {
                 "ret"
             };
 
+            let fn_args = fn_args.join(", ");
             let impl_func = match method_spec.ret_type {
                 TypeAnnotation::Promise(_) => formatdoc! {
                     r#"
-                    fn {prefixed_fn_name}({params_sig}){ret_type} {{
+                    fn {prefixed_fn_name}({params_sig}){ret_annotation} {{
                         craby::catch_panic!({{
                             let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }}).and_then(|r| r)
                     }}"#,
-                    params_sig = params_sig,
                     it = RESERVED_ARG_NAME_MODULE,
-                    ret_type = ret_annotation,
-                    ret = ret,
-                    prefixed_fn_name = prefixed_fn_name,
-                    fn_name = fn_name.to_string(),
-                    fn_args = fn_args.join(", "),
                 },
                 _ => formatdoc! {
                     r#"
-                    fn {prefixed_fn_name}({params_sig}){ret_type} {{
+                    fn {prefixed_fn_name}({params_sig}){ret_annotation} {{
                         craby::catch_panic!({{
                             let ret = {it}.{fn_name}({fn_args});
                             {ret}
                         }})
                     }}"#,
-                    params_sig = params_sig,
                     it = RESERVED_ARG_NAME_MODULE,
-                    ret_type = ret_annotation,
-                    ret = ret,
-                    prefixed_fn_name = prefixed_fn_name,
-                    fn_name = fn_name.to_string(),
-                    fn_args = fn_args.join(", "),
                 },
             };
 
@@ -578,19 +563,19 @@ impl Schema {
                     .map(|m| format!("{},", m.name))
                     .collect::<Vec<_>>();
 
+                let members = indent_str(&members.join("\n"), 4);
                 formatdoc! {
                     r#"
                     enum {name} {{
                     {members}
                     }}"#,
                     name = enum_schema.name,
-                    members = indent_str(&members.join("\n"), 4),
                 }
             })
             .collect();
 
         Ok(RsCxxBridge {
-            impl_type: format!("type {};", pascal_case(&self.module_name)),
+            impl_type: format!("type {module_name};"),
             struct_defs: struct_defs.into_values().collect(),
             enum_defs,
             func_extern_sigs,
@@ -717,13 +702,13 @@ pub mod template {
                 ));
             }
 
+            let props = indent_str(&props.join("\n"), 4);
             let struct_def = formatdoc! {
                 r#"
                 struct {name} {{
                 {props}
                 }}"#,
                 name = obj.name,
-                props = indent_str(&props.join("\n"), 4),
             };
 
             Ok(RsStruct(struct_def))
@@ -752,8 +737,6 @@ pub mod template {
                         null: bool,
                         val: {base_type},
                     }}"#,
-                    struct_type = struct_type,
-                    base_type = base_type,
                 };
 
                 let struct_impl = formatdoc! {
@@ -783,9 +766,6 @@ pub mod template {
                             }}
                         }}
                     }}"#,
-                    struct_type = struct_type,
-                    rs_impl_type = rs_impl_type,
-                    default_val = default_val,
                 };
 
                 return Ok(RsNullableStruct {
@@ -843,6 +823,7 @@ pub mod template {
                 ));
             }
 
+            let props = indent_str(&props_with_default_val.join(",\n"), 12);
             let default_impl = formatdoc! {
                 r#"
                 impl Default for {name} {{
@@ -853,7 +834,6 @@ pub mod template {
                     }}
                 }}"#,
                 name = obj.name,
-                props = indent_str(&props_with_default_val.join(",\n"), 12),
             };
 
             Ok(RsDefaultImpl(default_impl))

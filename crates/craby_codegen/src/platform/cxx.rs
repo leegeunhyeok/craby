@@ -151,16 +151,15 @@ impl TypeAnnotation {
                     .first()
                     .ok_or(anyhow::anyhow!("Enum should have at least one member"))?;
 
-                format!("{}::{}", enum_type, first_member.name)
+                format!("{enum_type}::{}", first_member.name)
             }
             TypeAnnotation::Object(..) => {
                 let cxx_type = self.as_cxx_type(cxx_ns)?;
-                format!("{}{{}}", cxx_type)
+                format!("{cxx_type}{{}}")
             }
             TypeAnnotation::Nullable(..) => {
                 let cxx_type = self.as_cxx_type(cxx_ns)?;
                 let default_val = self.as_cxx_default_val(cxx_ns)?;
-
                 formatdoc! {
                     r#"
                     {cxx_type} {{
@@ -168,8 +167,6 @@ impl TypeAnnotation {
                         null: true,
                     }}
                     "#,
-                    cxx_type = cxx_type,
-                    default_val = default_val,
                 }
             }
             _ => {
@@ -281,6 +278,7 @@ impl Method {
         cxx_ns: &CxxNamespace,
         cxx_mod: &CxxModuleName,
     ) -> Result<CxxMethod, anyhow::Error> {
+        let fn_name = camel_case(&self.name);
         // ["arg0", "arg1", "arg2"]
         let mut args = Vec::with_capacity(self.params.len() + 1);
         // ["auto arg0 = facebook::react::bridging::fromJs<T>(rt, value, callInvoker)", "..."]
@@ -294,19 +292,16 @@ impl Method {
             // To avoid dangling pointers, the converted `std::string` is retained within the scope for the lifetime of the reference.
             let from_js = if let TypeAnnotation::String = &param.type_annotation {
                 // Capture the converted `std::string` within the scope of the reference
-                let str_var = format!("{}$raw", arg_var);
-                args_decls.push(format!(
-                    "auto {} = {}.asString(rt).utf8(rt);",
-                    str_var, arg_ref
-                ));
+                let str_var = format!("{arg_var}$raw");
+                args_decls.push(format!("auto {str_var} = {arg_ref}.asString(rt).utf8(rt);",));
 
                 // Convert the `std::string` to `rust::Str`
-                format!("rust::Str({}.data(), {}.size())", str_var, str_var)
+                format!("rust::Str({str_var}.data(), {str_var}.size())")
             } else {
                 param.type_annotation.as_cxx_from_js(cxx_ns, &arg_ref)?.expr
             };
             args.push(arg_var.clone());
-            args_decls.push(format!("auto {} = {};", arg_var, from_js));
+            args_decls.push(format!("auto {arg_var} = {from_js};"));
         }
 
         let invoke_stmts = match &self.ret_type {
@@ -325,7 +320,6 @@ impl Method {
                         {cxx_ns}::bridging::{fn_name}({fn_args});
                         promise.resolve();
                         "#,
-                        fn_name = camel_case(&self.name),
                     }
                 } else {
                     formatdoc! {
@@ -333,28 +327,15 @@ impl Method {
                         auto ret = {cxx_ns}::bridging::{fn_name}({fn_args});
                         promise.resolve(ret);
                         "#,
-                        fn_name = camel_case(&self.name),
                     }
                 };
 
+                let bind_args = bind_args.join(", ");
+                let ret_stmts = indent_str(&ret_stmts, 4);
+                let ret_type = resolve_type.as_cxx_type(cxx_ns)?;
+                let ret = self.ret_type.as_cxx_to_js("promise")?.expr;
+
                 // Create a promise object and invoke the FFI function in a separate thread
-                //
-                // ```cpp
-                // react::AsyncPromise<T> promise(rt, callInvoker);
-                //
-                // thisModule.threadPool_->enqueue([promise, arg0, arg1, arg2]() mutable {
-                //   try {
-                //     auto ret = craby::mymodule::myFunc(*it_, arg0, arg1, arg2);
-                //     promise.resolve(ret);
-                //   } catch (const jsi::JSError &err) {
-                //     promise.reject(err.getMessage());
-                //   } catch (const std::exception &err) {
-                //     promise.reject(craby::calculator::utils::errorMessage(err));
-                //   }
-                // });
-                //
-                // return promise;
-                // ```
                 formatdoc! {
                     r#"
                     react::AsyncPromise<{ret_type}> promise(rt, callInvoker);
@@ -370,10 +351,6 @@ impl Method {
                     }});
 
                     return {ret};"#,
-                    bind_args = bind_args.join(", "),
-                    ret_stmts = indent_str(&ret_stmts, 4),
-                    ret_type = resolve_type.as_cxx_type(cxx_ns)?,
-                    ret = self.ret_type.as_cxx_to_js("promise")?.expr,
                 }
             }
             _ => {
@@ -383,19 +360,12 @@ impl Method {
                 // auto ret = craby::mymodule::bridging::myFunc(arg0, arg1, arg2);
                 // return ret;
                 // ```
-                args.insert(0, format!("*{}", RESERVED_ARG_NAME_MODULE));
+                args.insert(0, format!("*{RESERVED_ARG_NAME_MODULE}"));
+                let fn_args = args.join(", ");
                 let ret_stmts = if let TypeAnnotation::Void = &self.ret_type {
-                    formatdoc! {
-                        r#"{cxx_ns}::bridging::{fn_name}({fn_args});"#,
-                        fn_name = camel_case(&self.name),
-                        fn_args = args.join(", "),
-                    }
+                    format!("{cxx_ns}::bridging::{fn_name}({fn_args});")
                 } else {
-                    formatdoc! {
-                        r#"auto ret = {cxx_ns}::bridging::{fn_name}({fn_args});"#,
-                        fn_name = camel_case(&self.name),
-                        fn_args = args.join(", "),
-                    }
+                    format!("auto ret = {cxx_ns}::bridging::{fn_name}({fn_args});")
                 };
 
                 formatdoc! {
@@ -403,7 +373,6 @@ impl Method {
                     {ret_stmts}
 
                     return {to_js};"#,
-                    ret_stmts = ret_stmts,
                     to_js = self.ret_type.as_cxx_to_js("ret")?.expr,
                 }
             }
@@ -418,11 +387,9 @@ impl Method {
         let metadata = formatdoc! {
             r#"
             MethodMetadata{{{args_count}, &{cxx_mod}::{fn_name}}}"#,
-            fn_name = camel_case(&self.name),
         };
 
-        let invoke_stmts = [args_decls, invoke_stmts].join("\n").trim().to_string();
-
+        let invoke_stmts = indent_str([args_decls, invoke_stmts].join("\n").trim(), 4);
         let impl_func = formatdoc! {
             r#"
             jsi::Value {cxx_mod}::{fn_name}(jsi::Runtime &rt,
@@ -445,8 +412,6 @@ impl Method {
                 throw jsi::JSError(rt, {cxx_ns}::utils::errorMessage(err));
               }}
             }}"#,
-            fn_name = camel_case(&self.name),
-            invoke_stmts = indent_str(&invoke_stmts, 4),
             plural = if args_count > 1 { "s" } else { "" },
         };
 
@@ -564,7 +529,10 @@ impl Schema {
     ///   }
     /// };
     /// ```
-    pub fn collect_nullable_types(&self, project_name: &str) -> Result<BTreeMap<String, String>, anyhow::Error> {
+    pub fn collect_nullable_types(
+        &self,
+        project_name: &str,
+    ) -> Result<BTreeMap<String, String>, anyhow::Error> {
         let cxx_ns = CxxNamespace::from(project_name);
         let mut templates = BTreeMap::new();
 
@@ -669,6 +637,8 @@ pub mod template {
         /// };
         /// ```
         fn cxx_bridging_template(&self) -> String {
+            let from_js_impl = indent_str(&self.from_js, 4);
+            let to_js_impl = indent_str(&self.to_js, 4);
             formatdoc! {
                 r#"
                 template <>
@@ -682,8 +652,6 @@ pub mod template {
                   }}
                 }};"#,
                 namespace = self.namespace,
-                from_js_impl = indent_str(&self.from_js, 4),
-                to_js_impl = indent_str(&self.to_js, 4),
             }
         }
 
@@ -766,6 +734,9 @@ pub mod template {
                 to_js_stmts.push(to_js_stmt);
             }
 
+            let get_props = get_props.join("\n");
+            let from_js_stmts = from_js_stmts.join("\n");
+            let from_js_ident = indent_str(&from_js_ident.join(",\n"), 2);
             let from_js_impl = formatdoc! {
                 r#"
                 auto obj = value.asObject(rt);
@@ -778,12 +749,10 @@ pub mod template {
                 }};
     
                 return ret;"#,
-                struct_namespace = struct_namespace,
-                get_props = get_props.join("\n"),
-                from_js_stmts = from_js_stmts.join("\n"),
-                from_js_ident = indent_str(&from_js_ident.join(",\n"), 2),
             };
 
+            let to_js_stmts = to_js_stmts.join("\n");
+            let set_props = set_props.join("\n");
             let to_js_impl = formatdoc! {
                 r#"
                 jsi::Object obj = jsi::Object(rt);
@@ -792,8 +761,6 @@ pub mod template {
                 {set_props}
     
                 return jsi::Value(rt, obj);"#,
-                to_js_stmts = to_js_stmts.join("\n"),
-                set_props = set_props.join("\n"),
             };
 
             Ok(CxxBridgingTemplate {
@@ -852,7 +819,7 @@ pub mod template {
             let to_raw_member = |value: &String| -> String {
                 if is_str {
                     // "value"
-                    format!("\"{}\"", value)
+                    format!("\"{value}\"")
                 } else {
                     // 123
                     value.clone()
@@ -881,8 +848,6 @@ pub mod template {
                             if (raw == {raw_member}) {{
                               return {enum_namespace};
                             }}"#,
-                            raw_member = raw_member,
-                            enum_namespace = enum_namespace,
                         }
                     } else {
                         // ```cpp
@@ -895,8 +860,6 @@ pub mod template {
                             else if (raw == {raw_member}) {{
                               return {enum_namespace};
                             }}"#,
-                            raw_member = raw_member,
-                            enum_namespace = enum_namespace,
                         }
                     };
 
@@ -908,8 +871,6 @@ pub mod template {
                         r#"
                         case {enum_namespace}:
                           return react::bridging::toJs(rt, {raw_member});"#,
-                        enum_namespace = enum_namespace,
-                        raw_member = raw_member,
                     };
 
                     from_js_conds.push(from_js_cond);
@@ -927,9 +888,9 @@ pub mod template {
             from_js_conds.push(formatdoc! {
                 r#"
                 else {{
-                  throw jsi::JSError(rt, "Invalid enum value ({name})");
+                  throw jsi::JSError(rt, "Invalid enum value ({enum_name})");
                 }}"#,
-                name = enum_spec.name,
+                enum_name = enum_spec.name,
             });
 
             // ```cpp
@@ -939,9 +900,12 @@ pub mod template {
             to_js_conds.push(formatdoc! {
                 r#"
                 default:
-                  throw jsi::JSError(rt, "Invalid enum value ({name})");"#,
-                name = enum_spec.name,
+                  throw jsi::JSError(rt, "Invalid enum value ({enum_name})");"#,
+                enum_name = enum_spec.name,
             });
+
+            let from_js_conds = from_js_conds.join(" ");
+            let to_js_conds = indent_str(&to_js_conds.join("\n"), 2);
 
             // ```cpp
             // auto raw = value.asString(rt).utf8(rt);
@@ -957,8 +921,6 @@ pub mod template {
                 r#"
                 auto raw = {as_raw};
                 {from_js_conds}"#,
-                as_raw = as_raw,
-                from_js_conds = from_js_conds.join(" "),
             };
 
             // ```cpp
@@ -976,7 +938,6 @@ pub mod template {
                 switch (value) {{
                 {to_js_conds}
                 }}"#,
-                to_js_conds = indent_str(&to_js_conds.join("\n"), 2),
             };
 
             Ok(CxxBridgingTemplate {
@@ -1060,7 +1021,7 @@ pub mod template {
     /// args[1]  // idx = 1
     /// ```
     pub fn cxx_arg_ref(idx: usize) -> String {
-        format!("args[{}]", idx)
+        format!("args[{idx}]")
     }
 
     /// Generates C++ argument variable name.
@@ -1072,6 +1033,6 @@ pub mod template {
     /// arg1  // idx = 1
     /// ```
     pub fn cxx_arg_var(idx: usize) -> String {
-        format!("arg{}", idx)
+        format!("arg{idx}")
     }
 }

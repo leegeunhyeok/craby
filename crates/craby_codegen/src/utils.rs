@@ -13,7 +13,7 @@ pub fn indent_str(str: &str, indent_size: usize) -> String {
             if line.trim().is_empty() {
                 line.to_string()
             } else {
-                format!("{}{}", indent_str, line)
+                format!("{indent_str}{line}")
             }
         })
         .collect::<Vec<_>>()
