@@ -13,11 +13,13 @@ Pod::Spec.new do |s|
   s.platforms    = { :ios => min_ios_version_supported }
   s.source       = { :git => "{{ repository_url }}.git", :tag => "#{s.version}" }
 
-  s.source_files = ["ios/**/*.{{{{raw}}}}{h,m,mm,cc,cpp}{{{{/raw}}}}", "cpp/**/*.{{{{raw}}}}{hpp,cpp}{{{{/raw}}}}"]
-  s.private_header_files = "ios/include/*.h"
+  s.source_files = ["ios/**/*.{{{{raw}}}}{m,mm,cc,cpp}{{{{/raw}}}}", "cpp/**/*.cpp"]
   s.vendored_frameworks = "ios/framework/lib{{ flat_name }}.xcframework"
-
   s.pod_target_xcconfig = {
+    "HEADER_SEARCH_PATHS" => [
+      '"${PODS_TARGET_SRCROOT}/cpp"',
+      '"${PODS_TARGET_SRCROOT}/ios/include"',
+    ].join(' '),
     "CLANG_CXX_LANGUAGE_STANDARD" => "c++20",
   }
 
