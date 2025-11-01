@@ -7,6 +7,6 @@
 namespace facebook::react {
 
 JSI_EXPORT
-std::shared_ptr<TurboModule> {{ pascal_case }}_stub_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params);
+std::shared_ptr<TurboModule> {{ pascal_name }}_stub_ModuleProvider(const std::string &moduleName, const JavaTurboModule::InitParams &params);
 
 } // namespace facebook::react
