@@ -310,7 +310,7 @@ impl AndroidTemplate {
     /// )
     ///
     /// # From ReactAndroid/cmake-utils/folly-flags.cmake
-    /// target_compile_definitions(cxx-craby-test PRIVATE
+    /// target_compile_definitions(cxx-my-app PRIVATE
     ///   -DFOLLY_NO_CONFIG=1
     ///   -DFOLLY_HAVE_CLOCK_GETTIME=1
     ///   -DFOLLY_USE_LIBCPP=1
@@ -371,7 +371,7 @@ impl AndroidTemplate {
             )
 
             # From ReactAndroid/cmake-utils/folly-flags.cmake
-            target_compile_definitions(cxx-craby-test PRIVATE
+            target_compile_definitions(cxx-{kebab_name} PRIVATE
               -DFOLLY_NO_CONFIG=1
               -DFOLLY_HAVE_CLOCK_GETTIME=1
               -DFOLLY_USE_LIBCPP=1
