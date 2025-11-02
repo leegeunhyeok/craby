@@ -79,24 +79,6 @@ impl CodeHighlighter {
         }
     }
 
-    pub fn highlight_code_with_box(&self, code: &str, ext: &str) {
-        let lines = code.split("\n").collect::<Vec<&str>>();
-        let mut max_len = lines.iter().map(|line| line.len()).max().unwrap_or(0);
-
-        max_len += 2; // For the extra padding (left, right)
-
-        println!("╭{}╮", "─".repeat(max_len));
-        for line in lines {
-            // Add padding in `print!` macro, so we need to subtract 2
-            let pad = max_len - line.len() - 2;
-            print!("│ ");
-            self.highlight_line(line, ext);
-            print!("{} │", " ".repeat(pad));
-            println!();
-        }
-        println!("╰{}╯", "─".repeat(max_len));
-    }
-
     fn reset_color(&self) {
         print!("\x1b[0m");
     }

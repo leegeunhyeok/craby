@@ -9,10 +9,7 @@ use craby_common::{config::load_config, env::is_initialized};
 use log::{debug, info};
 use owo_colors::OwoColorize;
 
-use crate::{
-    commands::build::{guide, validate_schema},
-    utils::terminal::with_spinner,
-};
+use crate::{commands::build::validate_schema, utils::terminal::with_spinner};
 
 pub struct BuildOptions {
     pub project_root: PathBuf,
@@ -60,7 +57,6 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     ios_build::crate_libs(&config)?;
 
     info!("Build completed successfully 🎉");
-    guide::print_guide(&config.project.name);
 
     Ok(())
 }
