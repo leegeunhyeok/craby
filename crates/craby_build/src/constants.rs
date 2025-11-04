@@ -53,7 +53,7 @@ pub mod android {
 
     use log::debug;
 
-    use crate::platform::android::{get_ndk_clang_path, get_ndk_llvm_ar_path};
+    use crate::platform::android::path::{ndk_clang_path, ndk_llvm_ar_path};
 
     /// See https://github.com/facebook/react-native/blob/v0.76.0/packages/react-native/gradle/libs.versions.toml
     pub const MIN_SDK_VERSION: u8 = 23;
@@ -98,9 +98,9 @@ pub mod android {
                 Abi::X86 => "i686_linux_android",
             };
 
-            let cxxlang_path = get_ndk_clang_path(self, true)?;
-            let clang_path = get_ndk_clang_path(self, false)?;
-            let llvm_ar_path = get_ndk_llvm_ar_path()?;
+            let cxxlang_path = ndk_clang_path(self, true)?;
+            let clang_path = ndk_clang_path(self, false)?;
+            let llvm_ar_path = ndk_llvm_ar_path()?;
 
             let envs = HashMap::from([
                 (format!("CXX_{}", suffix), cxxlang_path),

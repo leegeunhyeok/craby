@@ -68,6 +68,14 @@ impl Artifacts {
         })
     }
 
+    pub fn path_of(&self, artifact_type: ArtifactType) -> &[PathBuf] {
+        match artifact_type {
+            ArtifactType::Src => &self.srcs,
+            ArtifactType::Header => &self.headers,
+            ArtifactType::Lib => &self.libs,
+        }
+    }
+
     pub fn copy_to(
         &self,
         artifact_type: ArtifactType,

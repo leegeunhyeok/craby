@@ -16,7 +16,8 @@ use craby_common::{
     utils::string::SanitizedString,
 };
 use indoc::formatdoc;
-use log::debug;
+use log::{debug, info};
+use owo_colors::OwoColorize;
 
 const IOS_TARGETS: [Target; 3] = [
     Target::Ios(Identifier::Arm64),
@@ -48,6 +49,17 @@ pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
     let xcframework_path = create_xcframework(config)?;
 
     for artifacts in [devices, vec![sims]].concat() {
+        artifacts.path_of(ArtifactType::Lib).iter().try_for_each(
+            |lib| -> Result<(), anyhow::Error> {
+                info!(
+                    "Optimizing library... {}",
+                    format!("({})", artifacts.identifier).dimmed()
+                );
+                strip_lib(lib)?;
+                Ok(())
+            },
+        )?;
+
         // ios/src
         artifacts.copy_to(ArtifactType::Src, &ios_base_path.join("src"))?;
 
@@ -132,6 +144,23 @@ fn create_sim_lib(project_root: &Path, sims: Vec<Artifacts>) -> Result<Artifacts
         srcs: orig.srcs,
         libs: vec![dest_path],
     })
+}
+
+fn strip_lib(lib: &PathBuf) -> Result<(), anyhow::Error> {
+    let res = Command::new("strip")
+        .arg("-x")
+        .arg("-S")
+        .arg(lib)
+        .output()?;
+
+    if !res.status.success() {
+        anyhow::bail!(
+            "Failed to strip library: {}",
+            String::from_utf8_lossy(&res.stderr)
+        );
+    }
+
+    Ok(())
 }
 
 fn create_xcframework(config: &CompleteConfig) -> Result<PathBuf, anyhow::Error> {

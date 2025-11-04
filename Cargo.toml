@@ -25,4 +25,4 @@ allow_branch = "release/*"
 
 [profile.release]
 lto = true
-strip = "symbols"
+strip = true

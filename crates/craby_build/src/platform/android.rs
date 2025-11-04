@@ -1,12 +1,16 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 use craby_common::{config::CompleteConfig, constants::jni_base_path};
-use log::debug;
+use log::{debug, info};
+use owo_colors::OwoColorize;
 
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
     constants::{android::Abi, toolchain::Target},
-    platform::common::{replace_cxx_header, replace_cxx_iter_template},
+    platform::{
+        android::path::ndk_llvm_strip_path,
+        common::{replace_cxx_header, replace_cxx_iter_template},
+    },
 };
 
 pub const ANDROID_TARGETS: [Target; 4] = [
@@ -25,6 +29,17 @@ pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
         if let Target::Android(abi) = &target {
             let artifacts = Artifacts::get_artifacts(config, &target)?;
             let abi = abi.to_str();
+
+            artifacts.path_of(ArtifactType::Lib).iter().try_for_each(
+                |lib| -> Result<(), anyhow::Error> {
+                    info!(
+                        "Optimizing library... {}",
+                        format!("({})", artifacts.identifier).dimmed()
+                    );
+                    strip_lib(lib)?;
+                    Ok(())
+                },
+            )?;
 
             // android/src/main/jni/src
             artifacts.copy_to(ArtifactType::Src, &jni_base_path.join("src"))?;
@@ -54,34 +69,61 @@ pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-pub fn get_ndk_bin_path() -> Result<PathBuf, anyhow::Error> {
-    let os_path = match std::env::consts::OS {
-        "macos" => Ok("darwin-x86_64"),
-        "linux" => Ok("linux-x86_64"),
-        "windows" => Ok("windows-x86_64"),
-        _ => Err(anyhow::anyhow!("Unsupported OS: {}", std::env::consts::OS)),
-    }?;
+fn strip_lib(lib: &PathBuf) -> Result<(), anyhow::Error> {
+    let bin = ndk_llvm_strip_path()?;
+    let res = Command::new(bin)
+        .arg("--strip-unneeded")
+        .arg(lib)
+        .output()?;
 
-    let path = PathBuf::from(
-        std::env::var("ANDROID_NDK_HOME")
-            .expect("`ANDROID_NDK_HOME` environment variable is not set"),
-    )
-    .join("toolchains")
-    .join("llvm")
-    .join("prebuilt")
-    .join(os_path)
-    .join("bin");
+    if !res.status.success() {
+        anyhow::bail!(
+            "Failed to strip library: {}",
+            String::from_utf8_lossy(&res.stderr)
+        );
+    }
 
-    Ok(path)
+    Ok(())
 }
 
-pub fn get_ndk_clang_path(abi: &Abi, cxx: bool) -> Result<PathBuf, anyhow::Error> {
-    let ndk_bin_path: PathBuf = get_ndk_bin_path()?;
-    let clang_name = abi.to_clang_name(cxx);
+pub mod path {
+    use std::path::PathBuf;
 
-    Ok(ndk_bin_path.join(clang_name))
-}
+    use crate::constants::android::Abi;
 
-pub fn get_ndk_llvm_ar_path() -> Result<PathBuf, anyhow::Error> {
-    Ok(get_ndk_bin_path()?.join("llvm-ar"))
+    pub fn ndk_bin_path() -> Result<PathBuf, anyhow::Error> {
+        let os_path = match std::env::consts::OS {
+            "macos" => Ok("darwin-x86_64"),
+            "linux" => Ok("linux-x86_64"),
+            "windows" => Ok("windows-x86_64"),
+            _ => Err(anyhow::anyhow!("Unsupported OS: {}", std::env::consts::OS)),
+        }?;
+
+        let path = PathBuf::from(
+            std::env::var("ANDROID_NDK_HOME")
+                .expect("`ANDROID_NDK_HOME` environment variable is not set"),
+        )
+        .join("toolchains")
+        .join("llvm")
+        .join("prebuilt")
+        .join(os_path)
+        .join("bin");
+
+        Ok(path)
+    }
+
+    pub fn ndk_clang_path(abi: &Abi, cxx: bool) -> Result<PathBuf, anyhow::Error> {
+        let ndk_bin_path = ndk_bin_path()?;
+        let clang_name = abi.to_clang_name(cxx);
+
+        Ok(ndk_bin_path.join(clang_name))
+    }
+
+    pub fn ndk_llvm_ar_path() -> Result<PathBuf, anyhow::Error> {
+        Ok(ndk_bin_path()?.join("llvm-ar"))
+    }
+
+    pub fn ndk_llvm_strip_path() -> Result<PathBuf, anyhow::Error> {
+        Ok(ndk_bin_path()?.join("llvm-strip"))
+    }
 }
