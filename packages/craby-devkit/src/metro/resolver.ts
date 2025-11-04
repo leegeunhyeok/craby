@@ -55,8 +55,6 @@ export function createResolver(options: CreateResolverOptions): CustomResolver {
       extensions: finalExtensions,
       conditionNames: ['react-native', 'require', 'node', 'default'],
       mainFields: ['react-native', 'browser', 'main'],
-      mainFiles: ['index'],
-      modules: ['node_modules', path.join(rootPath, 'src')],
     });
 
     function resolveSync(resolveDir: string, request: string) {

@@ -10,6 +10,7 @@ export function getMetroConfig(rootDir: string, options: GetMetroConfigOptions) 
     projectRoot: rootDir,
     watchFolders: [getWorkspaceRoot(rootDir)],
     resolver: {
+      sourceExts: ['ts', 'tsx', 'js', 'jsx', 'json'],
       resolveRequest: createResolver({ rootPath: rootDir, ...options?.resolverOptions }),
     },
   };
