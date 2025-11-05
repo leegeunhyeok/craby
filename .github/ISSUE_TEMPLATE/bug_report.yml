@@ -25,7 +25,7 @@ body:
     attributes:
       label: Steps to reproduce
       description: Please provide any reproduction steps that may need to be described.
-      placeholder: Run `npx craby build` and see the error message.
+      placeholder: Run `npx crabygen` then `npx crabygen build` and see the error message.
   - type: textarea
     id: rust-version
     attributes:
@@ -45,7 +45,7 @@ body:
     id: craby-doctor
     attributes:
       label: Doctor Output
-      description: Please provide the output of the `craby doctor` command
+      description: Please provide the output of the `npx crabygen doctor` command
       placeholder: |
         Doctor Output:
   - type: input
