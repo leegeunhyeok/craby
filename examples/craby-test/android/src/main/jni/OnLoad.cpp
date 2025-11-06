@@ -21,7 +21,9 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_rs_craby_crabytest_CrabyTestPackage_nativeSetDataPath(JNIEnv *env, jclass clazz, jstring jDataPath) {
-  auto dataPath = std::string(env->GetStringUTFChars(jDataPath, nullptr));
+  const char* cDataPath = env->GetStringUTFChars(jDataPath, nullptr);
+  auto dataPath = std::string(cDataPath);
+  env->ReleaseStringUTFChars(jDataPath, cDataPath);
   craby::crabytest::modules::CxxCalculatorModule::dataPath = dataPath;
   craby::crabytest::modules::CxxCrabyTestModule::dataPath = dataPath;
 }
