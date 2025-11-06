@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsdown",
     "prepack": "yarn build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "execute": "node bin.js"
   },
   "files": [
     "dist",

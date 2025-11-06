@@ -57,6 +57,7 @@ export default withMermaid(
             { text: 'Module Definition', link: '/guide/module-definition' },
             { text: 'How to Build', link: '/guide/build' },
             { text: 'CLI Commands', link: '/guide/cli-commands' },
+            { text: 'Contributing', link: '/guide/contributing' },
           ],
         },
         {
