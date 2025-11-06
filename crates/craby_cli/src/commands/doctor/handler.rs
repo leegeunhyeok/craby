@@ -9,9 +9,13 @@ use craby_common::{
         ios::{is_podspec_configured, is_xcode_cli_tools_installed},
     },
 };
+use indoc::formatdoc;
 use owo_colors::OwoColorize;
 
-use crate::commands::doctor::assert::{assert_with_status, Status};
+use crate::commands::doctor::{
+    assert::{assert_with_status, Status},
+    suggestion::{print_suggestions, Suggestion},
+};
 
 pub struct DoctorOptions {
     pub project_root: PathBuf,
@@ -20,6 +24,7 @@ pub struct DoctorOptions {
 pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
     println!("\n{}", "Platform".bold().dimmed());
     let mut passed = true;
+    let mut suggestions = Vec::new();
 
     assert_with_status("macOS", || {
         if std::env::consts::OS == "macos" {
@@ -41,6 +46,10 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
                     Ok(Status::Ok)
                 } else {
                     passed &= false;
+                    suggestions.push(Suggestion::command(
+                        &format!("Install '{}' target with rustup", target),
+                        &format!("rustup target install {target}"),
+                    ));
                     anyhow::bail!("Not installed");
                 }
             },
@@ -54,6 +63,15 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             Ok(_) => Ok(Status::Ok),
             Err(e) => {
                 passed &= false;
+                suggestions.push(Suggestion::plain_text(
+                    &format!("Check {} path is set correctly", "$ANDROID_NDK_HOME".yellow()),
+                    Some(&formatdoc! {
+                        r#"
+                        If Android NDK is not installed, please install it from the following link:
+                        {link}"#,
+                        link = "https://developer.android.com/ndk/downloads".dimmed().underline()
+                    }),
+                ));
                 anyhow::bail!("Environment variable is not set: {}", e);
             }
         },
@@ -86,6 +104,10 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
                 Ok(Status::Ok)
             } else {
                 passed &= false;
+                suggestions.push(Suggestion::plain_text(
+                    "Run `crabygen codegen` to fix this issue",
+                    None,
+                ));
                 anyhow::bail!("`android/build.gradle` is not configured correctly");
             }
         },
@@ -97,6 +119,10 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             Ok(Status::Ok)
         } else {
             passed &= false;
+            suggestions.push(Suggestion::command(
+                "Install XCode Command Line Tools",
+                "xcode-select --install",
+            ));
             anyhow::bail!("XCode Command Line Tools is not installed");
         }
     });
@@ -107,13 +133,14 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
                 Ok(Status::Ok)
             } else {
                 passed &= false;
-                anyhow::bail!("`android/build.gradle` is not configured correctly");
+                anyhow::bail!("`.podspec` is not configured correctly");
             }
         },
     );
 
     if !passed {
         println!();
+        print_suggestions(&mut suggestions);
         anyhow::bail!("Some required configurations are not configured correctly");
     }
 
