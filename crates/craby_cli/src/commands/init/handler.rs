@@ -24,7 +24,7 @@ pub fn perform(opts: InitOptions) -> anyhow::Result<()> {
 
     let template_data = prompt_for_template_data(&opts.pkg_name)?;
     setup_template(&dest_dir, &template_data)?;
-    setup_react_native_project(&dest_dir, &opts.pkg_name)?;
+    setup_react_native_project(&dest_dir, &opts.pkg_name, &template_data)?;
     setup_rust_toolchain()?;
 
     let outro = formatdoc! {

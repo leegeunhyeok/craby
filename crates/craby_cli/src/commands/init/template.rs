@@ -89,6 +89,7 @@ pub fn prompt_for_template_data(pkg_name: &str) -> anyhow::Result<TemplateData> 
         ("cxx_name", cxx_name.to_string()),
         ("objc_provider", objc_provider.to_string()),
         ("year", current_year.to_string()),
+        ("pkg_version", format!("^{}", env!("CARGO_PKG_VERSION"))),
     ]);
 
     Ok(template_data)

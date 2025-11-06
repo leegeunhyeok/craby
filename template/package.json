@@ -60,13 +60,13 @@
   },
   "homepage": "{{ repository_url }}#readme",
   "dependencies": {
-    "craby-modules": "*"
+    "craby-modules": "{{ pkg_version }}"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.7",
     "@react-native-community/cli-types": "^20.0.2",
     "@types/react": "^19.0.0",
-    "crabygen": "*",
+    "crabygen": "{{ pkg_version }}",
     "react": "19.1.1",
     "react-native": "0.82.1",
     "tsdown": "^0.15.10",

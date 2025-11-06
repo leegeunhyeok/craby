@@ -6,12 +6,17 @@ use log::debug;
 
 use crate::utils::{
     log::success,
+    template::TemplateData,
     terminal::{run_command, with_spinner},
 };
 
-pub fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
+pub fn setup_react_native_project(
+    dest_dir: &Path,
+    pkg_name: &str,
+    template_data: &TemplateData,
+) -> anyhow::Result<()> {
     with_spinner("Setting up React Native project...", |_| {
-        if let Err(e) = setup_react_native_project_impl(dest_dir, pkg_name) {
+        if let Err(e) = setup_react_native_project_impl(dest_dir, pkg_name, template_data) {
             anyhow::bail!("Failed to setup React Native project: {}", e);
         }
         Ok(())
@@ -20,7 +25,11 @@ pub fn setup_react_native_project(dest_dir: &Path, pkg_name: &str) -> anyhow::Re
     Ok(())
 }
 
-pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyhow::Result<()> {
+pub fn setup_react_native_project_impl(
+    dest_dir: &Path,
+    pkg_name: &str,
+    template_data: &TemplateData,
+) -> anyhow::Result<()> {
     let app_name = format!("{}Example", pascal_case(pkg_name));
 
     run_command(
@@ -51,7 +60,10 @@ pub fn setup_react_native_project_impl(dest_dir: &Path, pkg_name: &str) -> anyho
         if let Some(dev_dependencies) = obj.get_mut("devDependencies") {
             if let Some(dev_dependencies_obj) = dev_dependencies.as_object_mut() {
                 debug!("Inserting devDependencies");
-                dev_dependencies_obj.insert("@craby/devkit".to_string(), serde_json::json!("*"));
+                dev_dependencies_obj.insert(
+                    "@craby/devkit".to_string(),
+                    serde_json::json!(template_data["pkg_version"].clone()),
+                );
             }
         }
 
