@@ -1,10 +1,20 @@
-import { logger } from '../logger';
+import { error } from '@craby/cli-bindings';
 
-export function commonErrorHandler(error: unknown) {
-  if (error instanceof Error) {
-    logger.error(error.message);
+export function commonErrorHandler(reason: unknown) {
+  if (reason instanceof Error) {
+    error(reason.message);
   } else {
-    logger.error('Unknown error');
+    error('Unknown error');
   }
   process.exit(1);
+}
+
+export function withErrorHandler(action: () => void) {
+  return () => {
+    try {
+      action();
+    } catch (reason) {
+      commonErrorHandler(reason);
+    }
+  };
 }

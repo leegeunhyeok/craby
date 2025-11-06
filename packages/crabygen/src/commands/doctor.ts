@@ -1,15 +1,8 @@
 import { Command } from '@commander-js/extra-typings';
-import { getBindings } from '../utils/bindings';
+import { doctor } from '@craby/cli-bindings';
 import { withVerbose } from '../utils/command';
-import { commonErrorHandler } from '../utils/errors';
-import { resolveProjectRoot } from '../utils/resolve-project-root';
+import { withErrorHandler } from '../utils/errors';
 
 export const command = withVerbose(
-  new Command().name('doctor').action(async () => {
-    try {
-      getBindings().doctor({ projectRoot: resolveProjectRoot() });
-    } catch (error) {
-      commonErrorHandler(error);
-    }
-  }),
+  new Command().name('doctor').action(withErrorHandler(doctor.bind(null, { projectRoot: process.cwd() }))),
 );
