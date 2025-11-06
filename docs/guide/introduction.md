@@ -33,12 +33,13 @@ Craby achieves superior performance through:
 
 [This benchmark](https://github.com/leegeunhyeok/NitroBenchmarks) compares the total execution time when calling a single native method `100,000` times:
 
-| Module       | `addNumbers`   | `addStrings`   |
-| ------------ | -------------- | -------------- |
-| ExpoModules  | 445.21ms (x83) | 427.21ms (x27) |
-| TurboModules | 116.13ms (x21) | 175.27ms (x11) |
-| NitroModules | 7.07ms (24%)   | 28.53ms (80%)  |
-| CrabyModules | **5.32ms**     | **15.75ms**    |
+| Module               | `addNumbers`   | `addStrings`   |
+| -------------------- | -------------- | -------------- |
+| ExpoModules          | 445.21ms (x83) | 427.21ms (x27) |
+| TurboModules         | 116.13ms (x21) | 175.27ms (x11) |
+| NitroModules (Swift) | 7.07ms (32%)   | 28.53ms (80%)  |
+| NitroModules (C++)   | 5.61ms (≈)     | 11.02ms (-30%) |
+| CrabyModules         | **5.32ms**     | **15.75ms**    |
 
 Note: These benchmarks only compare native method throughput in extreme cases, and do not necessarily reflect real world use-cases. In a real-world app, results may vary. See [repository](https://github.com/leegeunhyeok/NitroBenchmarks) for full context.
 
