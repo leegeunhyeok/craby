@@ -136,9 +136,11 @@ pub fn validate_package_versions(package_infos: &[PackageInfo], version: &str) -
         let package_version = package_json
             .fields
             .get("version")
-            .expect("Missing version in package.json")
+            .ok_or_else(|| anyhow::anyhow!("Missing version in package.json"))?;
+
+        let package_version = package_version
             .as_str()
-            .expect("Version is not a string");
+            .ok_or_else(|| anyhow::anyhow!("version is not a string"))?;
 
         if package_version != version {
             anyhow::bail!(

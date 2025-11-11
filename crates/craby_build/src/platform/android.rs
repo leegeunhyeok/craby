@@ -99,15 +99,15 @@ pub mod path {
             _ => Err(anyhow::anyhow!("Unsupported OS: {}", std::env::consts::OS)),
         }?;
 
-        let path = PathBuf::from(
-            std::env::var("ANDROID_NDK_HOME")
-                .expect("`ANDROID_NDK_HOME` environment variable is not set"),
-        )
-        .join("toolchains")
-        .join("llvm")
-        .join("prebuilt")
-        .join(os_path)
-        .join("bin");
+        let path =
+            PathBuf::from(std::env::var("ANDROID_NDK_HOME").map_err(|_| {
+                anyhow::anyhow!("`ANDROID_NDK_HOME` environment variable is not set")
+            })?)
+            .join("toolchains")
+            .join("llvm")
+            .join("prebuilt")
+            .join(os_path)
+            .join("bin");
 
         Ok(path)
     }
