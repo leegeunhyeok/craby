@@ -44,12 +44,14 @@ pub fn init(opts: InitOptions) -> napi::Result<()> {
 #[napi(object)]
 pub struct CodegenOptions {
     pub project_root: String,
+    pub overwrite: bool,
 }
 
 #[napi]
 pub fn codegen(opts: CodegenOptions) -> napi::Result<()> {
     let opts = craby_cli::commands::codegen::CodegenOptions {
         project_root: opts.project_root.into(),
+        overwrite: opts.overwrite,
     };
 
     match craby_cli::commands::codegen::perform(opts) {

@@ -21,8 +21,10 @@ use owo_colors::OwoColorize;
 
 use crate::utils::{file::write_file, schema::print_schema};
 
+#[derive(Debug)]
 pub struct CodegenOptions {
     pub project_root: PathBuf,
+    pub overwrite: bool,
 }
 
 pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
@@ -34,6 +36,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     let config = load_config(&opts.project_root)?;
     let start_time = Instant::now();
 
+    debug!("Options: {:?}", opts);
     info!(
         "Collecting source files... {}",
         format!("({})", config.source_dir.display()).dimmed()
@@ -59,7 +62,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
 
     let ctx = CodegenContext {
         project_name: config.project.name,
-        root: opts.project_root,
+        root: opts.project_root.clone(),
         schemas,
         android_package_name: config.android.package_name,
     };
@@ -84,6 +87,7 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     }
 
     let mut generated_cnt = 0;
+    let mut preserved_files = vec![];
     for res in generate_res {
         let content = if res.overwrite {
             with_generated_comment(&res.path, &res.content)
@@ -91,7 +95,8 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             without_generated_comment(&res.content)
         };
 
-        if write_file(&res.path, &content, res.overwrite)? {
+        let should_overwrite = opts.overwrite && res.overwrite;
+        if write_file(&res.path, &content, should_overwrite)? {
             generated_cnt += 1;
             debug!("File generated: {}", res.path.display());
         } else {
@@ -100,11 +105,35 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
             let dest = tmp_dir.join(file_name);
             debug!("Saving to temporary directory: {}", dest.display());
             write_file(&dest, &content, true)?;
+
+            if res.overwrite {
+                preserved_files.push(
+                    res.path
+                        .strip_prefix(&opts.project_root)?
+                        .to_string_lossy()
+                        .to_string(),
+                );
+            }
         }
     }
 
     let elapsed = start_time.elapsed().as_millis();
     info!("{} files generated", generated_cnt);
+
+    let preserved_file_cnt = preserved_files.len();
+    if preserved_file_cnt > 0 {
+        info!("Preserving existing files");
+
+        for (idx, file) in preserved_files.iter().enumerate() {
+            let line = if idx == preserved_file_cnt - 1 {
+                "└─"
+            } else {
+                "├─"
+            };
+            println!("{} {}", line, file.dimmed());
+        }
+    }
+
     info!(
         "Codegen completed successfully 🎉 {}",
         format!("({}ms)", elapsed).dimmed()

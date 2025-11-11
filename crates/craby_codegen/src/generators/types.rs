@@ -9,7 +9,7 @@ pub trait Template {
         &self,
         ctx: &CodegenContext,
         file_type: &Self::FileType,
-    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error>;
+    ) -> Result<Vec<TemplateResult>, anyhow::Error>;
 }
 
 pub trait Generator<T>
@@ -17,16 +17,16 @@ where
     T: Template,
 {
     fn cleanup(ctx: &CodegenContext) -> Result<(), anyhow::Error>;
-    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error>;
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error>;
     fn template_ref(&self) -> &T;
 }
 
 pub trait GeneratorInvoker {
-    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error>;
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error>;
 }
 
 #[derive(Debug)]
-pub struct GenerateResult {
+pub struct TemplateResult {
     pub content: String,
     pub path: PathBuf,
     pub overwrite: bool,

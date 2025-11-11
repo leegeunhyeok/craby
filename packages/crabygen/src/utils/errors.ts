@@ -9,10 +9,10 @@ export function commonErrorHandler(reason: unknown) {
   process.exit(1);
 }
 
-export function withErrorHandler(action: () => void) {
-  return () => {
+export function withErrorHandler<T = void>(action: (arg: T) => void) {
+  return (arg: T) => {
     try {
-      action();
+      action(arg);
     } catch (reason) {
       commonErrorHandler(reason);
     }

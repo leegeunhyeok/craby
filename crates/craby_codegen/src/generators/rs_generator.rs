@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::PathBuf};
+use std::collections::BTreeMap;
 
 use craby_common::{
     constants::{crate_dir, impl_mod_name, HASH_COMMENT_PREFIX},
@@ -7,12 +7,13 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
+    generators::types::TemplateResult,
     platform::rust::RsCxxBridge,
     types::{CodegenContext, CxxNamespace, Schema},
     utils::indent_str,
 };
 
-use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
+use super::types::{Generator, GeneratorInvoker, Template};
 
 pub struct RsTemplate;
 pub struct RsGenerator;
@@ -24,17 +25,11 @@ pub enum RsFileType {
     FFIEntry,
     /// generated.rs
     Generated,
+    /// impl.rs
+    ModImpl,
 }
 
 impl RsTemplate {
-    fn file_path(&self, file_type: &RsFileType) -> PathBuf {
-        match file_type {
-            RsFileType::CrateEntry => PathBuf::from("lib.rs"),
-            RsFileType::FFIEntry => PathBuf::from("ffi.rs"),
-            RsFileType::Generated => PathBuf::from("generated.rs"),
-        }
-    }
-
     fn impl_mods(&self, schemas: &[Schema]) -> Vec<String> {
         schemas
             .iter()
@@ -447,15 +442,40 @@ impl Template for RsTemplate {
         &self,
         ctx: &CodegenContext,
         file_type: &Self::FileType,
-    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-        let path = self.file_path(file_type);
-        let content = match file_type {
-            RsFileType::CrateEntry => self.lib_rs(&ctx.schemas),
-            RsFileType::FFIEntry => self.ffi_rs(ctx),
-            RsFileType::Generated => self.generated_rs(&ctx.schemas),
-        }?;
+    ) -> Result<Vec<TemplateResult>, anyhow::Error> {
+        let base_path = crate_dir(&ctx.root).join("src");
+        let res = match file_type {
+            RsFileType::CrateEntry => vec![TemplateResult {
+                path: base_path.join("lib.rs"),
+                content: self.lib_rs(&ctx.schemas)?,
+                overwrite: false,
+            }],
+            RsFileType::FFIEntry => vec![TemplateResult {
+                path: base_path.join("ffi.rs"),
+                content: self.ffi_rs(ctx)?,
+                overwrite: true,
+            }],
+            RsFileType::Generated => vec![TemplateResult {
+                path: base_path.join("generated.rs"),
+                content: self.generated_rs(&ctx.schemas)?,
+                overwrite: true,
+            }],
+            RsFileType::ModImpl => ctx
+                .schemas
+                .iter()
+                .map(|schema| -> Result<TemplateResult, anyhow::Error> {
+                    let impl_code = self.rs_impl(schema)?;
 
-        Ok(vec![(path, content)])
+                    Ok(TemplateResult {
+                        path: base_path.join(format!("{}.rs", impl_mod_name(&schema.module_name))),
+                        content: impl_code,
+                        overwrite: false,
+                    })
+                })
+                .collect::<Result<Vec<_>, _>>()?,
+        };
+
+        Ok(res)
     }
 }
 
@@ -476,37 +496,17 @@ impl Generator<RsTemplate> for RsGenerator {
         Ok(())
     }
 
-    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let base_path = crate_dir(&ctx.root).join("src");
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         let template = self.template_ref();
-        let mut res = [
+        let res = [
             template.render(ctx, &RsFileType::CrateEntry)?,
             template.render(ctx, &RsFileType::FFIEntry)?,
             template.render(ctx, &RsFileType::Generated)?,
+            template.render(ctx, &RsFileType::ModImpl)?,
         ]
         .into_iter()
         .flatten()
-        .map(|(path, content)| GenerateResult {
-            path: base_path.join(path),
-            content,
-            overwrite: true,
-        })
         .collect::<Vec<_>>();
-
-        res.extend(
-            ctx.schemas
-                .iter()
-                .map(|schema| -> Result<GenerateResult, anyhow::Error> {
-                    let impl_code = template.rs_impl(schema)?;
-
-                    Ok(GenerateResult {
-                        path: base_path.join(format!("{}.rs", impl_mod_name(&schema.module_name))),
-                        content: impl_code,
-                        overwrite: false,
-                    })
-                })
-                .collect::<Result<Vec<_>, _>>()?,
-        );
 
         Ok(res)
     }
@@ -517,7 +517,7 @@ impl Generator<RsTemplate> for RsGenerator {
 }
 
 impl GeneratorInvoker for RsGenerator {
-    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         self.generate(ctx)
     }
 }

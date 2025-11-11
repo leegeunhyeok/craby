@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use craby_common::{
     constants::{
         android_path, android_src_main_path, dest_lib_name, java_base_path, jni_base_path,
@@ -9,11 +7,12 @@ use craby_common::{
 use indoc::formatdoc;
 
 use crate::{
+    generators::types::TemplateResult,
     types::{CodegenContext, CxxModuleName, CxxNamespace},
     utils::indent_str,
 };
 
-use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
+use super::types::{Generator, GeneratorInvoker, Template};
 
 pub struct AndroidTemplate;
 pub struct AndroidGenerator;
@@ -28,19 +27,6 @@ pub enum AndroidFileType {
 }
 
 impl AndroidTemplate {
-    fn file_path(&self, file_type: &AndroidFileType, project_name: &str) -> PathBuf {
-        match file_type {
-            AndroidFileType::JNIEntry => PathBuf::from("OnLoad.cpp"),
-            AndroidFileType::CmakeLists => PathBuf::from("CMakeLists.txt"),
-            AndroidFileType::ManifestXml => PathBuf::from("AndroidManifest.xml"),
-            AndroidFileType::BuildGradle => PathBuf::from("build.gradle"),
-            AndroidFileType::GradleProps => PathBuf::from("gradle.properties"),
-            AndroidFileType::RctPackage => {
-                PathBuf::from(format!("{}Package.kt", pascal_case(project_name)))
-            }
-        }
-    }
-
     /// Returns `JNI_OnLoad` function implementation
     ///
     /// # Generated Code
@@ -478,18 +464,42 @@ impl Template for AndroidTemplate {
         &self,
         ctx: &CodegenContext,
         file_type: &Self::FileType,
-    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
-        let path = self.file_path(file_type, &ctx.project_name);
-        let content = match file_type {
-            AndroidFileType::JNIEntry => self.jni_entry(ctx),
-            AndroidFileType::CmakeLists => Ok(self.cmakelists(ctx)),
-            AndroidFileType::ManifestXml => Ok(self.manifest_xml(ctx)),
-            AndroidFileType::BuildGradle => Ok(self.build_gradle(ctx)),
-            AndroidFileType::GradleProps => Ok(self.grable_props(ctx)),
-            AndroidFileType::RctPackage => Ok(self.rct_package(ctx)),
-        }?;
+    ) -> Result<Vec<TemplateResult>, anyhow::Error> {
+        let res = match file_type {
+            AndroidFileType::JNIEntry => vec![TemplateResult {
+                path: jni_base_path(&ctx.root).join("OnLoad.cpp"),
+                content: self.jni_entry(ctx)?,
+                overwrite: true,
+            }],
+            AndroidFileType::CmakeLists => vec![TemplateResult {
+                path: android_path(&ctx.root).join("CMakeLists.txt"),
+                content: self.cmakelists(ctx),
+                overwrite: true,
+            }],
+            AndroidFileType::ManifestXml => vec![TemplateResult {
+                path: android_src_main_path(&ctx.root).join("AndroidManifest.xml"),
+                content: self.manifest_xml(ctx),
+                overwrite: true,
+            }],
+            AndroidFileType::BuildGradle => vec![TemplateResult {
+                path: android_path(&ctx.root).join("build.gradle"),
+                content: self.build_gradle(ctx),
+                overwrite: true,
+            }],
+            AndroidFileType::GradleProps => vec![TemplateResult {
+                path: android_path(&ctx.root).join("gradle.properties"),
+                content: self.grable_props(ctx),
+                overwrite: false,
+            }],
+            AndroidFileType::RctPackage => vec![TemplateResult {
+                path: java_base_path(&ctx.root, &ctx.android_package_name)
+                    .join(format!("{}Package.kt", pascal_case(&ctx.project_name))),
+                content: self.rct_package(ctx),
+                overwrite: true,
+            }],
+        };
 
-        Ok(vec![(path, content)])
+        Ok(res)
     }
 }
 
@@ -510,69 +520,21 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
         Ok(())
     }
 
-    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let android_base_path = android_path(&ctx.root);
-        let android_src_path = android_src_main_path(&ctx.root);
-        let jni_base_path = jni_base_path(&ctx.root);
-        let java_base_path = java_base_path(&ctx.root, &ctx.android_package_name);
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         let template = self.template_ref();
-        let mut files = vec![];
+        let res = [
+            template.render(ctx, &AndroidFileType::JNIEntry)?,
+            template.render(ctx, &AndroidFileType::CmakeLists)?,
+            template.render(ctx, &AndroidFileType::ManifestXml)?,
+            template.render(ctx, &AndroidFileType::BuildGradle)?,
+            template.render(ctx, &AndroidFileType::GradleProps)?,
+            template.render(ctx, &AndroidFileType::RctPackage)?,
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
 
-        let jni_res = template
-            .render(ctx, &AndroidFileType::JNIEntry)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: jni_base_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        let android_base_path_targets = [
-            AndroidFileType::CmakeLists,
-            AndroidFileType::BuildGradle,
-            AndroidFileType::GradleProps,
-        ];
-
-        for target in &android_base_path_targets {
-            let res = template
-                .render(ctx, target)?
-                .into_iter()
-                .map(|(path, content)| GenerateResult {
-                    path: android_base_path.join(path),
-                    content,
-                    overwrite: true,
-                })
-                .collect::<Vec<_>>();
-
-            files.extend(res);
-        }
-
-        let manifest_xml_res = template
-            .render(ctx, &AndroidFileType::ManifestXml)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: android_src_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        let rct_package_res = template
-            .render(ctx, &AndroidFileType::RctPackage)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: java_base_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        files.extend(jni_res);
-        files.extend(manifest_xml_res);
-        files.extend(rct_package_res);
-
-        Ok(files)
+        Ok(res)
     }
 
     fn template_ref(&self) -> &AndroidTemplate {
@@ -581,7 +543,7 @@ impl Generator<AndroidTemplate> for AndroidGenerator {
 }
 
 impl GeneratorInvoker for AndroidGenerator {
-    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         self.generate(ctx)
     }
 }

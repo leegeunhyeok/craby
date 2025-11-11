@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::fs;
 
 use craby_common::{
     constants::{cxx_bridge_include_dir, cxx_dir},
@@ -13,7 +13,7 @@ use crate::{
     utils::indent_str,
 };
 
-use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
+use super::types::{Generator, GeneratorInvoker, Template, TemplateResult};
 
 pub struct CxxTemplate;
 pub struct CxxGenerator;
@@ -864,43 +864,52 @@ impl Template for CxxTemplate {
         &self,
         ctx: &CodegenContext,
         file_type: &Self::FileType,
-    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
+    ) -> Result<Vec<TemplateResult>, anyhow::Error> {
         let res = match file_type {
             CxxFileType::Mod => ctx
                 .schemas
                 .iter()
-                .map(|schema| -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
+                .map(|schema| -> Result<Vec<TemplateResult>, anyhow::Error> {
                     let (cpp, hpp) = self.cxx_mod(schema, &ctx.project_name)?;
                     let cxx_mod = CxxModuleName::from(&schema.module_name);
                     let cxx_base_path = cxx_dir(&ctx.root);
                     let files = vec![
-                        (cxx_base_path.join(format!("{cxx_mod}.cpp")), cpp),
-                        (cxx_base_path.join(format!("{cxx_mod}.hpp")), hpp),
+                        TemplateResult {
+                            path: cxx_base_path.join(format!("{cxx_mod}.cpp")),
+                            content: cpp,
+                            overwrite: true,
+                        },
+                        TemplateResult {
+                            path: cxx_base_path.join(format!("{cxx_mod}.hpp")),
+                            content: hpp,
+                            overwrite: true,
+                        },
                     ];
                     Ok(files)
                 })
                 .collect::<Result<Vec<_>, _>>()
                 .map(|v| v.into_iter().flatten().collect())?,
-            CxxFileType::BridgingHpp => vec![(
-                cxx_dir(&ctx.root).join("bridging-generated.hpp"),
-                self.cxx_bridging(ctx)?,
-            )],
-            CxxFileType::UtilsHpp => {
-                vec![(
-                    cxx_dir(&ctx.root).join("CrabyUtils.hpp"),
-                    self.cxx_utils(&ctx.project_name)?,
-                )]
-            }
+            CxxFileType::BridgingHpp => vec![TemplateResult {
+                path: cxx_dir(&ctx.root).join("bridging-generated.hpp"),
+                content: self.cxx_bridging(ctx)?,
+                overwrite: true,
+            }],
+            CxxFileType::UtilsHpp => vec![TemplateResult {
+                path: cxx_dir(&ctx.root).join("CrabyUtils.hpp"),
+                content: self.cxx_utils(&ctx.project_name)?,
+                overwrite: true,
+            }],
             CxxFileType::SignalsH => {
                 let has_signals = ctx.schemas.iter().any(|schema| !schema.signals.is_empty());
 
                 if has_signals {
-                    vec![(
-                        cxx_bridge_include_dir(&ctx.root).join("CrabySignals.h"),
-                        self.cxx_signals(&ctx.project_name)?,
-                    )]
+                    vec![TemplateResult {
+                        path: cxx_bridge_include_dir(&ctx.root).join("CrabySignals.h"),
+                        content: self.cxx_signals(&ctx.project_name)?,
+                        overwrite: true,
+                    }]
                 } else {
-                    vec![]
+                    Vec::default()
                 }
             }
         };
@@ -943,7 +952,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
         Ok(())
     }
 
-    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         let template = self.template_ref();
         let res = [
             template.render(ctx, &CxxFileType::Mod)?,
@@ -953,11 +962,6 @@ impl Generator<CxxTemplate> for CxxGenerator {
         ]
         .into_iter()
         .flatten()
-        .map(|(path, content)| GenerateResult {
-            path,
-            content,
-            overwrite: true,
-        })
         .collect::<Vec<_>>();
 
         Ok(res)
@@ -969,7 +973,7 @@ impl Generator<CxxTemplate> for CxxGenerator {
 }
 
 impl GeneratorInvoker for CxxGenerator {
-    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         self.generate(ctx)
     }
 }

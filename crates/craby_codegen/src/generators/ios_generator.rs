@@ -1,14 +1,15 @@
-use std::{fs, path::PathBuf};
+use std::fs;
 
 use craby_common::constants::ios_base_path;
 use indoc::formatdoc;
 
 use crate::{
+    generators::types::TemplateResult,
     types::{CodegenContext, CxxModuleName, CxxNamespace, ObjCProviderName},
     utils::indent_str,
 };
 
-use super::types::{GenerateResult, Generator, GeneratorInvoker, Template};
+use super::types::{Generator, GeneratorInvoker, Template};
 
 pub struct IosTemplate;
 pub struct IosGenerator;
@@ -156,13 +157,16 @@ impl Template for IosTemplate {
         &self,
         ctx: &CodegenContext,
         file_type: &Self::FileType,
-    ) -> Result<Vec<(PathBuf, String)>, anyhow::Error> {
+    ) -> Result<Vec<TemplateResult>, anyhow::Error> {
+        let base_path = ios_base_path(&ctx.root);
         let res = match file_type {
             IosFileType::ModuleProvider => {
-                vec![(
-                    PathBuf::from(format!("{}.mm", ObjCProviderName::from(&ctx.project_name))),
-                    self.module_provider(ctx)?,
-                )]
+                vec![TemplateResult {
+                    path: base_path
+                        .join(format!("{}.mm", ObjCProviderName::from(&ctx.project_name))),
+                    content: self.module_provider(ctx)?,
+                    overwrite: true,
+                }]
             }
         };
 
@@ -202,22 +206,9 @@ impl Generator<IosTemplate> for IosGenerator {
         Ok(())
     }
 
-    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
-        let ios_base_path = ios_base_path(&ctx.root);
+    fn generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         let template = self.template_ref();
-        let mut files = vec![];
-
-        let provider_res = template
-            .render(ctx, &IosFileType::ModuleProvider)?
-            .into_iter()
-            .map(|(path, content)| GenerateResult {
-                path: ios_base_path.join(path),
-                content,
-                overwrite: true,
-            })
-            .collect::<Vec<_>>();
-
-        files.extend(provider_res);
+        let files = template.render(ctx, &IosFileType::ModuleProvider)?;
 
         Ok(files)
     }
@@ -228,7 +219,7 @@ impl Generator<IosTemplate> for IosGenerator {
 }
 
 impl GeneratorInvoker for IosGenerator {
-    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<GenerateResult>, anyhow::Error> {
+    fn invoke_generate(&self, ctx: &CodegenContext) -> Result<Vec<TemplateResult>, anyhow::Error> {
         self.generate(ctx)
     }
 }

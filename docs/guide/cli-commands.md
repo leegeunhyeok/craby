@@ -36,7 +36,13 @@ Generates Rust and C++ bridge code from your TypeScript specs.
 
 ```bash
 npx crabygen
+# or
+npx crabygen codegen
 ```
+
+**Options**
+
+- `--no-overwrite`: Do not overwrite existing files (Default: `false`). Non-overwritten file contents can be found in the `.craby` directory.
 
 ## `build`
 

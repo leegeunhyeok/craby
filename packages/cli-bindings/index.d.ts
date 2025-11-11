@@ -16,6 +16,7 @@ export declare function codegen(opts: CodegenOptions): void
 
 export interface CodegenOptions {
   projectRoot: string
+  overwrite: boolean
 }
 
 export declare function debug(message: string): void
