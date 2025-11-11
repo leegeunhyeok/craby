@@ -19,6 +19,8 @@ const INVALID_SPEC: &str = "Invalid specification";
 const INVALID_TYPE_REFERENCE: &str = "Invalid type reference";
 const INVALID_COMPUTED_SIG: &str = "Computed signature is not supported";
 const INVALID_OPTIONAL_SIG: &str = "Optional signature is not supported";
+const INVALID_OPTIONAL_PROP: &str = "Optional property is not supported";
+const INVALID_OPTIONAL_PARAM: &str = "Optional parameter is not supported";
 const INVALID_NO_SPEC_GENERIC: &str = "NativeModule specification generic argument is required";
 const INVALID_FUNC_PARAM: &str = "Function parameter is not supported";
 const INVALID_TYPE_LITERAL: &str =
@@ -128,10 +130,16 @@ impl<'a> NativeModuleAnalyzer<'a> {
         let mut props = vec![];
         for sig in &it.body.body {
             match sig {
-                TSSignature::TSPropertySignature(prop_sig) => match self.try_into_prop(prop_sig) {
-                    Ok(prop) => props.push(prop),
-                    Err(e) => return self.diagnostics.push(e),
-                },
+                TSSignature::TSPropertySignature(prop_sig) => {
+                    if prop_sig.optional {
+                        return self.collect_error(INVALID_OPTIONAL_PROP, prop_sig.span);
+                    }
+
+                    match self.try_into_prop(prop_sig) {
+                        Ok(prop) => props.push(prop),
+                        Err(e) => return self.diagnostics.push(e),
+                    }
+                }
                 _ => return self.collect_error(INVALID_SPEC, it.span),
             }
         }
@@ -162,7 +170,13 @@ impl<'a> NativeModuleAnalyzer<'a> {
                     .members
                     .iter()
                     .map(|member| match member {
-                        TSSignature::TSPropertySignature(prop_sig) => self.try_into_prop(prop_sig),
+                        TSSignature::TSPropertySignature(prop_sig) => {
+                            if prop_sig.optional {
+                                Err(error(INVALID_OPTIONAL_PROP, prop_sig.span))
+                            } else {
+                                self.try_into_prop(prop_sig)
+                            }
+                        },
                         _ => Err(error(INVALID_SPEC, type_lit.span)),
                     })
                     .collect::<Result<Vec<Prop>, OxcDiagnostic>>();
@@ -385,6 +399,10 @@ impl<'a> NativeModuleAnalyzer<'a> {
             .map(|param| {
                 if !param.decorators.is_empty() {
                     return Err(error(INVALID_SPEC, param.span));
+                }
+
+                if param.pattern.optional {
+                    return Err(error(INVALID_OPTIONAL_PARAM, param.span));
                 }
 
                 let param_name = param
@@ -1228,6 +1246,65 @@ mod tests {
 
         export interface Spec extends NativeModule {
             myMethod(arg: MyEnum): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let result = try_parse_schema(src);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_optional_1() {
+        let src: &'static str = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        export interface Spec extends NativeModule {
+            myMethod(arg?: number): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let result = try_parse_schema(src);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_optional_2() {
+        let src: &'static str = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        interface Foo {
+            bar?: number
+        }
+
+        export interface Spec extends NativeModule {
+            myMethod(arg: Foo): void;
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
+        ";
+        let result = try_parse_schema(src);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_optional_3() {
+        let src: &'static str = "
+        import type { NativeModule, Signal } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        type Foo = {
+            bar?: number
+        }
+
+        export interface Spec extends NativeModule {
+            myMethod(arg: Foo): void;
         }
 
         export default NativeModuleRegistry.getEnforcing<Spec>('MyModule');
