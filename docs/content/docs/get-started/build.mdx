@@ -1,0 +1,124 @@
+---
+title: How to Build
+---
+
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
+This guide covers building native binaries for iOS and Android using Craby.
+
+## Overview
+
+After implementing your module in Rust, you need to compile it into native binaries that can be used by React Native. Craby handles the entire build process for you.
+
+## Building for All Platforms
+
+The simplest way to build for all supported platforms:
+
+<Callout>
+  Before building, Craby verifies that the generated code matches the current module specifications.
+  If they don't match, you won't be able to build and you'll need to run the `codegen` command to update the generated code.
+</Callout>
+
+
+```bash
+npx craby build
+```
+
+- Compiles Rust code for all target architectures
+- Generates platform-specific binaries
+
+---
+
+By default, this builds for:
+
+**iOS**
+
+| Identifier | Target | Description |
+|-------------|--------|-------------|
+| ios-arm64 | `aarch64-apple-ios` | Physical iOS devices (iPhone, iPad) |
+| ios-arm64-simulator | `aarch64-apple-ios-sim` | iOS Simulator on Apple Silicon Macs |
+| ios-x86_64-simulator | `x86_64-apple-ios` | iOS Simulator on Intel Macs |
+
+
+<Callout>
+  The simulator target libraries (`ios-arm64-simulator` and `ios-x86_64-simulator`) are merged into a single universal binary (`ios-arm64_x86_64-simulator`) using `lipo` command line tool.
+</Callout>
+
+**Android**
+
+| ABI | Target | Description |
+|-------------|--------|-------------|
+| arm64-v8a | `aarch64-linux-android` | 64-bit ARM devices (most modern phones) |
+| armeabi-v7a | `armv7-linux-androideabi` | 32-bit ARM devices (older phones) |
+| x86_64 | `x86_64-linux-android` | 64-bit x86 emulator |
+| x86 | `i686-linux-android` | 32-bit x86 emulator |
+
+<Callout title="Clean Build" type="warning">
+  If you encounter build issues or want to start fresh, you can remove all build artifacts and caches:
+
+  ```bash
+  npx crabygen clean
+  ```
+</Callout>
+
+## Setup scripts for publishing Craby modules
+
+To integrate with package publishing, we recommend the following configuration:
+
+```json title="package.json"
+{
+  "name": "my-module",
+  "scripts": {
+    "prepack": "yarn build",
+    "build": "craby build && tsdown",
+  }
+}
+```
+
+> Modify the build script according to your package manager and build tools.
+
+## Build Output
+
+### iOS
+
+<Files>
+  <Folder name="ios" defaultOpen>
+    <Folder name="framework" defaultOpen>
+      <Folder name="libmodule.xcframework" defaultOpen>
+        <File name="Info.plist" />
+        <Folder name="ios-arm64" defaultOpen>
+          <File name="libmodule-prebuilt.a" />
+        </Folder>
+        <Folder name="ios-arm64_x86_64-simulator" defaultOpen>
+          <File name="libmodule-prebuilt.a" />
+        </Folder>
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+### Android
+
+
+<Files>
+  <Folder name="android" defaultOpen>
+    <Folder name="src" defaultOpen>
+      <Folder name="main" defaultOpen>
+        <Folder name="libs" defaultOpen>
+          <Folder name="arm64-v8a" defaultOpen>
+            <File name="libmodule-prebuilt.a" />
+          </Folder>
+          <Folder name="armeabi-v7a" defaultOpen>
+            <File name="libmodule-prebuilt.a" />
+          </Folder>
+          <Folder name="x86" defaultOpen>
+            <File name="libmodule-prebuilt.a" />
+          </Folder>
+          <Folder name="x86_64" defaultOpen>
+            <File name="libmodule-prebuilt.a" />
+          </Folder>
+        </Folder>
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>

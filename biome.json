@@ -10,7 +10,7 @@
     "includes": [
       "packages/*/src/**",
       "examples/*/src/**",
-      "docs/.vitepress/**/*.mts",
+      "docs/src/**",
       "!template"
     ]
   },
@@ -33,9 +33,22 @@
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
       "semicolons": "always",
       "lineWidth": 120,
       "trailingCommas": "all"
+    }
+  },
+  "json": {
+    "formatter": {
+      "enabled": true,
+      "indentWidth": 2,
+      "lineWidth": 100,
+      "trailingCommas": "none"
+    },
+    "parser": {
+      "allowComments": true,
+      "allowTrailingCommas": false
     }
   },
   "assist": {

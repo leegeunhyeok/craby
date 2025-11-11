@@ -1,0 +1,31 @@
+---
+title: Limitations
+---
+
+Craby is designed for performance-critical pure computation modules and has the following limitations
+
+## Platform-Specific Features
+
+Craby does not support platform-specific APIs that require direct access to native platform capabilities, such as:
+
+- Camera, microphone, and sensor access
+- Native UI components and view managers
+- Platform-specific services (e.g., location services, notifications, background tasks)
+- Direct integration with platform SDKs (e.g., ARKit, MLKit, Firebase native modules)
+
+<Callout>
+  App data I/O (File I/O) operations are fully supported in Craby. For more details, refer to the [File IO guide](/guide/file-io).
+</Callout>
+
+## TurboModule Features
+
+Certain standard TurboModule capabilities are not supported:
+
+- Event emitters (`NativeEventEmitter`)
+- Platform context access (e.g., `Context` on Android, `UIApplication` on iOS)
+- Native module lifecycle callbacks
+- Direct access to React Native bridge APIs
+
+<Callout>
+  Craby provides [Signals](/guide/signals) as an alternative for one-way native-to-JavaScript event notifications. While Signals don't carry data payloads, they enable triggering callbacks from Rust to JavaScript.
+</Callout>

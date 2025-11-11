@@ -1,0 +1,12 @@
+{
+  "title": "Guides",
+  "pages": [
+    "types",
+    "signals",
+    "errors",
+    "sync-vs-async",
+    "file-io",
+    "stateful-modules"
+  ],
+  "defaultOpen": true
+}

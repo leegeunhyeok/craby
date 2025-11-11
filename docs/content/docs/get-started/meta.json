@@ -1,0 +1,12 @@
+{
+  "title": "Getting Started",
+  "pages": [
+    "introduction",
+    "create-project",
+    "configuration",
+    "module-definition",
+    "build",
+    "cli-commands"
+  ],
+  "defaultOpen": true
+}

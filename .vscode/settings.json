@@ -1,4 +1,8 @@
 {
   "rust-analyzer.check.command": "clippy",
-  "rust-analyzer.checkOnSave": true
+  "rust-analyzer.checkOnSave": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true
+  }
 }
