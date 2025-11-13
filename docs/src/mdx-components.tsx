@@ -10,12 +10,13 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     ...defaultMdxComponents,
     ...TabsComponents,
     ...components,
+    Mermaid,
+    TossFace,
+    Callout: (props) => <defaultMdxComponents.Callout {...props} className="shadow-none border-none pl-0" />,
     pre: ({ ref: _ref, ...props }) => (
-      <CodeBlock {...props}>
+      <CodeBlock {...props} className="shadow-none">
         <Pre>{props.children}</Pre>
       </CodeBlock>
     ),
-    Mermaid,
-    TossFace,
   };
 }

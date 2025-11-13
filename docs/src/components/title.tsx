@@ -1,10 +1,13 @@
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
+
+const LOGO_SIZE = 40;
 
 export function Title() {
   return (
-    <div className="flex flex-row items-center justify-center gap-2">
-      <Image src="/logo.svg" alt="Craby" width={36} height={36} />
-      <p className="text-xl">Craby</p>
-    </div>
-  )
+    <Link href="/" className="flex flex-row items-center justify-center gap-2 mr-5">
+      <Image src="/logo.svg" alt="Craby" width={LOGO_SIZE} height={LOGO_SIZE} />
+      <p className="text-md font-medium">Craby</p>
+    </Link>
+  );
 }

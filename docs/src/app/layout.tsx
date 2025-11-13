@@ -2,7 +2,6 @@ import { RootProvider } from 'fumadocs-ui/provider/next';
 import './global.css';
 import { Inter } from 'next/font/google';
 import SearchDialog from '@/components/search';
-import { Navbar } from '@/components/navbar';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,10 +28,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <script>{gaScript}</script>
       </head>
       <body className="flex flex-col min-h-screen">
-        <RootProvider search={{ SearchDialog }}>
-          <Navbar />
-          {children}
-        </RootProvider>
+        <RootProvider search={{ SearchDialog }}>{children}</RootProvider>
       </body>
     </html>
   );

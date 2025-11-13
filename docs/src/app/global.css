@@ -3,48 +3,49 @@
 @import 'fumadocs-ui/css/preset.css';
 
 :root {
-  --fd-nav-height: 64px !important;
+  --fd-nav-height: 56px !important;
+}
+
+.dark body > nav {
+  --color-fd-muted: #292929;
+  --color-fd-secondary: #2e2e2e;
+  --color-fd-muted-foreground: #b8b8b8;
 }
 
 @theme {
-  /* Light mode - Pure white background */
   --color-fd-background: hsl(0, 0%, 100%);
   --color-fd-foreground: hsl(0, 0%, 3.9%);
   --color-fd-muted: hsl(0, 0%, 98%);
-  --color-fd-muted-foreground: hsl(0, 0%, 40%); /* 더 진하게 */
+  --color-fd-muted-foreground: hsl(0, 0%, 40%);
   --color-fd-popover: hsl(0, 0%, 100%);
-  --color-fd-popover-foreground: hsl(0, 0%, 10%); /* 더 진하게 */
+  --color-fd-popover-foreground: hsl(0, 0%, 10%);
   --color-fd-card: hsl(0, 0%, 100%);
   --color-fd-card-foreground: hsl(0, 0%, 3.9%);
-  --color-fd-border: hsla(0, 0%, 70%, 50%); /* 더 진하게 */
-  
-  /* Brand colors - #82d7f7 기반 */
-  --color-fd-primary: hsl(192, 88%, 45%); /* #12b5db - 더 진하고 채도 높게 */
+  --color-fd-border: hsla(0, 0%, 70%, 50%);
+  --color-fd-primary: hsl(192, 88%, 45%);
   --color-fd-primary-foreground: hsl(0, 0%, 100%);
-  --color-fd-secondary: hsl(192, 88%, 96%); /* 매우 연한 cyan */
-  --color-fd-secondary-foreground: hsl(192, 88%, 30%); /* 진한 cyan */
-  --color-fd-accent: hsla(192, 88%, 50%, 20%); /* 연한 배경용 */
-  --color-fd-accent-foreground: hsl(192, 88%, 35%); /* 텍스트용 - 더 진하게 */
+  --color-fd-secondary: hsl(192, 88%, 96%);
+  --color-fd-secondary-foreground: hsl(192, 88%, 30%);
+  --color-fd-accent: hsla(192, 88%, 50%, 20%);
+  --color-fd-accent-foreground: hsl(192, 88%, 35%);
   --color-fd-ring: hsl(192, 88%, 50%);
 }
 
 .dark {
   --color-fd-background: hsl(0, 0%, 7.04%);
-  --color-fd-foreground: hsl(0, 0%, 95%); /* 더 밝게 */
+  --color-fd-foreground: hsl(0, 0%, 95%);
   --color-fd-muted: hsl(0, 0%, 12.9%);
-  --color-fd-muted-foreground: hsla(0, 0%, 75%, 0.9); /* 더 밝게 */
+  --color-fd-muted-foreground: hsla(0, 0%, 75%, 0.9);
   --color-fd-popover: hsl(0, 0%, 11.6%);
-  --color-fd-popover-foreground: hsl(0, 0%, 92%); /* 더 밝게 */
+  --color-fd-popover-foreground: hsl(0, 0%, 92%);
   --color-fd-card: hsl(0, 0%, 9.8%);
   --color-fd-card-foreground: hsl(0, 0%, 98%);
-  --color-fd-border: hsla(0, 0%, 40%, 30%); /* 더 밝게 */
-  
-  /* Brand colors - #82d7f7 사용 */
-  --color-fd-primary: hsl(192, 88%, 74%); /* #82d7f7 - 원본 브랜드 색상 */
-  --color-fd-primary-foreground: hsl(0, 0%, 5%); /* 진한 배경 */
-  --color-fd-secondary: hsl(192, 88%, 15%); /* 진한 cyan 배경 */
-  --color-fd-secondary-foreground: hsl(192, 88%, 85%); /* 밝은 cyan */
-  --color-fd-accent: hsla(192, 88%, 74%, 20%); /* #82d7f7 기반 배경 */
-  --color-fd-accent-foreground: hsl(192, 88%, 80%); /* 더 밝은 cyan */
-  --color-fd-ring: hsl(192, 88%, 74%); /* #82d7f7 */
+  --color-fd-border: hsla(0, 0%, 40%, 30%);
+  --color-fd-primary: hsl(192, 88%, 74%);
+  --color-fd-primary-foreground: hsl(0, 0%, 5%);
+  --color-fd-secondary: hsl(192, 88%, 15%);
+  --color-fd-secondary-foreground: hsl(192, 88%, 85%);
+  --color-fd-accent: hsla(192, 88%, 74%, 20%);
+  --color-fd-accent-foreground: hsl(192, 88%, 80%);
+  --color-fd-ring: hsl(192, 88%, 74%);
 }
