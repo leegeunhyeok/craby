@@ -2062,6 +2062,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@code-hike/lighter@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@code-hike/lighter@npm:1.0.1"
+  dependencies:
+    ansi-sequence-parser: "npm:1.1.1"
+  checksum: 10/511d21e91fa139d19168bced18104719470c4ad454f9cecf99eb762f34c030a531a8eeb18562570cbca3862ea662b1406bbed62683fde447a83f26f52101ba5a
+  languageName: node
+  linkType: hard
+
 "@commander-js/extra-typings@npm:^14.0.0":
   version: 14.0.0
   resolution: "@commander-js/extra-typings@npm:14.0.0"
@@ -7658,6 +7667,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ansi-sequence-parser@npm:1.1.1":
+  version: 1.1.1
+  resolution: "ansi-sequence-parser@npm:1.1.1"
+  checksum: 10/9ce30f257badc2ef62cac8028a7e26c368d22bf26650427192e8ffd102da42e377e3affe90fae58062eecc963b0b055f510dde3b677c7e0c433c67069b5a8ee5
+  languageName: node
+  linkType: hard
+
 "ansi-styles@npm:^3.2.0":
   version: 3.2.1
   resolution: "ansi-styles@npm:3.2.1"
@@ -8524,6 +8540,19 @@ __metadata:
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
   checksum: 10/cdfb57fa6c7649bbff98d9028c2f0de2f91c86f551179541cf784b1cfdc1562dcb951955f46d54d930a3879931a980e32a46b598acaea274728dbe068deca919
+  languageName: node
+  linkType: hard
+
+"codehike@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "codehike@npm:1.0.7"
+  dependencies:
+    "@code-hike/lighter": "npm:1.0.1"
+    diff: "npm:^5.1.0"
+    estree-util-visit: "npm:^2.0.0"
+    mdast-util-mdx-jsx: "npm:^3.0.0"
+    unist-util-visit: "npm:^5.0.0"
+  checksum: 10/f9f6af49c01def22d6fc6f6b7038b304cf3bbd33ee63646b66a621a8660c383453b6795b646e0ad23e0e433709e91ebfd11dfa603abc54e6a764c53212c0b52c
   languageName: node
   linkType: hard
 
@@ -9411,6 +9440,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dedent@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "dedent@npm:1.7.0"
+  peerDependencies:
+    babel-plugin-macros: ^3.1.0
+  peerDependenciesMeta:
+    babel-plugin-macros:
+      optional: true
+  checksum: 10/c902f3e7e828923bd642c12c1d8996616ff5588f8279a2951790bd7c7e479fa4dd7f016b55ce2c9ea1aa2895fc503e7d6c0cde6ebc95ca683ac0230f7c911fd7
+  languageName: node
+  linkType: hard
+
 "deep-extend@npm:^0.6.0":
   version: 0.6.0
   resolution: "deep-extend@npm:0.6.0"
@@ -9494,6 +9535,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"diff@npm:^5.1.0":
+  version: 5.2.0
+  resolution: "diff@npm:5.2.0"
+  checksum: 10/01b7b440f83a997350a988e9d2f558366c0f90f15be19f4aa7f1bb3109a4e153dfc3b9fbf78e14ea725717017407eeaa2271e3896374a0181e8f52445740846d
+  languageName: node
+  linkType: hard
+
 "diff@npm:^8.0.2":
   version: 8.0.2
   resolution: "diff@npm:8.0.2"
@@ -9511,6 +9559,8 @@ __metadata:
     "@types/node": "npm:^24.10.0"
     "@types/react": "npm:^19.2.2"
     "@types/react-dom": "npm:^19.2.2"
+    codehike: "npm:^1.0.7"
+    dedent: "npm:^1.7.0"
     fumadocs-core: "npm:16.0.10"
     fumadocs-mdx: "npm:13.0.7"
     fumadocs-ui: "npm:16.0.10"

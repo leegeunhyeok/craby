@@ -3,6 +3,11 @@ title: Create a Project
 ---
 
 import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { GradleIcon } from '@/components/icons/gradle';
+import { TomlIcon } from '@/components/icons/toml';
+import { TypeScriptIcon } from '@/components/icons/typescript';
+import { RustIcon } from '@/components/icons/rust';
+import { NodeJsIcon } from '@/components/icons/nodejs';
 
 This guide will walk you through creating your first Craby module from scratch.
 
@@ -83,33 +88,33 @@ After scaffolding or setup, your project will have this structure:
 
 <Files>
   <Folder name="your-module" defaultOpen>
-    <Folder name="src">
-      <File name="index.ts" />
-      <File name="NativeModule.ts" />
+    <Folder name="src" defaultOpen>
+      <File name="index.ts" icon={<TypeScriptIcon />} />
+      <File name="NativeModule.ts" icon={<TypeScriptIcon />} />
     </Folder>
-    <Folder name="crates">
+    <Folder name="crates" defaultOpen>
       <Folder name="lib" defaultOpen>
-        <File name="Cargo.toml" />
-        <File name="build.rs" />
+        <File name="Cargo.toml" icon={<TomlIcon />}/>
+        <File name="build.rs" icon={<RustIcon />} />
         <Folder name="src" defaultOpen>
-          <File name="lib.rs" />
-          <File name="ffi.rs" />
-          <File name="generated.rs" />
+          <File name="lib.rs" icon={<RustIcon />} />
+          <File name="ffi.rs" icon={<RustIcon />} />
+          <File name="generated.rs" icon={<RustIcon />} />
         </Folder>
       </Folder>
     </Folder>
     <Folder name="cpp" disabled />
-    <Folder name="android">
-      <File name="build.gradle" />
+    <Folder name="android" defaultOpen>
+      <File name="build.gradle" icon={<GradleIcon />} />
       <File name="CMakeLists.txt" />
     </Folder>
-    <Folder name="ios">
+    <Folder name="ios" defaultOpen>
       <Folder name="framework" disabled />
     </Folder>
-    <File name="Cargo.toml" />
-    <File name="craby.toml" />
-    <File name="rust-toolchain.toml" />
-    <File name="package.json" />
+    <File name="Cargo.toml" icon={<TomlIcon />} />
+    <File name="craby.toml" icon={<TomlIcon />} />
+    <File name="rust-toolchain.toml" icon={<TomlIcon />} />
+    <File name="package.json" icon={<NodeJsIcon />} />
   </Folder>
 </Files>
 

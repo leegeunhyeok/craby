@@ -14,7 +14,11 @@ import { BaseLinkItem } from 'fumadocs-ui/layouts/links';
 import { cn } from 'fumadocs-ui/utils/cn';
 import { XIcon } from 'lucide-react';
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOnly?: boolean;
+}
+
+export function Sidebar(props: SidebarProps) {
   const viewport = (
     <SidebarViewport>
       <SidebarPageTree />
@@ -24,7 +28,7 @@ export function Sidebar() {
   const mobile = (
     <SidebarContentMobile>
       <SidebarHeader>
-        <div className="flex text-fd-muted-foreground items-center gap-1.5 justify-between pl-2">
+        <div className="flex items-center justify-between gap-1.5 pl-2 text-fd-muted-foreground">
           <ThemeToggle className="p-0" mode="light-dark" />
           <SidebarTrigger
             className={cn(
@@ -55,18 +59,9 @@ export function Sidebar() {
     </SidebarContentMobile>
   );
 
-  const content = (
-    <SidebarContent>
-      {viewport}
-      <SidebarFooter>
-        <div className="flex text-fd-muted-foreground items-center empty:hidden">
-          <ThemeToggle className="ms-auto p-0" mode="light-dark" />
-        </div>
-      </SidebarFooter>
-    </SidebarContent>
-  );
+  const content = <SidebarContent className="bg-fd-background">{viewport}</SidebarContent>;
 
-  return <SidebarBase Mobile={mobile} Content={content} />;
+  return <SidebarBase Mobile={mobile} Content={props.mobileOnly ? null : content} />;
 }
 
 function GitHubIcon() {

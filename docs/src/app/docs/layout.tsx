@@ -1,7 +1,7 @@
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { DocsNavBar } from '@/components/navbar';
-import { source } from '@/lib/source';
 import { Sidebar } from '@/components/sidebar';
+import { source } from '@/lib/source';
 
 export default function Layout({ children }: LayoutProps<'/docs'>) {
   return (
@@ -10,6 +10,7 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
       nav={{ component: <DocsNavBar /> }}
       sidebar={{ collapsible: false, className: 'bg-fd-background md:-mt-6', component: <Sidebar /> }}
       searchToggle={{ enabled: false }}
+      themeSwitch={{ enabled: false }}
     >
       {children}
     </DocsLayout>

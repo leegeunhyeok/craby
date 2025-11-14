@@ -7,12 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": [
-      "packages/*/src/**",
-      "examples/*/src/**",
-      "docs/src/**",
-      "!template"
-    ]
+    "includes": ["packages/*/src/**", "examples/*/src/**", "docs/src/**", "!template"]
   },
   "formatter": {
     "enabled": true,
@@ -23,10 +18,21 @@
     "rules": {
       "recommended": true,
       "complexity": {
-        "noBannedTypes": "off"
+        "noBannedTypes": "off",
+        "noImportantStyles": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noUnknownAtRules": "off"
+      },
+      "nursery": {
+        "useSortedClasses": {
+          "level": "warn",
+          "fix": "safe"
+        }
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
       }
     }
   },
