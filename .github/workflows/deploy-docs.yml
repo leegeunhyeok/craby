@@ -34,14 +34,14 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Install dependencies
         run: yarn install --immutable
-      - name: Build with VitePress
+      - name: Build documentation
         run: yarn docs:build
         env:
           GA_ID: ${{ secrets.GA_ID }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: docs/.vitepress/dist
+          path: docs/out
 
   deploy:
     name: Deploy
