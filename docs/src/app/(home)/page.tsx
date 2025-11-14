@@ -2,7 +2,7 @@ import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import { cn } from 'fumadocs-ui/utils/cn';
 import Link from 'next/link';
 import { type PropsWithChildren, Suspense } from 'react';
-import { CodePreview } from '@/components/code-preview';
+import { CodePreview, CodePreviewFallback } from '@/components/code-preview';
 import { Feature } from '@/components/feature';
 
 export default function HomePage() {
@@ -37,7 +37,7 @@ export default function HomePage() {
           </div>
         </div>
         <div className="flex w-full max-w-[600px] pl-8 drop-shadow-[0_0_25px_rgba(130,215,247,0.8)] max-[1100px]:pl-0">
-          <Suspense fallback={null}>
+          <Suspense fallback={<CodePreviewFallback />}>
             <CodePreview />
           </Suspense>
         </div>

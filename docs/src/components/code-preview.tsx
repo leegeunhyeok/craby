@@ -1,6 +1,6 @@
 'use client';
 
-import { type AnnotationHandler, highlight, InnerToken, Pre } from 'codehike/code';
+import { type AnnotationHandler, type HighlightedCode, highlight, InnerToken, Pre } from 'codehike/code';
 import dedent from 'dedent';
 import { cn } from 'fumadocs-ui/utils/cn';
 import { use, useEffect, useMemo, useRef, useState } from 'react';
@@ -54,13 +54,26 @@ export function CodePreview() {
 
   if (highlighted[index] == null) return null;
 
+  return <CodePreviewWindow code={highlighted[index]} lang={highlighted[index]?.lang} />;
+}
+
+export function CodePreviewFallback() {
+  return <CodePreviewWindow code={null} lang="typescript" />;
+}
+
+interface CodePreviewWindowProps {
+  code: HighlightedCode | null;
+  lang: string;
+}
+
+function CodePreviewWindow({ code, lang }: CodePreviewWindowProps) {
   return (
     <div className="flex w-full flex-col">
       <div className="flex overflow-hidden rounded-lg rounded-b-none bg-[#303030]">
         <div
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-[#777] transition-[background-color,color] duration-300 md:px-5 md:py-3',
-            highlighted[index]?.lang === 'typescript' && 'bg-[#1e1e1e] text-white',
+            lang === 'typescript' && 'bg-[#1e1e1e] text-white',
           )}
         >
           <TypeScriptIcon className="h-3 xs:h-4 w-3 xs:w-4 fill-[#3178c6]" />
@@ -69,19 +82,21 @@ export function CodePreview() {
         <div
           className={cn(
             'flex items-center gap-2 px-3 py-2 text-[#777] transition-[background-color,color] duration-300 md:px-5 md:py-3',
-            highlighted[index]?.lang === 'rust' && 'bg-[#1e1e1e] text-white',
+            lang === 'rust' && 'bg-[#1e1e1e] text-white',
           )}
         >
           <RustIcon className="h-3 xs:h-4 w-3 xs:w-4 fill-[#d34516]" />
           <p className="text-[10px] xs:text-sm">Rust</p>
         </div>
       </div>
-      <div className="rounded-lg rounded-t-none bg-[#1e1e1e] p-2 xs:p-4 text-left text-[11px] xs:text-[13px] md:text-[14px]">
-        <Pre
-          code={highlighted[index]}
-          handlers={handlers}
-          className="overflow-x-auto overflow-y-hidden bg-transparent text-left text-[1em]"
-        />
+      <div className="min-h-[16em] rounded-lg rounded-t-none bg-[#1e1e1e] p-2 xs:p-4 text-left text-[11px] xs:text-[13px] md:text-[14px]">
+        {code && (
+          <Pre
+            code={code}
+            handlers={handlers}
+            className="overflow-x-auto overflow-y-hidden bg-transparent text-left text-[1em]"
+          />
+        )}
       </div>
     </div>
   );
