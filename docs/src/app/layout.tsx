@@ -21,7 +21,10 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <head>
+        <meta property="og:image" content="/banner.png" />
+        <meta name="twitter:image" content="/banner.png" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css" />
+        <link rel="icon" href="/favicon.ico" />
         <style>{`@import url('https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css');`}</style>
         <style>{`.tossface {  font-family: "Tossface", sans-serif; }`}</style>
         <script async src={GA_SRC} />
