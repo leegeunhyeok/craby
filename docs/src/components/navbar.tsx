@@ -72,7 +72,7 @@ function Navbar({ mode, links }: NavbarProps) {
         </Link>
         {/* Desktop */}
         <LargeSearchToggle className="inline-flex hidden w-[200px] cursor-pointer items-center gap-2 rounded-full border bg-fd-secondary/50 p-1.5 ps-2 text-fd-muted-foreground text-sm transition-colors hover:bg-fd-accent hover:text-fd-accent-foreground md:flex dark:bg-[#2e2e2e]" />
-        <ThemeToggle className="hidden md:flex" mode="light-dark" />
+        <ThemeToggle className="hidden cursor-pointer md:flex" mode="light-dark" />
         {/* Mobile */}
         <SearchToggle className="cursor-pointer md:hidden" />
         <div className="flex flex-row items-center justify-center md:hidden">
@@ -91,7 +91,12 @@ function Navbar({ mode, links }: NavbarProps) {
         (mode === 'docs' || isScrolled) && 'border-fd-border border-b',
       )}
     >
-      <div className="mx-auto flex w-full max-w-[1200px] flex-row items-center justify-between px-4">
+      <div
+        className={cn(
+          'mx-auto flex w-full flex-row items-center justify-between px-4',
+          mode === 'home' && 'max-w-[1200px]',
+        )}
+      >
         {right()}
         {left()}
       </div>

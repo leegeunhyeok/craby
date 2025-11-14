@@ -23,9 +23,13 @@ export default function NotFoundPage() {
       <div className="flex max-w-[1200px] flex-1 flex-col justify-center gap-4 px-8 pb-[100px] text-center">
         <NotFoundLogo className="mx-auto w-full max-w-[280px]" />
         <h1 className="mx-auto w-full font-bold text-3xl sm:text-4xl">404</h1>
+        <p>Oops! This page seems to have wandered off</p>
         <Link
           href="/"
-          className={cn('mx-auto font-medium text-sm sm:text-base', buttonVariants({ variant: 'outline' }))}
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'mx-auto rounded-full px-4 font-medium text-sm sm:text-base',
+          )}
         >
           Return to Home
         </Link>
