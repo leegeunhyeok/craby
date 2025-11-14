@@ -38,17 +38,33 @@ pub fn print_schema(schema: &Schema) -> Result<(), anyhow::Error> {
 
     // Enums
     let enum_count = schema.enums.len();
-    println!("└─ Enum types ({})", enum_count);
+    println!("├─ Enum types ({})", enum_count);
     schema.enums.iter().enumerate().for_each(|(i, enum_spec)| {
         let is_last = i == enum_count - 1;
         let branch = if is_last { "└─" } else { "├─" };
         println!(
-            "    {} {}",
+            "│   {} {}",
             branch,
             enum_spec.as_enum().unwrap().name.blue()
         );
     });
     if schema.enums.is_empty() {
+        println!("   {}", "(None)".dimmed());
+    }
+
+    // Signals
+    let signal_count = schema.signals.len();
+    println!("└─ Signals ({})", signal_count);
+    schema
+        .signals
+        .iter()
+        .enumerate()
+        .for_each(|(i, signal_spec)| {
+            let is_last = i == signal_count - 1;
+            let branch = if is_last { "└─" } else { "├─" };
+            println!("    {} {}", branch, signal_spec.name.blue());
+        });
+    if schema.signals.is_empty() {
         println!("   {}", "(None)".dimmed());
     }
 
