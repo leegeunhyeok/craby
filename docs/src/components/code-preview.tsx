@@ -89,7 +89,7 @@ function CodePreviewWindow({ code, lang }: CodePreviewWindowProps) {
           <p className="text-[10px] xs:text-sm">Rust</p>
         </div>
       </div>
-      <div className="min-h-[16em] rounded-lg rounded-t-none bg-[#1e1e1e] p-2 xs:p-4 text-left text-[11px] xs:text-[13px] md:text-[14px]">
+      <div className="min-h-[15em] xs:min-h-[16em] rounded-lg rounded-t-none bg-[#1e1e1e] p-3 xs:p-4 text-left text-[11px] xs:text-[13px]">
         {code && (
           <Pre
             code={code}

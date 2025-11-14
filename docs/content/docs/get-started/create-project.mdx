@@ -3,6 +3,7 @@ title: Create a Project
 ---
 
 import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { CMakeIcon } from '@/components/icons/cmake';
 import { GradleIcon } from '@/components/icons/gradle';
 import { TomlIcon } from '@/components/icons/toml';
 import { TypeScriptIcon } from '@/components/icons/typescript';
@@ -89,32 +90,32 @@ After scaffolding or setup, your project will have this structure:
 <Files>
   <Folder name="your-module" defaultOpen>
     <Folder name="src" defaultOpen>
-      <File name="index.ts" icon={<TypeScriptIcon />} />
-      <File name="NativeModule.ts" icon={<TypeScriptIcon />} />
+      <File name="index.ts" icon={<TypeScriptIcon fill="currentColor" />} />
+      <File name="NativeModule.ts" icon={<TypeScriptIcon fill="currentColor" />} />
     </Folder>
     <Folder name="crates" defaultOpen>
       <Folder name="lib" defaultOpen>
-        <File name="Cargo.toml" icon={<TomlIcon />}/>
-        <File name="build.rs" icon={<RustIcon />} />
+        <File name="Cargo.toml" icon={<TomlIcon fill="currentColor" />}/>
+        <File name="build.rs" icon={<RustIcon fill="currentColor" />} />
         <Folder name="src" defaultOpen>
-          <File name="lib.rs" icon={<RustIcon />} />
-          <File name="ffi.rs" icon={<RustIcon />} />
-          <File name="generated.rs" icon={<RustIcon />} />
+          <File name="lib.rs" icon={<RustIcon fill="currentColor" />} />
+          <File name="ffi.rs" icon={<RustIcon fill="currentColor" />} />
+          <File name="generated.rs" icon={<RustIcon fill="currentColor" />} />
         </Folder>
       </Folder>
     </Folder>
     <Folder name="cpp" disabled />
     <Folder name="android" defaultOpen>
-      <File name="build.gradle" icon={<GradleIcon />} />
-      <File name="CMakeLists.txt" />
+      <File name="build.gradle" icon={<GradleIcon fill="currentColor" />} />
+      <File name="CMakeLists.txt" icon={<CMakeIcon fill="currentColor" />} />
     </Folder>
     <Folder name="ios" defaultOpen>
       <Folder name="framework" disabled />
     </Folder>
-    <File name="Cargo.toml" icon={<TomlIcon />} />
-    <File name="craby.toml" icon={<TomlIcon />} />
-    <File name="rust-toolchain.toml" icon={<TomlIcon />} />
-    <File name="package.json" icon={<NodeJsIcon />} />
+    <File name="Cargo.toml" icon={<TomlIcon fill="currentColor" />} />
+    <File name="craby.toml" icon={<TomlIcon fill="currentColor" />} />
+    <File name="rust-toolchain.toml" icon={<TomlIcon fill="currentColor" />} />
+    <File name="package.json" icon={<NodeJsIcon fill="currentColor" />} />
   </Folder>
 </Files>
 

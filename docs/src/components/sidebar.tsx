@@ -53,7 +53,7 @@ export function Sidebar(props: SidebarProps) {
           className={cn(buttonVariants({ size: 'icon', color: 'ghost' }))}
           aria-label="GitHub"
         >
-          <GitHubIcon />
+          <GitHubIcon fill="currentColor" />
         </BaseLinkItem>
       </SidebarFooter>
     </SidebarContentMobile>

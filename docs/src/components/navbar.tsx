@@ -68,7 +68,7 @@ function Navbar({ mode, links }: NavbarProps) {
           target="_blank"
           className={`max-md:hidden ${iconButtonClass}`}
         >
-          <GitHubIcon />
+          <GitHubIcon fill="currentColor" />
         </Link>
         {/* Desktop */}
         <LargeSearchToggle className="inline-flex hidden w-[200px] cursor-pointer items-center gap-2 rounded-full border bg-fd-secondary/50 p-1.5 ps-2 text-fd-muted-foreground text-sm transition-colors hover:bg-fd-accent hover:text-fd-accent-foreground md:flex dark:bg-[#2e2e2e]" />
