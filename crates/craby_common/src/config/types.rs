@@ -22,6 +22,7 @@ pub struct LibConfig {
 pub struct Config {
     pub project: ProjectConfig,
     pub android: AndroidConfig,
+    pub ios: IosConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -33,12 +34,19 @@ pub struct ProjectConfig {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AndroidConfig {
     pub package_name: String,
+    pub targets: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct IosConfig {
+    pub targets: Option<Vec<String>>,
 }
 
 #[derive(Debug)]
 pub struct CompleteConfig {
     pub project: ProjectConfig,
-    pub android: AndroidConfig,
     pub project_root: PathBuf,
     pub source_dir: PathBuf,
+    pub android: AndroidConfig,
+    pub ios: IosConfig,
 }

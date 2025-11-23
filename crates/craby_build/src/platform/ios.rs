@@ -19,16 +19,10 @@ use indoc::formatdoc;
 use log::{debug, info};
 use owo_colors::OwoColorize;
 
-const IOS_TARGETS: [Target; 3] = [
-    Target::Ios(Identifier::Arm64),
-    Target::Ios(Identifier::Arm64Simulator),
-    Target::Ios(Identifier::X86_64Simulator),
-];
-
-pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
+pub fn crate_libs(config: &CompleteConfig, build_targets: &[Target]) -> Result<(), anyhow::Error> {
     let ios_base_path = ios_base_path(&config.project_root);
 
-    let (sims, devices): (Vec<_>, Vec<_>) = IOS_TARGETS.iter().partition(|target| {
+    let (sims, devices): (Vec<_>, Vec<_>) = build_targets.iter().partition(|target| {
         matches!(
             target,
             Target::Ios(Identifier::Arm64Simulator) | Target::Ios(Identifier::X86_64Simulator)
@@ -42,13 +36,18 @@ pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
 
     let devices = devices
         .into_iter()
+        .filter(|target| matches!(target, Target::Ios(_)))
         .map(|target| Artifacts::get_artifacts(config, target))
         .collect::<Result<Vec<_>, anyhow::Error>>()?;
 
-    let sims = create_sim_lib(&config.project_root, sims)?;
+    let sims = if sims.len() > 1 {
+        vec![create_sim_lib(&config.project_root, sims)?]
+    } else {
+        sims
+    };
     let xcframework_path = create_xcframework(config)?;
 
-    for artifacts in [devices, vec![sims]].concat() {
+    for artifacts in [devices, sims].concat() {
         artifacts.path_of(ArtifactType::Lib).iter().try_for_each(
             |lib| -> Result<(), anyhow::Error> {
                 info!(

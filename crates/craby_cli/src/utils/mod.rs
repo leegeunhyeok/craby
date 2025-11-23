@@ -1,3 +1,4 @@
+pub mod build_targets;
 pub mod file;
 pub mod git;
 pub mod log;

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use craby_build::{constants::toolchain::Target, platform::android::ANDROID_TARGETS};
+use craby_build::constants::toolchain::{Target, DEFAULT_ANDROID_TARGETS};
 use craby_common::{
     constants::toolchain::TARGETS,
     env::get_installed_targets,
@@ -64,7 +64,10 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
             Err(e) => {
                 passed &= false;
                 suggestions.push(Suggestion::plain_text(
-                    &format!("Check {} path is set correctly", "$ANDROID_NDK_HOME".yellow()),
+                    &format!(
+                        "Check {} path is set correctly",
+                        "$ANDROID_NDK_HOME".yellow()
+                    ),
                     Some(&formatdoc! {
                         r#"
                         If Android NDK is not installed, please install it from the following link:
@@ -77,7 +80,7 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
         },
     );
 
-    for target in ANDROID_TARGETS {
+    for target in DEFAULT_ANDROID_TARGETS {
         match target {
             Target::Android(abi) => {
                 assert_with_status(

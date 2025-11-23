@@ -6,28 +6,21 @@ use owo_colors::OwoColorize;
 
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},
-    constants::{android::Abi, toolchain::Target},
+    constants::toolchain::Target,
     platform::{
         android::path::ndk_llvm_strip_path,
         common::{replace_cxx_header, replace_cxx_iter_template},
     },
 };
 
-pub const ANDROID_TARGETS: [Target; 4] = [
-    Target::Android(Abi::Arm64V8a),
-    Target::Android(Abi::ArmeAbiV7a),
-    Target::Android(Abi::X86_64),
-    Target::Android(Abi::X86),
-];
-
-pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
+pub fn crate_libs(config: &CompleteConfig, build_targets: &[Target]) -> Result<(), anyhow::Error> {
     let jni_base_path = jni_base_path(&config.project_root);
 
-    for target in ANDROID_TARGETS {
+    for target in build_targets {
         debug!("Copying artifacts to JNI base path: {:?}", jni_base_path);
 
-        if let Target::Android(abi) = &target {
-            let artifacts = Artifacts::get_artifacts(config, &target)?;
+        if let Target::Android(abi) = target {
+            let artifacts = Artifacts::get_artifacts(config, target)?;
             let abi = abi.to_str();
 
             artifacts.path_of(ArtifactType::Lib).iter().try_for_each(
@@ -49,8 +42,6 @@ pub fn crate_libs(config: &CompleteConfig) -> Result<(), anyhow::Error> {
 
             // android/src/main/jni/libs/{abi}
             artifacts.copy_to(ArtifactType::Lib, &jni_base_path.join("libs").join(abi))?;
-        } else {
-            unreachable!();
         }
     }
 

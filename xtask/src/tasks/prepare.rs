@@ -1,5 +1,5 @@
 use anyhow::Result;
-use craby_build::constants::toolchain::BUILD_TARGETS;
+use craby_build::constants::toolchain::{DEFAULT_ANDROID_TARGETS, DEFAULT_IOS_TARGETS};
 
 use crate::utils::run_command;
 
@@ -18,7 +18,12 @@ pub fn run(opt: Option<&str>) -> Result<()> {
         println!("Setting up toolchain targets...");
         run_command("cargo", &["--version"], None)?;
 
-        for target in BUILD_TARGETS {
+        for target in [
+            DEFAULT_ANDROID_TARGETS.as_ref(),
+            DEFAULT_IOS_TARGETS.as_ref(),
+        ]
+        .concat()
+        {
             println!("Installing target: {}", target.to_str());
             run_command("rustup", &["target", "install", target.to_str()], None)?;
         }

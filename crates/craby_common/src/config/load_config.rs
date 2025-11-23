@@ -29,6 +29,7 @@ pub fn load_config(project_root: &Path) -> Result<CompleteConfig, anyhow::Error>
         project_root: project_root.to_path_buf(),
         project: config.project,
         android: config.android,
+        ios: config.ios,
         source_dir,
     })
 }

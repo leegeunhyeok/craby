@@ -7,6 +7,7 @@ pub mod toolchain {
 
     use super::{android::Abi, ios::Identifier};
 
+    #[derive(Debug, Clone, Copy)]
     pub enum Target {
         Android(Abi),
         Ios(Identifier),
@@ -31,17 +32,37 @@ pub mod toolchain {
         }
     }
 
+    impl TryFrom<&str> for Target {
+        type Error = anyhow::Error;
+
+        fn try_from(value: &str) -> Result<Self, Self::Error> {
+            match value {
+                "aarch64-linux-android" => Ok(Target::Android(Abi::Arm64V8a)),
+                "armv7-linux-androideabi" => Ok(Target::Android(Abi::ArmeAbiV7a)),
+                "x86_64-linux-android" => Ok(Target::Android(Abi::X86_64)),
+                "i686-linux-android" => Ok(Target::Android(Abi::X86)),
+                "aarch64-apple-ios" => Ok(Target::Ios(Identifier::Arm64)),
+                "aarch64-apple-ios-sim" => Ok(Target::Ios(Identifier::Arm64Simulator)),
+                "x86_64-apple-ios" => Ok(Target::Ios(Identifier::X86_64Simulator)),
+                _ => anyhow::bail!("Invalid target: {}", value),
+            }
+        }
+    }
+
     impl Display for Target {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             write!(f, "{}", self.to_str())
         }
     }
 
-    pub const BUILD_TARGETS: [Target; 7] = [
+    pub const DEFAULT_ANDROID_TARGETS: [Target; 4] = [
         Target::Android(Abi::Arm64V8a),
         Target::Android(Abi::ArmeAbiV7a),
         Target::Android(Abi::X86_64),
         Target::Android(Abi::X86),
+    ];
+
+    pub const DEFAULT_IOS_TARGETS: [Target; 3] = [
         Target::Ios(Identifier::Arm64),
         Target::Ios(Identifier::Arm64Simulator),
         Target::Ios(Identifier::X86_64Simulator),
@@ -58,6 +79,7 @@ pub mod android {
     /// See https://github.com/facebook/react-native/blob/v0.76.0/packages/react-native/gradle/libs.versions.toml
     pub const MIN_SDK_VERSION: u8 = 23;
 
+    #[derive(Debug, Clone, Copy)]
     pub enum Abi {
         Arm64V8a,
         ArmeAbiV7a,
@@ -122,6 +144,7 @@ pub mod android {
 }
 
 pub mod ios {
+    #[derive(Debug, Clone, Copy)]
     pub enum Identifier {
         /// For device
         Arm64,

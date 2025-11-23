@@ -1,15 +1,18 @@
 use std::path::PathBuf;
 
-use craby_build::{
-    constants::toolchain::BUILD_TARGETS,
-    platform::{android as android_build, ios as ios_build},
-};
+use craby_build::platform::{android as android_build, ios as ios_build};
 use craby_codegen::codegen;
 use craby_common::{config::load_config, env::is_initialized};
 use log::{debug, info};
 use owo_colors::OwoColorize;
 
-use crate::{commands::build::validate_schema, utils::terminal::with_spinner};
+use crate::{
+    commands::build::validate_schema,
+    utils::{
+        build_targets::{get_build_targets, print_build_targets},
+        terminal::with_spinner,
+    },
+};
 
 pub struct BuildOptions {
     pub project_root: PathBuf,
@@ -20,6 +23,11 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
 
     if !is_initialized(&opts.project_root) {
         anyhow::bail!("Craby project is not initialized. Please run `craby init` first.");
+    }
+
+    let build_targets = get_build_targets(&config)?;
+    if build_targets.is_empty() {
+        anyhow::bail!("No build targets found. Please check your `craby.toml` file.");
     }
 
     debug!(
@@ -36,12 +44,13 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     validate_schema(&opts.project_root, &schemas)?;
 
     info!("Starting to build the Cargo project...");
+    print_build_targets(&build_targets);
     with_spinner("Building Cargo projects...", |pb| {
-        for (i, target) in BUILD_TARGETS.iter().enumerate() {
+        for (i, target) in build_targets.iter().enumerate() {
             pb.set_message(format!(
                 "[{}/{}] Building for target: {}",
                 i + 1,
-                BUILD_TARGETS.len(),
+                build_targets.len(),
                 target.to_str().dimmed()
             ));
             craby_build::cargo::build::build_target(&opts.project_root, target)?;
@@ -51,10 +60,10 @@ pub fn perform(opts: BuildOptions) -> anyhow::Result<()> {
     info!("Cargo project build completed successfully");
 
     info!("Creating Android artifacts...");
-    android_build::crate_libs(&config)?;
+    android_build::crate_libs(&config, &build_targets)?;
 
     info!("Creating iOS XCFramework...");
-    ios_build::crate_libs(&config)?;
+    ios_build::crate_libs(&config, &build_targets)?;
 
     info!("Build completed successfully 🎉");
 

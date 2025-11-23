@@ -1,6 +1,6 @@
 use std::process::Command;
 
-use craby_build::constants::toolchain::BUILD_TARGETS;
+use craby_build::constants::toolchain::{DEFAULT_ANDROID_TARGETS, DEFAULT_IOS_TARGETS};
 use craby_common::env::is_rustup_installed;
 use owo_colors::OwoColorize;
 
@@ -26,7 +26,12 @@ pub fn setup_rust_toolchain() -> anyhow::Result<()> {
 }
 
 fn setup_rust_targets() -> anyhow::Result<()> {
-    for target in BUILD_TARGETS {
+    for target in [
+        DEFAULT_ANDROID_TARGETS.as_ref(),
+        DEFAULT_IOS_TARGETS.as_ref(),
+    ]
+    .concat()
+    {
         let target = target.to_str();
         let res = Command::new("rustup")
             .args(["target", "add", target])
