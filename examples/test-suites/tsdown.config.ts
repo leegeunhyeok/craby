@@ -6,4 +6,5 @@ export default defineConfig({
   format: ['cjs'],
   external: [new RegExp('.png$')],
   dts: true,
+  fixedExtension: false,
 });
