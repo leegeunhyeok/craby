@@ -44,6 +44,11 @@ impl CrabyTestSpec for CrabyTest {
         arg
     }
 
+    fn array_buffer_method(&mut self, mut arg: Vec<u8>) -> Vec<u8> {
+        arg.iter_mut().for_each(|x| *x ^= 255);
+        arg
+    }
+
     fn array_method(&mut self, mut arg: Array<Number>) -> Array<Number> {
         arg.extend(vec![1.0, 2.0, 3.0]);
         arg.iter_mut().for_each(|x| *x *= 2.0);

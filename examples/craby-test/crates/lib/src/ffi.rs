@@ -11,27 +11,9 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::crabytest::bridging")]
 pub mod bridging {
     #[derive(Clone)]
-    struct NullableNumber {
-        null: bool,
-        val: f64,
-    }
-
-    #[derive(Clone)]
     struct NullableString {
         null: bool,
         val: String,
-    }
-
-    #[derive(Clone)]
-    struct SubObject {
-        a: NullableString,
-        b: f64,
-        c: bool,
-    }
-
-    #[derive(Clone)]
-    struct MyModuleError {
-        reason: String,
     }
 
     #[derive(Clone)]
@@ -51,9 +33,27 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
+    struct MyModuleError {
+        reason: String,
+    }
+
+    #[derive(Clone)]
+    struct SubObject {
+        a: NullableString,
+        b: f64,
+        c: bool,
+    }
+
+    #[derive(Clone)]
     struct NullableSubObject {
         null: bool,
         val: SubObject,
+    }
+
+    #[derive(Clone)]
+    struct NullableNumber {
+        null: bool,
+        val: f64,
     }
 
     enum MyEnum {
@@ -89,6 +89,9 @@ pub mod bridging {
 
         #[cxx_name = "createCrabyTest"]
         fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest>;
+
+        #[cxx_name = "arrayBufferMethod"]
+        fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>>;
 
         #[cxx_name = "arrayMethod"]
         fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
@@ -198,6 +201,13 @@ fn calculator_subtract(it_: &mut Calculator, a: f64, b: f64) -> Result<f64, anyh
 fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
     let ctx = Context::new(id, data_path);
     Box::new(CrabyTest::new(ctx))
+}
+
+fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.array_buffer_method(arg);
+        ret
+    })
 }
 
 fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {

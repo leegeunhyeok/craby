@@ -2,6 +2,14 @@ export function toErrorObject(error: any) {
   return { message: error.message };
 }
 
+export function stringToBytes(str: string) {
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    bytes[i] = str.charCodeAt(i);
+  }
+  return bytes;
+}
+
 export function createTaskHandler<T>() {
   let resolver: (value: T) => void;
   let rejector: (reason: unknown) => void;

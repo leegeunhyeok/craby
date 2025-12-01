@@ -30,6 +30,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
     [](craby::crabytest::bridging::CrabyTest *ptr) { rust::Box<craby::crabytest::bridging::CrabyTest>::from_raw(ptr); }
   );
   threadPool_ = std::make_shared<craby::crabytest::utils::ThreadPool>(10);
+  methodMap_["arrayBufferMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayBufferMethod};
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
@@ -138,6 +139,30 @@ void CxxCrabyTestModule::emit(std::string name, bridging::CrabyTestSignal* signa
     } catch (const std::exception& err) {
       // Noop
     }
+  }
+}
+
+jsi::Value CxxCrabyTestModule::arrayBufferMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, args[0], callInvoker);
+    auto ret = craby::crabytest::bridging::arrayBufferMethod(*it_, arg0);
+
+    return react::bridging::toJs(rt, ret);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
   }
 }
 

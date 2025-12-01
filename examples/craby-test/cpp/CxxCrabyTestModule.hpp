@@ -23,6 +23,11 @@ public:
   void emit(std::string name, bridging::CrabyTestSignal* signal);
 
   static facebook::jsi::Value
+  arrayBufferMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
   arrayMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);

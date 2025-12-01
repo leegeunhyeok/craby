@@ -4,5 +4,6 @@
   "search.exclude": {
     "**/node_modules": true,
     "**/.next": true
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -969,13 +969,13 @@ std::size_t align_of() {
 namespace craby {
   namespace crabytest {
     namespace bridging {
-      struct NullableNumber;
       struct NullableString;
-      struct SubObject;
-      struct MyModuleError;
       struct TestObject;
       struct ProgressEvent;
+      struct MyModuleError;
+      struct SubObject;
       struct NullableSubObject;
+      struct NullableNumber;
       enum class MyEnum : ::std::uint8_t;
       enum class SwitchState : ::std::uint8_t;
       struct Calculator;
@@ -991,16 +991,6 @@ namespace craby {
 namespace craby {
 namespace crabytest {
 namespace bridging {
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
-#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
-struct NullableNumber final {
-  bool null CXX_DEFAULT_VALUE(false);
-  double val CXX_DEFAULT_VALUE(0);
-
-  using IsRelocatable = ::std::true_type;
-};
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
-
 #ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableString
 #define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableString
 struct NullableString final {
@@ -1021,15 +1011,6 @@ struct SubObject final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$SubObject
-
-#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
-#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
-struct MyModuleError final {
-  ::rust::String reason;
-
-  using IsRelocatable = ::std::true_type;
-};
-#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
 
 #ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableSubObject
 #define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableSubObject
@@ -1064,6 +1045,25 @@ struct ProgressEvent final {
   using IsRelocatable = ::std::true_type;
 };
 #endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$ProgressEvent
+
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
+struct MyModuleError final {
+  ::rust::String reason;
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$MyModuleError
+
+#ifndef CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
+#define CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
+struct NullableNumber final {
+  bool null CXX_DEFAULT_VALUE(false);
+  double val CXX_DEFAULT_VALUE(0);
+
+  using IsRelocatable = ::std::true_type;
+};
+#endif // CXXBRIDGE1_STRUCT_craby$crabytest$bridging$NullableNumber
 
 #ifndef CXXBRIDGE1_ENUM_craby$crabytest$bridging$MyEnum
 #define CXXBRIDGE1_ENUM_craby$crabytest$bridging$MyEnum
@@ -1135,6 +1135,8 @@ double multiply(::craby::crabytest::bridging::Calculator &it_, double a, double 
 double subtract(::craby::crabytest::bridging::Calculator &it_, double a, double b);
 
 ::rust::Box<::craby::crabytest::bridging::CrabyTest> createCrabyTest(::std::size_t id, ::rust::Str data_path) noexcept;
+
+::rust::Vec<::std::uint8_t> arrayBufferMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Vec<::std::uint8_t> arg);
 
 ::rust::Vec<double> arrayMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Vec<double> arg);
 

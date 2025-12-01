@@ -1,7 +1,7 @@
 import * as Module from 'craby-test';
 import { assert, isEqual } from 'es-toolkit';
 import type { TestSuite } from './types';
-import { createTaskHandler, nextTick, toErrorObject, waitForSignals } from './utils';
+import { createTaskHandler, nextTick, stringToBytes, toErrorObject, waitForSignals } from './utils';
 
 const TEST_SUITES: TestSuite[] = [
   {
@@ -85,6 +85,27 @@ const TEST_SUITES: TestSuite[] = [
         return toErrorObject(error);
       }
     },
+  },
+  {
+    label: 'ArrayBuffer',
+    action: () => {
+      const text = 'Hello, World!';
+      const arrayBuffer = stringToBytes(text);
+      const result = Module.CrabyTestModule.arrayBufferMethod(arrayBuffer.buffer);
+      const type = result instanceof ArrayBuffer ? 'ArrayBuffer' : '';
+
+      assert(type === 'ArrayBuffer', '`arrayBufferMethod` result is not an ArrayBuffer');
+
+      return {
+        text,
+        type,
+        data: Array.from(new Uint8Array(result)),
+      };
+    },
+  },
+  {
+    label: 'Array',
+    action: () => Module.CrabyTestModule.arrayMethod([1, 2, 3]),
   },
   {
     label: 'Array',
