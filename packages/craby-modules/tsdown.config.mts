@@ -5,5 +5,6 @@ export default defineConfig({
   outDir: './dist',
   format: ['esm', 'cjs'],
   dts: true,
+  fixedExtension: false,
   attw: process.env.ATTW === 'true',
 });

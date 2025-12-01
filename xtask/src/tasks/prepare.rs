@@ -3,7 +3,7 @@ use craby_build::constants::toolchain::{DEFAULT_ANDROID_TARGETS, DEFAULT_IOS_TAR
 
 use crate::utils::run_command;
 
-pub const EXCLUDE_PACKAGE_NAMES: [&str; 3] = ["craby-test", "craby-0.76", "craby-0.80"];
+pub const EXCLUDE_PACKAGE_NAMES: [&str; 4] = ["craby-test", "craby-0.76", "craby-0.80", "docs"];
 
 pub fn run(opt: Option<&str>) -> Result<()> {
     let is_ts = opt.is_some_and(|o| o == "--ts");
