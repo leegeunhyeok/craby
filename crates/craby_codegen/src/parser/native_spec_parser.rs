@@ -176,7 +176,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                             } else {
                                 self.try_into_prop(prop_sig)
                             }
-                        },
+                        }
                         _ => Err(error(INVALID_SPEC, type_lit.span)),
                     })
                     .collect::<Result<Vec<Prop>, OxcDiagnostic>>();
@@ -474,7 +474,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                         } else {
                             None
                         };
-                        Ok(Signal { 
+                        Ok(Signal {
                             name: event_name,
                             payload_type,
                         })
@@ -509,23 +509,21 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 Ok(TypeAnnotation::Array(Box::new(type_annotation)))
             }
             TSType::TSTypeReference(type_ref) => match &type_ref.type_name {
-                TSTypeName::IdentifierReference(ident_ref) => {
-                    if matches!(ident_ref.name.as_str(), RESERVED_TYPE_PROMISE) {
-                        match &type_ref.type_arguments {
-                            Some(type_args) if type_args.params.len() == 1 => {
-                                let resolved_type = type_args.params.first().unwrap();
-                                let resolved_type = self.try_into_type_annotation(resolved_type)?;
-                                return Ok(TypeAnnotation::Promise(Box::new(resolved_type)));
-                            }
-                            _ => anyhow::bail!("Invalid promise type"),
+                TSTypeName::IdentifierReference(ident_ref) => match ident_ref.name.as_str() {
+                    RESERVED_TYPE_ARRAY_BUFFER => Ok(TypeAnnotation::ArrayBuffer),
+                    RESERVED_TYPE_PROMISE => match &type_ref.type_arguments {
+                        Some(type_args) if type_args.params.len() == 1 => {
+                            let resolved_type = type_args.params.first().unwrap();
+                            let resolved_type = self.try_into_type_annotation(resolved_type)?;
+                            Ok(TypeAnnotation::Promise(Box::new(resolved_type)))
                         }
-                    }
-
-                    Ok(TypeAnnotation::Ref(RefTypeAnnotation {
+                        _ => anyhow::bail!("Invalid promise type"),
+                    },
+                    _ => Ok(TypeAnnotation::Ref(RefTypeAnnotation {
                         ref_id: ident_ref.reference_id(),
                         name: ident_ref.name.to_string(),
-                    }))
-                }
+                    })),
+                },
                 _ => anyhow::bail!(INVALID_TYPE_REFERENCE),
             },
             TSType::TSUnionType(union_type) => self.try_into_nullable(union_type),
@@ -711,8 +709,11 @@ impl<'a> NativeModuleAnalyzer<'a> {
     }
 
     fn try_assert_reserved_type(&self, name: &Atom<'a>) -> Result<(), anyhow::Error> {
-        if matches!(name.as_str(), RESERVED_TYPE_PROMISE) {
-            anyhow::bail!("Cannot use reserved type: {}", name.as_str());
+        match name.as_str() {
+            RESERVED_TYPE_ARRAY_BUFFER | RESERVED_TYPE_PROMISE => {
+                anyhow::bail!("Cannot use reserved type: {}", name.as_str())
+            }
+            _ => {}
         }
 
         if name.starts_with("Nullable") {
@@ -777,11 +778,7 @@ impl<'a> NativeModuleAnalyzer<'a> {
                 .into_iter()
                 .map(|mut signal| {
                     if let Some(ref mut payload_type) = signal.payload_type {
-                        NativeModuleAnalyzer::resolve_refs(
-                            payload_type,
-                            self.scoping,
-                            &self.decls,
-                        );
+                        NativeModuleAnalyzer::resolve_refs(payload_type, self.scoping, &self.decls);
 
                         NativeModuleAnalyzer::collect_types(
                             payload_type,

@@ -1,6 +1,7 @@
 pub type Boolean = bool;
 pub type Number = f64;
 pub type String = std::string::String;
+pub type ArrayBuffer = std::vec::Vec<u8>;
 pub type Array<T> = std::vec::Vec<T>;
 pub type Promise<T> = std::result::Result<T, anyhow::Error>;
 pub type Void = ();

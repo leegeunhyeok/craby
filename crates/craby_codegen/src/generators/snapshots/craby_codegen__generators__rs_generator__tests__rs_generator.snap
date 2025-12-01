@@ -21,22 +21,9 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::testmodule::bridging")]
 pub mod bridging {
     #[derive(Clone)]
-    struct NullableNumber {
-        null: bool,
-        val: f64,
-    }
-
-    #[derive(Clone)]
     struct NullableString {
         null: bool,
         val: String,
-    }
-
-    #[derive(Clone)]
-    struct SubObject {
-        a: NullableString,
-        b: f64,
-        c: bool,
     }
 
     #[derive(Clone)]
@@ -51,9 +38,22 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
+    struct SubObject {
+        a: NullableString,
+        b: f64,
+        c: bool,
+    }
+
+    #[derive(Clone)]
     struct NullableSubObject {
         null: bool,
         val: SubObject,
+    }
+
+    #[derive(Clone)]
+    struct NullableNumber {
+        null: bool,
+        val: f64,
     }
 
     enum MyEnum {
@@ -72,6 +72,9 @@ pub mod bridging {
 
         #[cxx_name = "createCrabyTest"]
         fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest>;
+
+        #[cxx_name = "arrayBufferMethod"]
+        fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>>;
 
         #[cxx_name = "arrayMethod"]
         fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>>;
@@ -128,6 +131,13 @@ pub mod bridging {
 fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
     let ctx = Context::new(id, data_path);
     Box::new(CrabyTest::new(ctx))
+}
+
+fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.array_buffer_method(arg);
+        ret
+    })
 }
 
 fn craby_test_array_method(it_: &mut CrabyTest, arg: Vec<f64>) -> Result<Vec<f64>, anyhow::Error> {
@@ -214,7 +224,7 @@ unsafe fn drop_signal(signal: *mut CrabyTestSignal) {
 }
 
 ./crates/lib/src/generated.rs
-// Hash: 01fedec5ee57afb3
+// Hash: 13e0a78327427cfe
 #[rustfmt::skip]
 use craby::prelude::*;
 
@@ -233,6 +243,7 @@ pub trait CrabyTestSpec {
             }
         }
     }
+    fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer;
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
     fn boolean_method(&mut self, arg: Boolean) -> Boolean;
     fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
@@ -248,6 +259,32 @@ pub trait CrabyTestSpec {
 
 pub enum CrabyTestSignal {
     OnSignal,
+}
+
+impl Default for NullableSubObject {
+    fn default() -> Self {
+        NullableSubObject {
+            null: true,
+            val: SubObject::default(),
+        }
+    }
+}
+
+impl From<NullableSubObject> for Nullable<SubObject> {
+    fn from(val: NullableSubObject) -> Self {
+        Nullable::new(if val.null { None } else { Some(val.val) })
+    }
+}
+
+impl From<Nullable<SubObject>> for NullableSubObject {
+    fn from(val: Nullable<SubObject>) -> Self {
+        let val = val.into_value();
+        let null = val.is_none();
+        NullableSubObject {
+            val: val.unwrap_or(SubObject::default()),
+            null,
+        }
+    }
 }
 
 impl Default for SwitchState {
@@ -282,26 +319,6 @@ impl From<Nullable<String>> for NullableString {
     }
 }
 
-impl Default for TestObject {
-    fn default() -> Self {
-        TestObject {
-            foo: String::default(),
-            bar: 0.0,
-            baz: false,
-            sub: NullableSubObject::default(),
-            camel_case: 0.0,
-            pascal_case: 0.0,
-            snake_case: 0.0
-        }
-    }
-}
-
-impl Default for MyEnum {
-    fn default() -> Self {
-        MyEnum::Foo
-    }
-}
-
 impl Default for NullableNumber {
     fn default() -> Self {
         NullableNumber {
@@ -328,29 +345,23 @@ impl From<Nullable<Number>> for NullableNumber {
     }
 }
 
-impl Default for NullableSubObject {
+impl Default for TestObject {
     fn default() -> Self {
-        NullableSubObject {
-            null: true,
-            val: SubObject::default(),
+        TestObject {
+            foo: String::default(),
+            bar: 0.0,
+            baz: false,
+            sub: NullableSubObject::default(),
+            camel_case: 0.0,
+            pascal_case: 0.0,
+            snake_case: 0.0
         }
     }
 }
 
-impl From<NullableSubObject> for Nullable<SubObject> {
-    fn from(val: NullableSubObject) -> Self {
-        Nullable::new(if val.null { None } else { Some(val.val) })
-    }
-}
-
-impl From<Nullable<SubObject>> for NullableSubObject {
-    fn from(val: Nullable<SubObject>) -> Self {
-        let val = val.into_value();
-        let null = val.is_none();
-        NullableSubObject {
-            val: val.unwrap_or(SubObject::default()),
-            null,
-        }
+impl Default for MyEnum {
+    fn default() -> Self {
+        MyEnum::Foo
     }
 }
 
@@ -376,6 +387,10 @@ pub struct CrabyTest {
 
 #[craby_module]
 impl CrabyTestSpec for CrabyTest {
+    fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer {
+        unimplemented!();
+    }
+
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number> {
         unimplemented!();
     }

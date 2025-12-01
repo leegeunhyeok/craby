@@ -621,6 +621,29 @@ impl CxxTemplate {
 
             using namespace facebook;
 
+            namespace {flat_name} {{
+
+            class RustVecBuffer : public jsi::MutableBuffer {{
+            public:
+              explicit RustVecBuffer(rust::Vec<uint8_t> vec)
+                : vec_(std::move(vec)) {{}}
+
+              ~RustVecBuffer() override = default;
+
+              size_t size() const override {{
+                return vec_.size();
+              }}
+
+              uint8_t* data() override {{
+                return const_cast<uint8_t*>(vec_.data());
+              }}
+
+            private:
+              rust::Vec<uint8_t> vec_;
+            }};
+
+            }} // namespace {flat_name}
+
             namespace facebook {{
             namespace react {{
 
@@ -659,6 +682,28 @@ impl CxxTemplate {
               }}
             }};
 
+            template <>
+            struct Bridging<rust::Vec<uint8_t>> {{
+              static rust::Vec<uint8_t> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
+                auto arrayBuffer = value.asObject(rt).getArrayBuffer(rt);
+                uint8_t* data = arrayBuffer.data(rt);
+                size_t size = arrayBuffer.size(rt);
+                rust::Vec<uint8_t> vec;
+                vec.reserve(size);
+
+                for (size_t i = 0; i < size; i++) {{
+                  vec.push_back(data[i]);
+                }}
+
+                return vec;
+              }}
+
+              static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {{
+                auto buffer = std::make_shared<{flat_name}::RustVecBuffer>(std::move(vec));
+                return jsi::ArrayBuffer(rt, buffer);
+              }}
+            }};
+
             template <typename T>
             struct Bridging<rust::Vec<T>> {{
               static rust::Vec<T> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {{
@@ -689,6 +734,7 @@ impl CxxTemplate {
             {bridging_templates}
             }} // namespace react
             }} // namespace facebook"#,
+            flat_name = flat_case(&ctx.project_name),
             bridging_templates = if bridging_templates.is_empty() { "".to_string() } else { format!("\n{}\n", bridging_templates.join("\n\n")) },
         };
 

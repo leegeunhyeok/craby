@@ -8,6 +8,7 @@ pub mod specs {
     pub const REGISTRY_GET: &str = "get";
     pub const REGISTRY_GET_ENFORCING: &str = "getEnforcing";
 
+    pub const RESERVED_TYPE_ARRAY_BUFFER: &str = "ArrayBuffer";
     pub const RESERVED_TYPE_PROMISE: &str = "Promise";
 
     /// `it_` is reserved for the `shared_ptr` of the module

@@ -120,6 +120,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean => "bool".to_string(),
             TypeAnnotation::Number => "f64".to_string(),
             TypeAnnotation::String => "String".to_string(),
+            TypeAnnotation::ArrayBuffer => "Vec<u8>".to_string(),
             TypeAnnotation::Array(element_type) => {
                 if let TypeAnnotation::Array(..) = &**element_type {
                     return Err(anyhow::anyhow!(
@@ -150,6 +151,7 @@ impl TypeAnnotation {
                 TypeAnnotation::Ref(RefTypeAnnotation { name, .. }) => {
                     format!("Nullable{name}")
                 }
+                TypeAnnotation::ArrayBuffer => "NullableArrayBuffer".to_string(),
                 TypeAnnotation::Array(element_type) => match &**element_type {
                     TypeAnnotation::Boolean => "NullableBooleanArray".to_string(),
                     TypeAnnotation::Number => "NullableNumberArray".to_string(),
@@ -214,12 +216,13 @@ impl TypeAnnotation {
     /// # Generated Code Examples
     ///
     /// ```rust,ignore
-    /// Boolean                       // Boolean (aliased bool)
-    /// Number                        // Number (aliased f64)
-    /// String                        // String
-    /// Array<Number>                 // Array<Number>
-    /// Promise<Number>               // Promise<Number>
-    /// Nullable<Number>              // Nullable<Number>
+    /// Boolean          // Boolean (aliased bool)
+    /// Number           // Number (aliased f64)
+    /// String           // String
+    /// ArrayBuffer      // ArrayBuffer (aliased Vec<u8>)
+    /// Array<Number>    // Array<Number>
+    /// Promise<Number>  // Promise<Number>
+    /// Nullable<Number> // Nullable<Number>
     /// ```
     pub fn as_rs_impl_type(&self) -> Result<RsImplType, anyhow::Error> {
         let rs_type = match self {
@@ -227,6 +230,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean => "Boolean".to_string(),
             TypeAnnotation::Number => "Number".to_string(),
             TypeAnnotation::String => "String".to_string(),
+            TypeAnnotation::ArrayBuffer => "ArrayBuffer".to_string(),
             TypeAnnotation::Array(element_type) => {
                 if let TypeAnnotation::Array { .. } = &**element_type {
                     return Err(anyhow::anyhow!(
@@ -268,7 +272,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean => "false".to_string(),
             TypeAnnotation::Number => "0.0".to_string(),
             TypeAnnotation::String => "String::default()".to_string(),
-            TypeAnnotation::Array(..) => "Vec::default()".to_string(),
+            TypeAnnotation::ArrayBuffer | TypeAnnotation::Array(..) => "Vec::default()".to_string(),
             TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => {
                 format!("{name}::default()")
             }

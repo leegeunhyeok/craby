@@ -68,6 +68,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean => "bool".to_string(),
             TypeAnnotation::Number => "double".to_string(),
             TypeAnnotation::String => "rust::String".to_string(),
+            TypeAnnotation::ArrayBuffer => "rust::Vec<uint8_t>".to_string(),
             TypeAnnotation::Array(element_type) => {
                 format!("rust::Vec<{}>", element_type.as_cxx_type(cxx_ns)?)
             }
@@ -85,6 +86,7 @@ impl TypeAnnotation {
                     TypeAnnotation::Void => "NullableVoid".to_string(), 
                     TypeAnnotation::Object(ObjectTypeAnnotation { name, .. }) => format!("Nullable{}", name),
                     TypeAnnotation::Enum(EnumTypeAnnotation { name, .. }) => format!("Nullable{}", name),
+                    TypeAnnotation::ArrayBuffer => "NullableArrayBuffer".to_string(),
                     TypeAnnotation::Array(element_type) => match &**element_type {
                         TypeAnnotation::Boolean => "NullableBooleanArray".to_string(),
                         TypeAnnotation::Number=> {
@@ -144,6 +146,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean => "false".to_string(),
             TypeAnnotation::Number => "0.0".to_string(),
             TypeAnnotation::String => "rust::String()".to_string(),
+            TypeAnnotation::ArrayBuffer => "rust::Vec<uint8_t>()".to_string(),
             TypeAnnotation::Array(element_type) => {
                 format!("rust::Vec<{}>()", element_type.as_cxx_type(cxx_ns)?)
             }
@@ -196,6 +199,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean
             | TypeAnnotation::Number
             | TypeAnnotation::String
+            | TypeAnnotation::ArrayBuffer
             | TypeAnnotation::Array(..)
             | TypeAnnotation::Enum(..)
             | TypeAnnotation::Object(..)
@@ -224,6 +228,7 @@ impl TypeAnnotation {
             TypeAnnotation::Boolean
             | TypeAnnotation::Number
             | TypeAnnotation::String
+            | TypeAnnotation::ArrayBuffer
             | TypeAnnotation::Array(..)
             | TypeAnnotation::Enum(..)
             | TypeAnnotation::Object(..)

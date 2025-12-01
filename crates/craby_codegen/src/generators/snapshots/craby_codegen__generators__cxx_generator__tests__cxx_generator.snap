@@ -34,6 +34,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
     [](craby::testmodule::bridging::CrabyTest *ptr) { rust::Box<craby::testmodule::bridging::CrabyTest>::from_raw(ptr); }
   );
   threadPool_ = std::make_shared<craby::testmodule::utils::ThreadPool>(10);
+  methodMap_["arrayBufferMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayBufferMethod};
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{2, &CxxCrabyTestModule::camelMethod};
@@ -128,6 +129,30 @@ void CxxCrabyTestModule::emit(std::string name, bridging::CrabyTestSignal* signa
     } catch (const std::exception& err) {
       // Noop
     }
+  }
+}
+
+jsi::Value CxxCrabyTestModule::arrayBufferMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, args[0], callInvoker);
+    auto ret = craby::testmodule::bridging::arrayBufferMethod(*it_, arg0);
+
+    return react::bridging::toJs(rt, ret);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::testmodule::utils::errorMessage(err));
   }
 }
 
@@ -495,6 +520,11 @@ public:
   void emit(std::string name, bridging::CrabyTestSignal* signal);
 
   static facebook::jsi::Value
+  arrayBufferMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
   arrayMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
@@ -581,6 +611,29 @@ protected:
 
 using namespace facebook;
 
+namespace testmodule {
+
+class RustVecBuffer : public jsi::MutableBuffer {
+public:
+  explicit RustVecBuffer(rust::Vec<uint8_t> vec)
+    : vec_(std::move(vec)) {}
+
+  ~RustVecBuffer() override = default;
+
+  size_t size() const override {
+    return vec_.size();
+  }
+
+  uint8_t* data() override {
+    return const_cast<uint8_t*>(vec_.data());
+  }
+
+private:
+  rust::Vec<uint8_t> vec_;
+};
+
+} // namespace testmodule
+
 namespace facebook {
 namespace react {
 
@@ -616,6 +669,28 @@ struct Bridging<rust::String> {
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {
     return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+  }
+};
+
+template <>
+struct Bridging<rust::Vec<uint8_t>> {
+  static rust::Vec<uint8_t> fromJs(jsi::Runtime& rt, const jsi::Value &value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto arrayBuffer = value.asObject(rt).getArrayBuffer(rt);
+    uint8_t* data = arrayBuffer.data(rt);
+    size_t size = arrayBuffer.size(rt);
+    rust::Vec<uint8_t> vec;
+    vec.reserve(size);
+
+    for (size_t i = 0; i < size; i++) {
+      vec.push_back(data[i]);
+    }
+
+    return vec;
+  }
+
+  static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {
+    auto buffer = std::make_shared<testmodule::RustVecBuffer>(std::move(vec));
+    return jsi::ArrayBuffer(rt, buffer);
   }
 };
 

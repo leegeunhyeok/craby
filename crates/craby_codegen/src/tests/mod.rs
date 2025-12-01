@@ -42,6 +42,7 @@ pub fn get_codegen_context() -> CodegenContext {
             booleanMethod(arg: boolean): boolean;
             stringMethod(arg: string): string;
             objectMethod(arg: TestObject): TestObject;
+            arrayBufferMethod(arg: ArrayBuffer): ArrayBuffer;
             arrayMethod(arg: number[]): number[];
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;

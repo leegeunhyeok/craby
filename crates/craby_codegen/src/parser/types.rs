@@ -42,6 +42,7 @@ pub enum TypeAnnotation {
     Number,
     String,
     Array(Box<TypeAnnotation>),
+    ArrayBuffer,
     Object(ObjectTypeAnnotation),
     Enum(EnumTypeAnnotation),
     Promise(Box<TypeAnnotation>),
