@@ -1,6 +1,6 @@
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::PathBuf,
     process::Command,
 };
 
@@ -41,7 +41,7 @@ pub fn crate_libs(config: &CompleteConfig, build_targets: &[Target]) -> Result<(
         .collect::<Result<Vec<_>, anyhow::Error>>()?;
 
     let sims = if sims.len() > 1 {
-        vec![create_sim_lib(&config.project_root, sims)?]
+        vec![create_sim_lib(sims)?]
     } else {
         sims
     };
@@ -94,7 +94,7 @@ pub fn crate_libs(config: &CompleteConfig, build_targets: &[Target]) -> Result<(
 ///
 /// This function takes a vector of artifacts and creates a simulator library from them.
 /// It uses the `lipo` command to combine the libraries into a single library.
-fn create_sim_lib(project_root: &Path, sims: Vec<Artifacts>) -> Result<Artifacts, anyhow::Error> {
+fn create_sim_lib(sims: Vec<Artifacts>) -> Result<Artifacts, anyhow::Error> {
     let identifier = Identifier::Simulator.try_into_str()?;
     let orig = sims
         .first()
@@ -111,7 +111,8 @@ fn create_sim_lib(project_root: &Path, sims: Vec<Artifacts>) -> Result<Artifacts
         .file_name()
         .ok_or(anyhow::anyhow!("No library name found"))?;
 
-    let dest_dir = crate_target_dir(project_root, identifier);
+    let target_dir = Artifacts::try_get_target_dir()?;
+    let dest_dir = crate_target_dir(&target_dir, identifier);
     let dest_path = dest_dir.join(lib_name);
 
     if dest_dir.try_exists()? {

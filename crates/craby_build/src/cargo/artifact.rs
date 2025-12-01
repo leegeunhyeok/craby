@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, process::Command};
 
 use craby_common::{
     config::CompleteConfig,
@@ -28,6 +28,27 @@ const CXX_SRC_EXTS: &[&str] = &["c", "cc"];
 const CXX_HEADER_EXTS: &[&str] = &["h", "hh"];
 
 impl Artifacts {
+    pub fn try_get_target_dir() -> Result<PathBuf, anyhow::Error> {
+        let res = Command::new("cargo")
+            .args(["metadata", "--no-deps", "--format-version", "1"])
+            .output()?;
+
+        if !res.status.success() {
+            anyhow::bail!(
+                "Failed to get target path: {}",
+                String::from_utf8_lossy(&res.stderr)
+            );
+        }
+
+        let metadata = serde_json::from_slice::<serde_json::Value>(&res.stdout)?;
+        let target_dir = metadata["target_directory"].as_str();
+
+        match target_dir {
+            Some(target_dir) => Ok(PathBuf::from(target_dir)),
+            None => anyhow::bail!("target_directory field not found in cargo metadata"),
+        }
+    }
+
     pub fn get_artifacts(
         config: &CompleteConfig,
         target: &Target,
@@ -51,8 +72,9 @@ impl Artifacts {
         let cxx_headers = collect_files(&cxx_bridge_dir, &cxx_header_filter)?;
         let cxx_bridge_headers = collect_files(&cxx_bridge_include_dir, &cxx_header_filter)?;
 
+        let target_dir = Self::try_get_target_dir()?;
         let lib_name = SanitizedString::from(&config.project.name);
-        let lib = crate_target_dir(&config.project_root, target.to_str())
+        let lib = crate_target_dir(&target_dir, target.to_str())
             .join(format!("lib{}.a", lib_base_name(&lib_name)));
 
         debug!("cxx_srcs: {:?}", cxx_srcs);
