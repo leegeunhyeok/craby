@@ -39,6 +39,5 @@
     "@types/node": "^22",
     "tsdown": "^0.15.10",
     "typescript": "^5.9.3"
-  },
-  "packageManager": "yarn@4.10.3"
+  }
 }

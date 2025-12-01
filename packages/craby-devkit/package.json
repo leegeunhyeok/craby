@@ -47,6 +47,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "packageManager": "yarn@4.10.3"
+  }
 }

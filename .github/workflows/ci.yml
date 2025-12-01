@@ -78,7 +78,7 @@ jobs:
             build: |
               RUST_TARGET=aarch64-pc-windows-msvc yarn workspace @craby/cli-bindings build
 
-    name: stable - ${{ matrix.settings.target }} - node@22
+    name: stable - ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
@@ -86,7 +86,7 @@ jobs:
         uses: actions/setup-node@v4
         if: ${{ !matrix.settings.docker }}
         with:
-          node-version: 22
+          node-version: 22.21.1
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -152,7 +152,7 @@ jobs:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
         node:
-          - '22'
+          - '22.21.1'
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
@@ -197,7 +197,7 @@ jobs:
           - aarch64-unknown-linux-musl
           - armv7-unknown-linux-gnueabihf
         node:
-          - '22'
+          - '22.21.1'
     runs-on: ${{ contains(matrix.target, 'aarch64') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
@@ -263,12 +263,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Enable Corepack
-        run: corepack enable
+      - name: Setup Tools
+        uses: jdx/mise-action@v3
       - name: Install dependencies
         run: yarn install --immutable
       - name: Install Rust toolchain
@@ -310,14 +306,10 @@ jobs:
       - test-linux-binding
     steps:
       - uses: actions/checkout@v4
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+      - name: Setup Tools
+        uses: jdx/mise-action@v3
       # - name: Update npm
       #   run: npm install -g npm@latest
-      - name: Enable Corepack
-        run: corepack enable
       - name: Install dependencies
         run: yarn install --immutable
       - name: Download all artifacts

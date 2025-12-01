@@ -75,6 +75,5 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*"
-  },
-  "packageManager": "yarn@4.10.3"
+  }
 }
