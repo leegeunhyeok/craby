@@ -691,9 +691,7 @@ impl CxxTemplate {
                 rust::Vec<uint8_t> vec;
                 vec.reserve(size);
 
-                for (size_t i = 0; i < size; i++) {{
-                  vec.push_back(data[i]);
-                }}
+                std::memcpy(vec.data(), data, size);
 
                 return vec;
               }}
