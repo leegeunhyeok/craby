@@ -142,7 +142,7 @@ jobs:
             cd "$GITHUB_WORKSPACE/examples/${{ matrix.react-native.version }}/android"
             adb install -r "$(find . -name "*.apk" -path "*/outputs/apk/release/*" | head -n 1)"
             cd $GITHUB_WORKSPACE
-            MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }} MAESTRO_DRIVER_STARTUP_TIMEOUT=300000 yarn e2e
+            MAESTRO_APP_ID=${{ matrix.react-native.app-identifier }} MAESTRO_DRIVER_STARTUP_TIMEOUT=600000 yarn e2e
 
   e2e-ios:
     strategy:
@@ -207,7 +207,7 @@ jobs:
         run: yarn e2e
         env:
           MAESTRO_APP_ID: ${{ matrix.react-native.app-identifier }}
-          MAESTRO_DRIVER_STARTUP_TIMEOUT: 300000
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 600000
 
   e2e-pass-report:
     runs-on: ubuntu-latest
