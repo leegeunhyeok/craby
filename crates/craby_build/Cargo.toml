@@ -15,7 +15,8 @@ artifact = [
   "dep:indoc",
   "dep:log",
   "dep:anyhow",
-  "dep:owo-colors"
+  "dep:owo-colors",
+  "dep:serde_json",
 ]
 cxx = ["dep:cxx-build"]
 
@@ -27,4 +28,5 @@ indoc         = { version = "2.0.6", optional = true }
 log           = { workspace = true, optional = true }
 anyhow        = { workspace = true, optional = true }
 owo-colors    = { workspace = true, optional = true }
+serde_json    = { workspace = true, optional = true }
 toml = "0.9.8"
