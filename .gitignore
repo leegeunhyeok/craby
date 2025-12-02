@@ -185,7 +185,7 @@ $RECYCLE.BIN/
 
 *.node
 /target
-Cargo.lock
+examples/**/Cargo.lock
 
 .yarn/*
 !.yarn/patches
