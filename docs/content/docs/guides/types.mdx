@@ -14,6 +14,7 @@ Craby automatically converts types between TypeScript, Rust, and C++ at compile-
 | `number` | `f64` | `double` |
 | `string` | `&str` for parameters, otherwise `String` | `std::string` |
 | `object` | `struct` | `struct` |
+| `ArrayBuffer` | `Vec<u8>` | `std::vector<uint8_t>` |
 | `T[]` | `Vec<T>` | `std::vector<T>` |
 | `T \| null` | `Nullable<T>` | `struct` |
 | `Promise<T>` | `Result<T>` | `T` (Unwrapped) |
@@ -33,6 +34,7 @@ Craby provides type aliases to make Rust types more familiar to TypeScript devel
 |-----------|------------|
 | `bool` | `Boolean` |
 | `f64` | `Number` |
+| `Vec<u8>` | `ArrayBuffer` |
 | `Vec<T>` | `Array<T>` |
 | `Result<T>` | `Promise<T>` |
 | `()` | `Void` |
@@ -247,6 +249,33 @@ fn baz(&mut self, count: Number) -> Array<Number> {
     (0..count as i32).map(|x| x as f64).collect()
 }
 ```
+
+## ArrayBuffer
+
+`ArrayBuffer` is used to represent raw binary data. This is particularly useful for working with images, file data, network protocols, or any binary format.
+
+<Tabs items={['TypeScript', 'Rust']}>
+  <Tab value="TypeScript">
+    ```typescript
+    export interface Spec extends NativeModule {
+      encrypt(data: ArrayBuffer): ArrayBuffer;
+    }
+    ```
+  </Tab>
+  <Tab value="Rust">
+    ```rust
+    #[craby_module]
+    impl EncryptModuleSpec for EncryptModule {
+        fn encrypt(&mut self, mut data: ArrayBuffer) -> ArrayBuffer {
+            for byte in data.iter_mut() {
+                *byte ^= 0xFF; // Simple XOR encryption
+            }
+            data
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
 
 ## Nullable Types
 
