@@ -618,6 +618,8 @@ impl CxxTemplate {
             #include "ffi.rs.h"
             #include <react/bridging/Bridging.h>
             #include <variant>
+            #include <iterator>
+            #include <algorithm>
 
             using namespace facebook;
 
@@ -691,7 +693,7 @@ impl CxxTemplate {
                 rust::Vec<uint8_t> vec;
                 vec.reserve(size);
 
-                std::memcpy(vec.data(), data, size);
+                std::copy(data, data + size, std::back_inserter(vec));
 
                 return vec;
               }}

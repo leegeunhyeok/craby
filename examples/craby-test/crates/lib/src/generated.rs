@@ -41,7 +41,7 @@ pub trait CrabyTestSpec {
             }
         }
     }
-    fn array_buffer_method(&mut self, arg: Vec<u8>) -> Vec<u8>; // TODO: update codegen
+    fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer;
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
     fn boolean_method(&mut self, arg: Boolean) -> Boolean;
     fn camel_method(&mut self) -> Void;
