@@ -74,11 +74,12 @@ yarn workspaces foreach --all --topological-dev run typecheck   # Type check all
 ### NAPI bindings (Vitest)
 
 The NAPI bindings tests load the native binary against an actual Metro bundle.
-**Start the Metro bundler first**, then run the tests:
+**Start the Metro bundler from one of the example apps first**, then run the tests:
 
 ```bash
-# Terminal 1 — start Metro
-cd examples/craby-test && yarn crabygen start
+# Terminal 1 — start Metro (use either 0.76 or 0.80)
+cd examples/0.76   # or examples/0.80
+yarn start
 
 # Terminal 2 — run Vitest
 yarn workspace @craby/cli-bindings test
@@ -90,11 +91,14 @@ When modifying `craby_codegen`:
 
 1. Add the new type/method case to `crates/craby_codegen/src/tests/mod.rs`
 2. Run `cargo insta test --workspace` → `cargo insta review --workspace` to update snapshots
-3. Add the corresponding method to `examples/craby-test/src/NativeCrabyTest.ts` (TS spec) and `examples/craby-test/crates/lib/src/craby_test_impl.rs` (Rust impl), then regenerate:
+3. Add the corresponding method to `examples/craby-test/src/NativeCrabyTest.ts` (TS spec) and `examples/craby-test/crates/lib/src/craby_test_impl.rs` (Rust impl), then regenerate and build:
    ```bash
-   cd examples/craby-test && yarn crabygen codegen
+   cd examples/craby-test
+   yarn crabygen codegen   # regenerate bindings
+   yarn crabygen build     # build native libraries
    ```
-4. Add an E2E assertion in `examples/test-suites/src/test-suites.ts`
+4. **Include all regenerated files** (under `examples/craby-test/`) in the same commit as the codegen change. This keeps the generated artifacts in sync and avoids stale diffs in later PRs.
+5. Add an E2E assertion in `examples/test-suites/src/test-suites.ts`
 
 ## E2E Testing
 
