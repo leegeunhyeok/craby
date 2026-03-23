@@ -2,15 +2,13 @@
 
 Thank you for your interest in contributing to Craby!
 
-We welcome contributions from the community and appreciate your efforts to help improve this project.
-
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Help](#getting-help)
 - [How to Contribute](#how-to-contribute)
 - [Development Setup](#development-setup)
-- [Testing the CLI](#testing-the-cli)
+- [Unit Tests](#unit-tests)
 - [E2E Testing](#e2e-testing)
 - [Code Quality Checks](#code-quality-checks)
 - [Pull Request Process](#pull-request-process)
@@ -22,212 +20,178 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 ## Getting Help
 
-If you have questions about the project or need help getting started, please use our [GitHub Discussions](https://github.com/leegeunhyeok/craby/discussions) page. This is the best place to ask questions, share ideas, and engage with the community.
+If you have questions or need help getting started, use [GitHub Discussions](https://github.com/leegeunhyeok/craby/discussions).
 
 ## How to Contribute
 
-There are many ways to contribute to Craby:
-
-- **Report bugs**: If you find a bug, please [open an issue](https://github.com/leegeunhyeok/craby/issues/new) with a clear description and reproduction steps.
-- **Suggest features**: Have an idea for a new feature? Start a discussion or open an issue to share your thoughts.
-- **Improve documentation**: Help us improve our docs by fixing typos, adding examples, or clarifying instructions.
+- **Report bugs**: [Open an issue](https://github.com/leegeunhyeok/craby/issues/new) with a clear description and reproduction steps.
+- **Suggest features**: Start a discussion or open an issue.
+- **Improve documentation**: Fix typos, add examples, or clarify instructions.
 - **Submit pull requests**: Fix bugs, add features, or improve existing code.
 
 ## Development Setup
 
-Craby uses [mise](https://mise.jdx.dev/) to manage Node.js and Rust versions, ensuring consistent development environments across the team.
+Craby uses [mise](https://mise.jdx.dev/) to manage Node.js and Rust versions.
 
-1. **Set up the project**:
-   ```bash
-   mise trust
-   mise install
-   ```
+```bash
+mise trust && mise install   # Rust nightly + Node LTS
+yarn install                 # Install JS dependencies
+yarn prepare                 # Full build (all packages)
+```
 
-2. **Install dependencies**:
-   ```bash
-   yarn install
-   ```
-
-3. **Build all packages**:
-   ```bash
-   yarn prepare
-   ```
-
-## Testing the CLI
-
-### Building the Native Bindings
-
-Before testing CLI commands, you need to build the NAPI-RS bindings:
+### Build CLI bindings and run commands
 
 ```bash
 yarn workspace @craby/cli-bindings build
-```
-
-### Running CLI Commands
-
-After building the bindings, you can execute commands using:
-
-```bash
 yarn workspace crabygen run execute <command> [options]
 ```
 
-### Testing Core Features
-
-To test critical features like code generation and builds, use the test project:
+### Test with the example module
 
 ```bash
 cd examples/craby-test
 yarn crabygen <command> [options]
 ```
 
-This provides a real-world environment for testing your changes.
+## Unit Tests
+
+### Rust
+
+```bash
+cargo test --all                       # Run all Rust unit tests
+cargo insta test --workspace           # Run snapshot tests and collect diffs
+cargo insta review --workspace         # Review and accept snapshot changes
+```
+
+> If your changes affect code generation, snapshot tests will fail. Always run `cargo insta review --workspace` and carefully inspect each diff before accepting.
+
+### TypeScript
+
+```bash
+yarn workspaces foreach --all --topological-dev run typecheck   # Type check all packages
+```
+
+### NAPI bindings (Vitest)
+
+The NAPI bindings tests load the native binary against an actual Metro bundle.
+**Start the Metro bundler first**, then run the tests:
+
+```bash
+# Terminal 1 — start Metro
+cd examples/craby-test && yarn crabygen start
+
+# Terminal 2 — run Vitest
+yarn workspace @craby/cli-bindings test
+```
+
+### Codegen changes checklist
+
+When modifying `craby_codegen`:
+
+1. Add the new type/method case to `crates/craby_codegen/src/tests/mod.rs`
+2. Run `cargo insta test --workspace` → `cargo insta review --workspace` to update snapshots
+3. Add the corresponding method to `examples/craby-test/src/NativeCrabyTest.ts` (TS spec) and `examples/craby-test/crates/lib/src/craby_test_impl.rs` (Rust impl), then regenerate:
+   ```bash
+   cd examples/craby-test && yarn crabygen codegen
+   ```
+4. Add an E2E assertion in `examples/test-suites/src/test-suites.ts`
 
 ## E2E Testing
 
-End-to-end testing ensures the entire workflow functions correctly across different React Native versions and platforms.
+E2E testing runs the full workflow on a real React Native app.
 
 ### Prerequisites
 
-1. **Build the CLI bindings**:
+1. Build CLI bindings:
    ```bash
    yarn workspace @craby/cli-bindings build
    ```
 
-2. **Generate code and verify build**:
+2. Generate code and build native libraries:
    ```bash
    cd examples/craby-test
-   yarn crabygen
-   yarn build
+   yarn crabygen codegen
+   yarn crabygen build
    ```
 
-   If the build succeeds, proceed to test with sample apps.
+### Running with sample apps
 
-### Testing with Sample Apps
+Test against both React Native versions:
 
-Test your changes with the provided React Native sample apps to ensure compatibility:
+- `examples/0.80` — React Native 0.80
+- `examples/0.76` — React Native 0.76
 
-- `examples/0.80` - React Native 0.80
-- `examples/0.76` - React Native 0.76
+For each app:
 
-For each sample app, follow these steps:
+#### 1. Start Metro bundler
 
-#### Start Metro Development Server
+Metro must be running before launching the app. Without it the JS bundle won't load and all tests will fail.
 
 ```bash
+cd examples/<version>
 yarn start
 ```
 
-#### Android Testing
+#### 2. iOS
 
-1. **Build the app**:
-   ```bash
-   yarn android
-   ```
+```bash
+yarn pod:install   # Install CocoaPods dependencies
+yarn ios           # Build and launch on simulator
+```
 
-   Alternatively, build manually using Android Studio.
+Or build manually via Xcode using `examples/<version>/ios/*.xcworkspace`.
 
-2. **Run tests**:
-   - Launch the app on your device/emulator
-   - Tap the "Run All Tests" button
-   - Verify that all test items pass
+#### 3. Android
 
-#### iOS Testing
+```bash
+yarn android       # Build and launch on emulator/device
+```
 
-1. **Install CocoaPods dependencies**:
-   ```bash
-   yarn pod:install
-   ```
+Or build manually via Android Studio.
 
-   This adds the built binary to the iOS workspace.
+#### 4. Run tests
 
-2. **Build the app**:
-   ```bash
-   yarn ios
-   ```
+- Launch the app on your device/simulator/emulator
+- Tap **Run All Tests**
+- Verify all items show **Passed**
 
-   Alternatively, build manually using Xcode.
+### Important notes
 
-3. **Run tests**:
-   - Launch the app on your device/simulator
-   - Tap the "Run All Tests" button
-   - Verify that all test items pass
-
-### Important Notes
-
-- Run E2E tests for **both** React Native versions (0.76 and 0.80)
-- Test on **both** Android and iOS platforms
-- Ensure all tests pass before submitting your PR
-- If tests fail, investigate and fix the issues before proceeding
+- Test on **both** React Native versions (0.76 and 0.80)
+- Test on **both** iOS and Android
+- All tests must pass before submitting a PR
 
 ## Code Quality Checks
 
-Before submitting a pull request, ensure your code passes all quality checks. Run these commands locally to catch issues early.
+Run these locally before opening a PR.
 
-### TypeScript
+### TypeScript (Biome)
 
-- **Lint check**:
-  ```bash
-  yarn lint:all
-  ```
-
-- **Lint and auto-fix**:
-  ```bash
-  yarn lint:fix
-  ```
-
-- **Type checking**:
-  ```bash
-  yarn workspaces foreach --all --topological-dev run typecheck
-  ```
+```bash
+yarn lint:all    # Lint + format check
+yarn lint:fix    # Auto-fix
+```
 
 ### Rust
 
-- **Clippy**:
-  ```bash
-  cargo clippy --all -- --deny warnings
-  ```
-
-- **Run tests**:
-  ```bash
-  cargo test --all
-  ```
-
-- **Review snapshot changes**:
-
-  If your changes affect code generation, snapshot tests may fail. Review and accept changes with:
-  ```bash
-  cargo insta review --workspace
-  ```
-
-  Carefully review each snapshot change, and press `a` to accept valid changes.
+```bash
+cargo clippy --all -- --deny warnings   # Lint
+cargo fmt --all -- --check              # Format check
+cargo fmt --all                         # Format (apply)
+cargo test --all                        # Tests
+```
 
 ## Pull Request Process
 
-1. **Fork repository**
-
-2. **Make your changes**: Implement your bug fix, feature, or improvement.
-
-3. **Test locally**: Run all code quality checks mentioned above to ensure everything passes.
-
-4. **Commit your changes**: Follow our [commit message guidelines](#commit-message-guidelines).
-
-5. **Push and open a pull request**: Push your branch and open a PR against the `main` branch.
-
-6. **CI approval**: After you open a PR, a maintainer will approve the CI workflow to run automated tests.
-
-7. **CI validation**: The CI workflow will run all quality checks, build processes, and end-to-end tests. All checks must pass before your PR can be merged.
-
-### Important Notes
-
-- Make sure to run all quality checks locally before opening a PR. This speeds up the review process and reduces CI failures.
-- The CI runs comprehensive validation including builds and E2E tests that verify the entire system works correctly.
-- Address all feedback from maintainers promptly and update your PR as needed.
+1. Fork the repository
+2. Implement your change and run all quality checks
+3. Commit following the [commit message guidelines](#commit-message-guidelines)
+4. Open a PR against the `main` branch
+5. A maintainer will approve the CI workflow — all checks must pass before merge
 
 ## Commit Message Guidelines
 
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This helps us maintain a clear and consistent project history.
-
-### Format
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 <type>: <description>
@@ -237,6 +201,8 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 [optional footer]
 ```
 
+Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
+
 ---
 
-Thank you for contributing to Craby! Your efforts help make this project better for everyone.
+Thank you for contributing to Craby!
