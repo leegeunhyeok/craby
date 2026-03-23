@@ -164,10 +164,11 @@ const TEST_SUITES: TestSuite[] = [
   {
     label: 'Promise',
     description: '(String arg)',
-    action: () => Module.CrabyTestModule.promiseStringMethod('Hello, Craby!').then((len) => {
-      assert(len === 'Hello, Craby!'.length, `promiseStringMethod returned wrong length: ${len}`);
-      return { path: 'Hello, Craby!', len };
-    }),
+    action: () =>
+      Module.CrabyTestModule.promiseStringMethod('Hello, Craby!').then((len) => {
+        assert(len === 'Hello, Craby!'.length, `promiseStringMethod returned wrong length: ${len}`);
+        return { path: 'Hello, Craby!', len };
+      }),
   },
   {
     label: 'State',
