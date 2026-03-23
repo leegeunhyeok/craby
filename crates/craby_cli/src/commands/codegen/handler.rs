@@ -144,13 +144,11 @@ pub fn perform(opts: CodegenOptions) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Checks `lib.rs` for missing or stale `mod <impl>` declarations.
+/// Checks `lib.rs` for missing `mod <impl>` declarations.
 ///
-/// Since `lib.rs` is never overwritten (to preserve user code), module additions
-/// or removals won't be reflected automatically. This function warns when:
-///
-/// - An expected `mod <name>_impl;` is absent from the file (module added to spec)
-/// - A `mod <name>_impl;` exists in the file but is no longer in the schema (module removed)
+/// Since `lib.rs` is never overwritten (to preserve user code), adding a new
+/// craby module won't be reflected automatically. This function warns when an
+/// expected `mod <name>_impl;` is absent from the file.
 fn check_lib_rs_mods(ctx: &CodegenContext) {
     let lib_rs_path = crate_dir(&ctx.root).join("src").join("lib.rs");
 
@@ -159,44 +157,12 @@ fn check_lib_rs_mods(ctx: &CodegenContext) {
         Err(_) => return,
     };
 
-    let expected: Vec<String> = ctx
-        .schemas
-        .iter()
-        .map(|s| impl_mod_name(&s.module_name))
-        .collect();
-
-    // Warn about missing declarations
-    for mod_name in &expected {
+    for mod_name in ctx.schemas.iter().map(|s| impl_mod_name(&s.module_name)) {
         if !content.contains(&format!("mod {mod_name}")) {
             warn!(
                 "lib.rs is missing module declaration: `pub(crate) mod {mod_name};`\n  → Add it manually or delete lib.rs to regenerate."
             );
         }
-    }
-
-    // Warn about stale declarations (ends with `_impl` but no longer in schema)
-    for line in content.lines() {
-        if let Some(mod_name) = parse_mod_name(line.trim()) {
-            if mod_name.ends_with("_impl") && !expected.iter().any(|m| m == mod_name) {
-                warn!(
-                    "lib.rs contains a stale module declaration: `mod {mod_name};`\n  → Remove it manually."
-                );
-            }
-        }
-    }
-}
-
-/// Extracts the module name from a `mod` declaration line.
-///
-/// Matches: `mod foo;`, `pub mod foo;`, `pub(crate) mod foo;`
-fn parse_mod_name(line: &str) -> Option<&str> {
-    let line = line.strip_suffix(';')?.trim();
-    let idx = line.rfind("mod ")? + 4;
-    let name = line[idx..].trim();
-    if !name.is_empty() && name.chars().all(|c| c.is_alphanumeric() || c == '_') {
-        Some(name)
-    } else {
-        None
     }
 }
 
