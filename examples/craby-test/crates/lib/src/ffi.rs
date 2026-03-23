@@ -126,6 +126,9 @@ pub mod bridging {
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
+        #[cxx_name = "promiseStringMethod"]
+        fn craby_test_promise_string_method(it_: &mut CrabyTest, path: &str) -> Result<f64>;
+
         #[cxx_name = "readData"]
         fn craby_test_read_data(it_: &mut CrabyTest) -> Result<NullableString>;
 
@@ -283,6 +286,13 @@ fn craby_test_pascal_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
 fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.promise_method(arg);
+        ret
+    }).and_then(|r| r)
+}
+
+fn craby_test_promise_string_method(it_: &mut CrabyTest, path: &str) -> Result<f64, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_string_method(path);
         ret
     }).and_then(|r| r)
 }

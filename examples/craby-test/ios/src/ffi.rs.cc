@@ -1237,6 +1237,8 @@ extern "C" {
 
 ::rust::repr::PtrLen craby$crabytest$bridging$cxxbridge1$craby_test_promise_method(::craby::crabytest::bridging::CrabyTest &it_, double arg, double *return$) noexcept;
 
+::rust::repr::PtrLen craby$crabytest$bridging$cxxbridge1$craby_test_promise_string_method(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Str path, double *return$) noexcept;
+
 ::rust::repr::PtrLen craby$crabytest$bridging$cxxbridge1$craby_test_read_data(::craby::crabytest::bridging::CrabyTest &it_, ::craby::crabytest::bridging::NullableString *return$) noexcept;
 
 ::rust::repr::PtrLen craby$crabytest$bridging$cxxbridge1$craby_test_set_state(::craby::crabytest::bridging::CrabyTest &it_, double arg) noexcept;
@@ -1436,6 +1438,15 @@ void pascalMethod(::craby::crabytest::bridging::CrabyTest &it_) {
 double promiseMethod(::craby::crabytest::bridging::CrabyTest &it_, double arg) {
   ::rust::MaybeUninit<double> return$;
   ::rust::repr::PtrLen error$ = craby$crabytest$bridging$cxxbridge1$craby_test_promise_method(it_, arg, &return$.value);
+  if (error$.ptr) {
+    throw ::rust::impl<::rust::Error>::error(error$);
+  }
+  return ::std::move(return$.value);
+}
+
+double promiseStringMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Str path) {
+  ::rust::MaybeUninit<double> return$;
+  ::rust::repr::PtrLen error$ = craby$crabytest$bridging$cxxbridge1$craby_test_promise_string_method(it_, path, &return$.value);
   if (error$.ptr) {
     throw ::rust::impl<::rust::Error>::error(error$);
   }

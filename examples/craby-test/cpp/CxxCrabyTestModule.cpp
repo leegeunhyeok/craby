@@ -42,6 +42,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["objectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["PascalMethod"] = MethodMetadata{0, &CxxCrabyTestModule::pascalMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
+  methodMap_["promiseStringMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseStringMethod};
   methodMap_["readData"] = MethodMetadata{0, &CxxCrabyTestModule::readData};
   methodMap_["setState"] = MethodMetadata{1, &CxxCrabyTestModule::setState};
   methodMap_["snake_method"] = MethodMetadata{0, &CxxCrabyTestModule::snakeMethod};
@@ -422,6 +423,42 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
     thisModule.threadPool_->enqueue([it_, promise, arg0]() mutable {
       try {
         auto ret = craby::crabytest::bridging::promiseMethod(*it_, arg0);
+        promise.resolve(ret);
+      } catch (const jsi::JSError &err) {
+        promise.reject(err.getMessage());
+      } catch (const std::exception &err) {
+        promise.reject(craby::crabytest::utils::errorMessage(err));
+      }
+    });
+
+    return react::bridging::toJs(rt, promise);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::promiseStringMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0$raw = args[0].asString(rt).utf8(rt);
+    auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
+    react::AsyncPromise<double> promise(rt, callInvoker);
+
+    thisModule.threadPool_->enqueue([it_, promise, arg0]() mutable {
+      try {
+        auto ret = craby::crabytest::bridging::promiseStringMethod(*it_, arg0);
         promise.resolve(ret);
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());

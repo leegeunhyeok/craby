@@ -103,6 +103,9 @@ pub mod bridging {
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
 
+        #[cxx_name = "promiseStringMethod"]
+        fn craby_test_promise_string_method(it_: &mut CrabyTest, path: &str) -> Result<f64>;
+
         #[cxx_name = "snakeMethod"]
         fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
 
@@ -203,6 +206,13 @@ fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyho
     }).and_then(|r| r)
 }
 
+fn craby_test_promise_string_method(it_: &mut CrabyTest, path: &str) -> Result<f64, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_string_method(path);
+        ret
+    }).and_then(|r| r)
+}
+
 fn craby_test_snake_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.snake_method(first_arg, second_arg);
@@ -224,7 +234,7 @@ unsafe fn drop_signal(signal: *mut CrabyTestSignal) {
 }
 
 ./crates/lib/src/generated.rs
-// Hash: 13e0a78327427cfe
+// Hash: dfae61da65c7fb45
 #[rustfmt::skip]
 use craby::prelude::*;
 
@@ -253,6 +263,7 @@ pub trait CrabyTestSpec {
     fn object_method(&mut self, arg: TestObject) -> TestObject;
     fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
     fn promise_method(&mut self, arg: Number) -> Promise<Number>;
+    fn promise_string_method(&mut self, path: &str) -> Promise<Number>;
     fn snake_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
     fn string_method(&mut self, arg: &str) -> String;
 }
@@ -424,6 +435,10 @@ impl CrabyTestSpec for CrabyTest {
     }
 
     fn promise_method(&mut self, arg: Number) -> Promise<Number> {
+        unimplemented!();
+    }
+
+    fn promise_string_method(&mut self, path: &str) -> Promise<Number> {
         unimplemented!();
     }
 

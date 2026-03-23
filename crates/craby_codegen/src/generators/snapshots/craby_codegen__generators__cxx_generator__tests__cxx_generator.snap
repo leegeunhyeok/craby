@@ -44,6 +44,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["objectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["PascalMethod"] = MethodMetadata{2, &CxxCrabyTestModule::pascalMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
+  methodMap_["promiseStringMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseStringMethod};
   methodMap_["snakeMethod"] = MethodMetadata{2, &CxxCrabyTestModule::snakeMethod};
   methodMap_["stringMethod"] = MethodMetadata{1, &CxxCrabyTestModule::stringMethod};
   methodMap_["onSignal"] = MethodMetadata{1, &CxxCrabyTestModule::onSignal};
@@ -386,6 +387,43 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
   }
 }
 
+jsi::Value CxxCrabyTestModule::promiseStringMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0$raw = args[0].asString(rt).utf8(rt);
+    auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
+    react::AsyncPromise<double> promise(rt, callInvoker);
+
+    thisModule.threadPool_->enqueue([it_, promise, arg0$raw]() mutable {
+      try {
+        auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
+        auto ret = craby::testmodule::bridging::promiseStringMethod(*it_, arg0);
+        promise.resolve(ret);
+      } catch (const jsi::JSError &err) {
+        promise.reject(err.getMessage());
+      } catch (const std::exception &err) {
+        promise.reject(craby::testmodule::utils::errorMessage(err));
+      }
+    });
+
+    return react::bridging::toJs(rt, promise);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::testmodule::utils::errorMessage(err));
+  }
+}
+
 jsi::Value CxxCrabyTestModule::snakeMethod(jsi::Runtime &rt,
                                 react::TurboModule &turboModule,
                                 const jsi::Value args[],
@@ -566,6 +604,11 @@ public:
 
   static facebook::jsi::Value
   promiseMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  promiseStringMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 

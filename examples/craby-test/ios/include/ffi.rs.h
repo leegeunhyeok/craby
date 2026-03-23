@@ -1160,6 +1160,8 @@ void pascalMethod(::craby::crabytest::bridging::CrabyTest &it_);
 
 double promiseMethod(::craby::crabytest::bridging::CrabyTest &it_, double arg);
 
+double promiseStringMethod(::craby::crabytest::bridging::CrabyTest &it_, ::rust::Str path);
+
 ::craby::crabytest::bridging::NullableString readData(::craby::crabytest::bridging::CrabyTest &it_);
 
 void setState(::craby::crabytest::bridging::CrabyTest &it_, double arg);

@@ -83,6 +83,11 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
+  promiseStringMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
   readData(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);

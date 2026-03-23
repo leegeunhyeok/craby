@@ -48,6 +48,7 @@ export interface Spec extends NativeModule {
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;
+  promiseStringMethod(path: string): Promise<number>;
   // Stateful methods
   setState(arg: number): void;
   getState(): number;

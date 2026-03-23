@@ -98,6 +98,10 @@ impl CrabyTestSpec for CrabyTest {
         }
     }
 
+    fn promise_string_method(&mut self, path: &str) -> Promise<Number> {
+        promise::resolve(path.len() as Number)
+    }
+
     fn set_state(&mut self, arg: Number) -> Void {
         self.state = Some(arg);
     }
