@@ -318,6 +318,16 @@ impl Method {
 
         let invoke_stmts = match &self.ret_type {
             TypeAnnotation::Promise(resolve_type) => {
+                // For async functions, the outer-scope `auto arg0 = rust::Str(...)` declarations
+                // for string args are unnecessary: they are not captured by the lambda and would
+                // shadow the inner declarations reconstructed from `arg0$raw` inside the lambda.
+                // Remove them from the outer scope so the generated code stays clean.
+                for arg in &string_args {
+                    let str_var = format!("{arg}$raw");
+                    let decl = format!("auto {arg} = rust::Str({str_var}.data(), {str_var}.size());");
+                    args_decls.retain(|d| d != &decl);
+                }
+
                 let mut bind_args = Vec::with_capacity(args.len() + 2);
                 bind_args.push(RESERVED_ARG_NAME_MODULE.to_string());
                 bind_args.push("promise".to_string());
