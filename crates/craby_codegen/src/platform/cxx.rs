@@ -671,7 +671,7 @@ pub mod template {
         ///     // fromJs implementation
         ///   }
         ///
-        ///   static jsi::Value toJs(jsi::Runtime &rt, TargetType value) {
+        ///   static jsi::Value toJs(jsi::Runtime &rt, const TargetType& value) {
         ///     // toJs implementation
         ///   }
         /// };
@@ -687,7 +687,7 @@ pub mod template {
                 {from_js_impl}
                   }}
     
-                  static jsi::Value toJs(jsi::Runtime &rt, {namespace} value) {{
+                  static jsi::Value toJs(jsi::Runtime &rt, const {namespace}& value) {{
                 {to_js_impl}
                   }}
                 }};"#,
@@ -715,7 +715,7 @@ pub mod template {
         ///     return ret;
         ///   }
         ///
-        ///   static jsi::Value toJs(jsi::Runtime &rt, craby::mymodule::bridging::MyStruct value) {
+        ///   static jsi::Value toJs(jsi::Runtime &rt, const craby::mymodule::bridging::MyStruct& value) {
         ///     jsi::Object obj = jsi::Object(rt);
         ///     auto _obj$foo = react::bridging::toJs(rt, value.foo);
         ///

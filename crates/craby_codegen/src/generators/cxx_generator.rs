@@ -668,7 +668,7 @@ impl CxxTemplate {
               }}
 
               static jsi::Value toJs(jsi::Runtime& rt, const rust::Str& value) {{
-                return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+                return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
               }}
             }};
 
@@ -680,7 +680,7 @@ impl CxxTemplate {
               }}
 
               static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {{
-                return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+                return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
               }}
             }};
 

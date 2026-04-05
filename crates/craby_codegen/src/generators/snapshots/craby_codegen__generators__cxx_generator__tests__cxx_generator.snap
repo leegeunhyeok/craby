@@ -700,7 +700,7 @@ struct Bridging<rust::Str> {
   }
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::Str& value) {
-    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+    return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
   }
 };
 
@@ -712,7 +712,7 @@ struct Bridging<rust::String> {
   }
 
   static jsi::Value toJs(jsi::Runtime& rt, const rust::String& value) {
-    return react::bridging::toJs(rt, std::string(value.data(), value.size()));
+    return jsi::String::createFromUtf8(rt, std::string(value.data(), value.size()));
   }
 };
 
@@ -779,7 +779,7 @@ struct Bridging<craby::testmodule::bridging::MyEnum> {
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::MyEnum value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::MyEnum& value) {
     switch (value) {
       case craby::testmodule::bridging::MyEnum::Foo:
         return react::bridging::toJs(rt, "foo");
@@ -806,7 +806,7 @@ struct Bridging<craby::testmodule::bridging::SwitchState> {
     }
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::SwitchState value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::SwitchState& value) {
     switch (value) {
       case craby::testmodule::bridging::SwitchState::Off:
         return react::bridging::toJs(rt, 0);
@@ -831,7 +831,7 @@ struct Bridging<craby::testmodule::bridging::NullableString> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::NullableString value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::NullableString& value) {
     if (value.null) {
       return jsi::Value::null();
     }
@@ -861,7 +861,7 @@ struct Bridging<craby::testmodule::bridging::SubObject> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::SubObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::SubObject& value) {
     jsi::Object obj = jsi::Object(rt);
     auto _obj$a = react::bridging::toJs(rt, value.a);
     auto _obj$b = react::bridging::toJs(rt, value.b);
@@ -888,7 +888,7 @@ struct Bridging<craby::testmodule::bridging::NullableSubObject> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::NullableSubObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::NullableSubObject& value) {
     if (value.null) {
       return jsi::Value::null();
     }
@@ -930,7 +930,7 @@ struct Bridging<craby::testmodule::bridging::TestObject> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::TestObject value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::TestObject& value) {
     jsi::Object obj = jsi::Object(rt);
     auto _obj$foo = react::bridging::toJs(rt, value.foo);
     auto _obj$bar = react::bridging::toJs(rt, value.bar);
@@ -965,7 +965,7 @@ struct Bridging<craby::testmodule::bridging::NullableNumber> {
     return ret;
   }
 
-  static jsi::Value toJs(jsi::Runtime &rt, craby::testmodule::bridging::NullableNumber value) {
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::testmodule::bridging::NullableNumber& value) {
     if (value.null) {
       return jsi::Value::null();
     }
