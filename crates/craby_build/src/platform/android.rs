@@ -118,7 +118,7 @@ pub mod path {
         Ok(ndk_bin_path()?.join("llvm-strip"))
     }
 
-    fn ndk_root_path() -> Result<PathBuf, anyhow::Error> {
+    pub fn ndk_root_path() -> Result<PathBuf, anyhow::Error> {
         if let Ok(path) = std::env::var("ANDROID_NDK_HOME") {
             return Ok(PathBuf::from(path));
         }

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use craby_build::constants::toolchain::{Target, DEFAULT_ANDROID_TARGETS};
-use craby_build::platform::android::path::ndk_bin_path;
+use craby_build::platform::android::path::ndk_root_path;
 use craby_common::{
     constants::toolchain::TARGETS,
     env::get_installed_targets,
@@ -58,15 +58,15 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
     });
 
     println!("\n{}", "Android".bold().dimmed());
-    let ndk_bin_path = ndk_bin_path();
-    let ndk_label = match &ndk_bin_path {
+    let ndk_path = ndk_root_path();
+    let ndk_label = match &ndk_path {
         Ok(path) => format!(
             "Android NDK toolchain {}",
             format!("({})", path.display()).dimmed()
         ),
-        Err(_) => "Android NDK toolchain".to_string(),
+        Err(_) => "Android NDK".to_string(),
     };
-    assert_with_status(&ndk_label, || match ndk_bin_path {
+    assert_with_status(&ndk_label, || match ndk_path {
         Ok(path) if path.try_exists()? => Ok(Status::Ok),
         Ok(path) => {
             passed &= false;
