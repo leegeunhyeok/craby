@@ -78,7 +78,10 @@ fn strip_lib(lib: &PathBuf) -> Result<(), anyhow::Error> {
 }
 
 pub mod path {
-    use std::path::PathBuf;
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+    };
 
     use crate::constants::android::Abi;
 
@@ -90,10 +93,7 @@ pub mod path {
             _ => Err(anyhow::anyhow!("Unsupported OS: {}", std::env::consts::OS)),
         }?;
 
-        let path =
-            PathBuf::from(std::env::var("ANDROID_NDK_HOME").map_err(|_| {
-                anyhow::anyhow!("`ANDROID_NDK_HOME` environment variable is not set")
-            })?)
+        let path = ndk_root_path()?
             .join("toolchains")
             .join("llvm")
             .join("prebuilt")
@@ -116,5 +116,40 @@ pub mod path {
 
     pub fn ndk_llvm_strip_path() -> Result<PathBuf, anyhow::Error> {
         Ok(ndk_bin_path()?.join("llvm-strip"))
+    }
+
+    pub fn ndk_root_path() -> Result<PathBuf, anyhow::Error> {
+        if let Ok(path) = std::env::var("ANDROID_NDK_HOME") {
+            return Ok(PathBuf::from(path));
+        }
+
+        let ndk_dir = PathBuf::from(std::env::var("ANDROID_HOME").map_err(|_| {
+            anyhow::anyhow!("`ANDROID_NDK_HOME` or `ANDROID_HOME` environment variable is not set")
+        })?)
+        .join("ndk");
+
+        latest_ndk_path(&ndk_dir)
+            .ok_or_else(|| anyhow::anyhow!("Android NDK not found in {}", ndk_dir.display()))
+    }
+
+    fn latest_ndk_path(ndk_dir: &Path) -> Option<PathBuf> {
+        fn ndk_version_key(path: &Path) -> Option<Vec<u64>> {
+            path.file_name()?
+                .to_string_lossy()
+                .split('.')
+                .map(|part| part.parse::<u64>())
+                .collect::<Result<Vec<_>, _>>()
+                .ok()
+        }
+
+        fs::read_dir(ndk_dir)
+            .ok()?
+            .filter_map(|entry| {
+                let path = entry.ok()?.path();
+                path.is_dir().then_some(path)
+            })
+            .filter_map(|path| ndk_version_key(&path).map(|key| (key, path)))
+            .max_by(|(left, _), (right, _)| left.cmp(right))
+            .map(|(_, path)| path)
     }
 }

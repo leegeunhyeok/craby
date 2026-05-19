@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use craby_build::constants::toolchain::{Target, DEFAULT_ANDROID_TARGETS};
+use craby_build::platform::android::path::ndk_root_path;
 use craby_common::{
     constants::toolchain::TARGETS,
     env::get_installed_targets,
@@ -57,28 +58,34 @@ pub fn perform(opts: DoctorOptions) -> anyhow::Result<()> {
     });
 
     println!("\n{}", "Android".bold().dimmed());
-    assert_with_status(
-        &format!("Environment variable: {}", "ANDROID_NDK_HOME".dimmed()),
-        || match std::env::var("ANDROID_NDK_HOME") {
-            Ok(_) => Ok(Status::Ok),
-            Err(e) => {
-                passed &= false;
-                suggestions.push(Suggestion::plain_text(
-                    &format!(
-                        "Check {} path is set correctly",
-                        "$ANDROID_NDK_HOME".yellow()
-                    ),
-                    Some(&formatdoc! {
-                        r#"
-                        If Android NDK is not installed, please install it from the following link:
-                        {link}"#,
-                        link = "https://developer.android.com/ndk/downloads".dimmed().underline()
-                    }),
-                ));
-                anyhow::bail!("Environment variable is not set: {}", e);
-            }
-        },
-    );
+    let ndk_path = ndk_root_path();
+    let ndk_label = match &ndk_path {
+        Ok(path) => format!(
+            "Android NDK toolchain {}",
+            format!("({})", path.display()).dimmed()
+        ),
+        Err(_) => "Android NDK".to_string(),
+    };
+    assert_with_status(&ndk_label, || match ndk_path {
+        Ok(path) if path.try_exists()? => Ok(Status::Ok),
+        Ok(path) => {
+            passed &= false;
+            anyhow::bail!("Android NDK toolchain not found: {}", path.display());
+        }
+        Err(e) => {
+            passed &= false;
+            suggestions.push(Suggestion::plain_text(
+                "Set Android NDK path",
+                Some(&formatdoc! {
+                    r#"
+                    Set ANDROID_NDK_HOME to a specific NDK path, or set ANDROID_HOME to an Android SDK path that contains ndk/<version>.
+                    {link}"#,
+                    link = "https://developer.android.com/ndk/downloads".dimmed().underline()
+                }),
+            ));
+            Err(e)
+        }
+    });
 
     for target in DEFAULT_ANDROID_TARGETS {
         match target {
