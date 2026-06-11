@@ -21,8 +21,8 @@ artifact = [
 cxx = ["dep:cxx-build"]
 
 [dependencies]
-craby_codegen = { version = "0.1.0-rc.5", path = "../craby_codegen", optional = true }
-craby_common  = { version = "0.1.0-rc.5", path = "../craby_common", optional = true }
+craby_codegen = { version = "0.1.0-rc.6", path = "../craby_codegen", optional = true }
+craby_common  = { version = "0.1.0-rc.6", path = "../craby_common", optional = true }
 cxx-build     = { version = "1.0.187", optional = true }
 indoc         = { version = "2.0.6", optional = true }
 log           = { workspace = true, optional = true }
