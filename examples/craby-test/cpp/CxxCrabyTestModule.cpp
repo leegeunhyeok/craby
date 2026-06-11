@@ -34,6 +34,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
+  methodMap_["customStructArrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::customStructArrayMethod};
   methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
   methodMap_["getDataPath"] = MethodMetadata{0, &CxxCrabyTestModule::getDataPath};
   methodMap_["getState"] = MethodMetadata{0, &CxxCrabyTestModule::getState};
@@ -231,6 +232,30 @@ jsi::Value CxxCrabyTestModule::camelMethod(jsi::Runtime &rt,
     craby::crabytest::bridging::camelMethod(*it_);
 
     return jsi::Value::undefined();
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::customStructArrayMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<rust::Vec<craby::crabytest::bridging::ResultPoint>>(rt, args[0], callInvoker);
+    auto ret = craby::crabytest::bridging::customStructArrayMethod(*it_, arg0);
+
+    return react::bridging::toJs(rt, ret);
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

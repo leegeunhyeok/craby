@@ -662,6 +662,9 @@ impl<'a> NativeModuleAnalyzer<'a> {
             TypeAnnotation::Nullable(base_type) => {
                 NativeModuleAnalyzer::collect_types(base_type, _scoping, _decls, types, enums);
             }
+            TypeAnnotation::Array(element_type) => {
+                NativeModuleAnalyzer::collect_types(element_type, _scoping, _decls, types, enums);
+            }
             TypeAnnotation::Promise(resolved_type) => {
                 NativeModuleAnalyzer::collect_types(resolved_type, _scoping, _decls, types, enums);
             }
@@ -700,6 +703,9 @@ impl<'a> NativeModuleAnalyzer<'a> {
             }
             TypeAnnotation::Nullable(base_type) => {
                 NativeModuleAnalyzer::resolve_refs(base_type, scoping, decls);
+            }
+            TypeAnnotation::Array(element_type) => {
+                NativeModuleAnalyzer::resolve_refs(element_type, scoping, decls);
             }
             TypeAnnotation::Promise(t) => {
                 NativeModuleAnalyzer::resolve_refs(&mut *t, scoping, decls);
@@ -932,7 +938,10 @@ pub fn try_parse_schema(src: &str) -> Result<Vec<Schema>, ParseError> {
 mod tests {
     use insta::{assert_debug_snapshot, assert_snapshot};
 
-    use crate::{parser::native_spec_parser::try_parse_schema, types::Schema};
+    use crate::{
+        parser::{native_spec_parser::try_parse_schema, types::TypeAnnotation},
+        types::Schema,
+    };
 
     #[test]
     fn test_common_spec() {
@@ -985,6 +994,60 @@ mod tests {
 
         assert!(result.len() == 1);
         assert_debug_snapshot!(result);
+    }
+
+    #[test]
+    fn test_ref_type_inside_array() {
+        let src = "
+        import type { NativeModule } from 'craby-modules';
+        import { NativeModuleRegistry } from 'craby-modules';
+
+        interface ResultPoint {
+            x: number;
+            y: number;
+        }
+
+        interface Result {
+            points: ResultPoint[];
+        }
+
+        interface Spec extends NativeModule {
+            doesNotWork(): Result;
+            alsoDoesNotWork(): ResultPoint[];
+        }
+
+        export default NativeModuleRegistry.getEnforcing<Spec>('CrabyTest');
+        ";
+        let schemas = try_parse_schema(src).unwrap();
+        let schema = schemas.first().unwrap();
+
+        let result = schema
+            .aliases
+            .iter()
+            .filter_map(TypeAnnotation::as_object)
+            .find(|obj| obj.name == "Result")
+            .unwrap();
+        let points = result
+            .props
+            .iter()
+            .find(|prop| prop.name == "points")
+            .unwrap();
+        assert!(matches!(
+            &points.type_annotation,
+            TypeAnnotation::Array(element_type)
+                if matches!(element_type.as_ref(), TypeAnnotation::Object(obj) if obj.name == "ResultPoint")
+        ));
+
+        let method = schema
+            .methods
+            .iter()
+            .find(|method| method.name == "alsoDoesNotWork")
+            .unwrap();
+        assert!(matches!(
+            &method.ret_type,
+            TypeAnnotation::Array(element_type)
+                if matches!(element_type.as_ref(), TypeAnnotation::Object(obj) if obj.name == "ResultPoint")
+        ));
     }
 
     #[test]

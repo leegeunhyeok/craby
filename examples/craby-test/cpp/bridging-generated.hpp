@@ -303,6 +303,36 @@ struct Bridging<craby::crabytest::bridging::ProgressEvent> {
 };
 
 template <>
+struct Bridging<craby::crabytest::bridging::ResultPoint> {
+  static craby::crabytest::bridging::ResultPoint fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$x = obj.getProperty(rt, "x");
+    auto obj$y = obj.getProperty(rt, "y");
+
+    auto _obj$x = react::bridging::fromJs<double>(rt, obj$x, callInvoker);
+    auto _obj$y = react::bridging::fromJs<double>(rt, obj$y, callInvoker);
+
+    craby::crabytest::bridging::ResultPoint ret = {
+      _obj$x,
+      _obj$y
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::crabytest::bridging::ResultPoint& value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$x = react::bridging::toJs(rt, value.x);
+    auto _obj$y = react::bridging::toJs(rt, value.y);
+
+    obj.setProperty(rt, "x", _obj$x);
+    obj.setProperty(rt, "y", _obj$y);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
 struct Bridging<craby::crabytest::bridging::TestObject> {
   static craby::crabytest::bridging::TestObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
@@ -310,6 +340,7 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
     auto obj$bar = obj.getProperty(rt, "bar");
     auto obj$baz = obj.getProperty(rt, "baz");
     auto obj$sub = obj.getProperty(rt, "sub");
+    auto obj$points = obj.getProperty(rt, "points");
     auto obj$camelCase = obj.getProperty(rt, "camelCase");
     auto obj$pascalCase = obj.getProperty(rt, "PascalCase");
     auto obj$snakeCase = obj.getProperty(rt, "snake_case");
@@ -318,6 +349,7 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
     auto _obj$bar = react::bridging::fromJs<double>(rt, obj$bar, callInvoker);
     auto _obj$baz = react::bridging::fromJs<bool>(rt, obj$baz, callInvoker);
     auto _obj$sub = react::bridging::fromJs<craby::crabytest::bridging::NullableSubObject>(rt, obj$sub, callInvoker);
+    auto _obj$points = react::bridging::fromJs<rust::Vec<craby::crabytest::bridging::ResultPoint>>(rt, obj$points, callInvoker);
     auto _obj$camelCase = react::bridging::fromJs<double>(rt, obj$camelCase, callInvoker);
     auto _obj$pascalCase = react::bridging::fromJs<double>(rt, obj$pascalCase, callInvoker);
     auto _obj$snakeCase = react::bridging::fromJs<double>(rt, obj$snakeCase, callInvoker);
@@ -327,6 +359,7 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
       _obj$bar,
       _obj$baz,
       _obj$sub,
+      _obj$points,
       _obj$camelCase,
       _obj$pascalCase,
       _obj$snakeCase
@@ -341,6 +374,7 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
     auto _obj$bar = react::bridging::toJs(rt, value.bar);
     auto _obj$baz = react::bridging::toJs(rt, value.baz);
     auto _obj$sub = react::bridging::toJs(rt, value.sub);
+    auto _obj$points = react::bridging::toJs(rt, value.points);
     auto _obj$camelCase = react::bridging::toJs(rt, value.camel_case);
     auto _obj$pascalCase = react::bridging::toJs(rt, value.pascal_case);
     auto _obj$snakeCase = react::bridging::toJs(rt, value.snake_case);
@@ -349,6 +383,7 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
     obj.setProperty(rt, "bar", _obj$bar);
     obj.setProperty(rt, "baz", _obj$baz);
     obj.setProperty(rt, "sub", _obj$sub);
+    obj.setProperty(rt, "points", _obj$points);
     obj.setProperty(rt, "camelCase", _obj$camelCase);
     obj.setProperty(rt, "PascalCase", _obj$pascalCase);
     obj.setProperty(rt, "snake_case", _obj$snakeCase);
