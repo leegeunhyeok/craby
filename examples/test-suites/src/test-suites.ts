@@ -28,6 +28,10 @@ const TEST_SUITES: TestSuite[] = [
           b: 456,
           c: true,
         },
+        points: [
+          { x: 1, y: 2 },
+          { x: 3, y: 4 },
+        ],
         camelCase: 0,
         PascalCase: 0,
         snake_case: 0,
@@ -54,6 +58,7 @@ const TEST_SUITES: TestSuite[] = [
           bar: 456,
           baz: true,
           sub: null,
+          points: [{ x: 1, y: 2 }],
           camelCase: 0,
           PascalCase: 0,
           snake_case: 0,
@@ -77,6 +82,7 @@ const TEST_SUITES: TestSuite[] = [
             b: 789,
             c: false,
           },
+          points: [{ x: 1, y: 2 }],
           camelCase: 0,
           PascalCase: 0,
           snake_case: 0,
@@ -105,7 +111,24 @@ const TEST_SUITES: TestSuite[] = [
   },
   {
     label: 'Array',
-    action: () => Module.CrabyTestModule.arrayMethod([1, 2, 3]),
+    description: '(Custom struct)',
+    action: () => {
+      const result = Module.CrabyTestModule.customStructArrayMethod([
+        { x: 1, y: 2 },
+        { x: 3, y: 4 },
+      ]);
+
+      assert(
+        isEqual(result, [
+          { x: 2, y: 3 },
+          { x: 4, y: 5 },
+          { x: 9, y: 9 },
+        ]),
+        '`customStructArrayMethod` result is incorrect',
+      );
+
+      return result;
+    },
   },
   {
     label: 'Array',

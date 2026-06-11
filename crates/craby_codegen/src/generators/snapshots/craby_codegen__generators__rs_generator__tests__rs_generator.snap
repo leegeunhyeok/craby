@@ -21,20 +21,21 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::testmodule::bridging")]
 pub mod bridging {
     #[derive(Clone)]
+    struct ResultPoint {
+        x: f64,
+        y: f64,
+    }
+
+    #[derive(Clone)]
     struct NullableString {
         null: bool,
         val: String,
     }
 
     #[derive(Clone)]
-    struct TestObject {
-        foo: String,
-        bar: f64,
-        baz: bool,
-        sub: NullableSubObject,
-        camel_case: f64,
-        pascal_case: f64,
-        snake_case: f64,
+    struct NullableSubObject {
+        null: bool,
+        val: SubObject,
     }
 
     #[derive(Clone)]
@@ -45,9 +46,15 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
-    struct NullableSubObject {
-        null: bool,
-        val: SubObject,
+    struct TestObject {
+        foo: String,
+        bar: f64,
+        baz: bool,
+        sub: NullableSubObject,
+        points: Vec<ResultPoint>,
+        camel_case: f64,
+        pascal_case: f64,
+        snake_case: f64,
     }
 
     #[derive(Clone)]
@@ -84,6 +91,9 @@ pub mod bridging {
 
         #[cxx_name = "camelMethod"]
         fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
+
+        #[cxx_name = "customStructArrayMethod"]
+        fn craby_test_custom_struct_array_method(it_: &mut CrabyTest, arg: Vec<ResultPoint>) -> Result<Vec<ResultPoint>>;
 
         #[cxx_name = "enumMethod"]
         fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
@@ -164,6 +174,13 @@ fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64)
     })
 }
 
+fn craby_test_custom_struct_array_method(it_: &mut CrabyTest, arg: Vec<ResultPoint>) -> Result<Vec<ResultPoint>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.custom_struct_array_method(arg);
+        ret
+    })
+}
+
 fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.enum_method(arg_0, arg_1);
@@ -234,7 +251,7 @@ unsafe fn drop_signal(signal: *mut CrabyTestSignal) {
 }
 
 ./crates/lib/src/generated.rs
-// Hash: dfae61da65c7fb45
+// Hash: 3290f185ee972a90
 #[rustfmt::skip]
 use craby::prelude::*;
 
@@ -257,6 +274,7 @@ pub trait CrabyTestSpec {
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
     fn boolean_method(&mut self, arg: Boolean) -> Boolean;
     fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
+    fn custom_struct_array_method(&mut self, arg: Array<ResultPoint>) -> Array<ResultPoint>;
     fn enum_method(&mut self, arg_0: MyEnum, arg_1: SwitchState) -> String;
     fn nullable_method(&mut self, arg: Nullable<Number>) -> Nullable<Number>;
     fn numeric_method(&mut self, arg: Number) -> Number;
@@ -330,6 +348,21 @@ impl From<Nullable<String>> for NullableString {
     }
 }
 
+impl Default for TestObject {
+    fn default() -> Self {
+        TestObject {
+            foo: String::default(),
+            bar: 0.0,
+            baz: false,
+            sub: NullableSubObject::default(),
+            points: Vec::default(),
+            camel_case: 0.0,
+            pascal_case: 0.0,
+            snake_case: 0.0
+        }
+    }
+}
+
 impl Default for NullableNumber {
     fn default() -> Self {
         NullableNumber {
@@ -356,16 +389,11 @@ impl From<Nullable<Number>> for NullableNumber {
     }
 }
 
-impl Default for TestObject {
+impl Default for ResultPoint {
     fn default() -> Self {
-        TestObject {
-            foo: String::default(),
-            bar: 0.0,
-            baz: false,
-            sub: NullableSubObject::default(),
-            camel_case: 0.0,
-            pascal_case: 0.0,
-            snake_case: 0.0
+        ResultPoint {
+            x: 0.0,
+            y: 0.0
         }
     }
 }
@@ -411,6 +439,10 @@ impl CrabyTestSpec for CrabyTest {
     }
 
     fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
+        unimplemented!();
+    }
+
+    fn custom_struct_array_method(&mut self, arg: Array<ResultPoint>) -> Array<ResultPoint> {
         unimplemented!();
     }
 
