@@ -3,7 +3,7 @@ use log::debug;
 use std::{
     collections::BTreeMap,
     fs::{self, File},
-    io::Write,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 use walkdir::WalkDir;
@@ -50,7 +50,42 @@ pub fn render_template(
         }
     }
 
-    fs::rename(template_dir, dest_dir)?;
+    move_dir(template_dir, dest_dir)?;
+
+    Ok(())
+}
+
+fn move_dir(source: &Path, dest: &Path) -> io::Result<()> {
+    match fs::rename(source, dest) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == io::ErrorKind::CrossesDevices => {
+            copy_dir_all(source, dest)?;
+            fs::remove_dir_all(source)
+        }
+        Err(e) => Err(e),
+    }
+}
+
+fn copy_dir_all(source: &Path, dest: &Path) -> io::Result<()> {
+    fs::create_dir_all(dest)?;
+
+    for entry in WalkDir::new(source).min_depth(1) {
+        let entry = entry?;
+        let path = entry.path();
+        let target_path = dest.join(
+            path.strip_prefix(source)
+                .expect("path must be under source"),
+        );
+
+        if path.is_dir() {
+            fs::create_dir_all(&target_path)?;
+        } else if path.is_file() {
+            if let Some(parent) = target_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            fs::copy(path, target_path)?;
+        }
+    }
 
     Ok(())
 }
@@ -89,5 +124,41 @@ fn custom_render(path: &Path, content: &str) -> Option<String> {
     match base_name.as_str() {
         "biome.json" => Some(content.replace("\"root\": false", "\"root\": true")),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    #[test]
+    fn copy_dir_all_copies_nested_files() {
+        let test_dir = std::env::temp_dir().join(format!(
+            "craby-template-test-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let source = test_dir.join("source");
+        let dest = test_dir.join("dest");
+
+        fs::create_dir_all(source.join("nested")).unwrap();
+        fs::write(source.join("root.txt"), "root").unwrap();
+        fs::write(source.join("nested").join("child.txt"), "child").unwrap();
+
+        copy_dir_all(&source, &dest).unwrap();
+
+        assert_eq!(fs::read_to_string(dest.join("root.txt")).unwrap(), "root");
+        assert_eq!(
+            fs::read_to_string(dest.join("nested").join("child.txt")).unwrap(),
+            "child"
+        );
+
+        fs::remove_dir_all(test_dir).unwrap();
     }
 }
