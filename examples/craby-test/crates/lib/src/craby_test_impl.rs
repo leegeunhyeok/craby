@@ -38,6 +38,10 @@ impl CrabyTestSpec for CrabyTest {
         arg.foo = format!("From Rust: {}", arg.foo);
         arg.bar = arg.bar * 2.0;
         arg.baz = !arg.baz;
+        for point in &mut arg.points {
+            point.x = point.x + 1.0;
+            point.y = point.y + 1.0;
+        }
         arg.camel_case = arg.camel_case + 1.0;
         arg.pascal_case = arg.pascal_case + 1.0;
         arg.snake_case = arg.snake_case + 1.0;
@@ -52,6 +56,15 @@ impl CrabyTestSpec for CrabyTest {
     fn array_method(&mut self, mut arg: Array<Number>) -> Array<Number> {
         arg.extend(vec![1.0, 2.0, 3.0]);
         arg.iter_mut().for_each(|x| *x *= 2.0);
+        arg
+    }
+
+    fn custom_struct_array_method(&mut self, mut arg: Array<ResultPoint>) -> Array<ResultPoint> {
+        for point in &mut arg {
+            point.x = point.x + 1.0;
+            point.y = point.y + 1.0;
+        }
+        arg.push(ResultPoint { x: 9.0, y: 9.0 });
         arg
     }
 

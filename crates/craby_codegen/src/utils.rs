@@ -49,6 +49,25 @@ pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
                         .unwrap()
                         .push(enum_name.clone());
                 }
+                TypeAnnotation::Array(type_annotation) => match &**type_annotation {
+                    TypeAnnotation::Object(ObjectTypeAnnotation {
+                        name: alias_name, ..
+                    }) => {
+                        dependencies
+                            .get_mut(&alias_spec.name)
+                            .unwrap()
+                            .push(alias_name.clone());
+                    }
+                    TypeAnnotation::Enum(EnumTypeAnnotation {
+                        name: enum_name, ..
+                    }) => {
+                        dependencies
+                            .get_mut(&alias_spec.name)
+                            .unwrap()
+                            .push(enum_name.clone());
+                    }
+                    _ => (),
+                },
                 nullable @ TypeAnnotation::Nullable(type_annotation) => {
                     let rs_type = nullable.as_rs_bridge_type()?.into_code();
                     dependencies.entry(rs_type.clone()).or_insert(vec![]);
@@ -76,6 +95,26 @@ pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
                                 .unwrap()
                                 .push(enum_name.clone());
                         }
+                        TypeAnnotation::Array(element_type) => match &**element_type {
+                            TypeAnnotation::Object(ObjectTypeAnnotation {
+                                name: alias_name,
+                                ..
+                            }) => {
+                                dependencies
+                                    .get_mut(&rs_type)
+                                    .unwrap()
+                                    .push(alias_name.clone());
+                            }
+                            TypeAnnotation::Enum(EnumTypeAnnotation {
+                                name: enum_name, ..
+                            }) => {
+                                dependencies
+                                    .get_mut(&rs_type)
+                                    .unwrap()
+                                    .push(enum_name.clone());
+                            }
+                            _ => (),
+                        },
                         _ => (),
                     }
                 }

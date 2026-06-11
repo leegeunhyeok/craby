@@ -6,6 +6,7 @@ export interface TestObject {
   bar: number;
   baz: boolean;
   sub: SubObject | null;
+  points: ResultPoint[];
   camelCase: number;
   PascalCase: number;
   snake_case: number;
@@ -23,6 +24,11 @@ export interface ProgressEvent {
 
 export interface MyModuleError {
   reason: string;
+}
+
+export interface ResultPoint {
+  x: number;
+  y: number;
 }
 
 export type MaybeNumber = number | null;
@@ -45,6 +51,7 @@ export interface Spec extends NativeModule {
   objectMethod(arg: TestObject): TestObject;
   arrayBufferMethod(arg: ArrayBuffer): ArrayBuffer;
   arrayMethod(arg: number[]): number[];
+  customStructArrayMethod(arg: ResultPoint[]): ResultPoint[];
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;

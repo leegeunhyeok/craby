@@ -13,6 +13,7 @@ pub fn get_codegen_context() -> CodegenContext {
             bar: number;
             baz: boolean;
             sub: SubObject | null;
+            points: ResultPoint[];
             camelCase: number;
             PascalCase: number;
             snake_case: number;
@@ -28,6 +29,11 @@ pub fn get_codegen_context() -> CodegenContext {
             name: string | null;
             value: number | null;
         };
+
+        export interface ResultPoint {
+            x: number;
+            y: number;
+        }
 
         export type MaybeNumber = number | null;
 
@@ -49,6 +55,7 @@ pub fn get_codegen_context() -> CodegenContext {
             objectMethod(arg: TestObject): TestObject;
             arrayBufferMethod(arg: ArrayBuffer): ArrayBuffer;
             arrayMethod(arg: number[]): number[];
+            customStructArrayMethod(arg: ResultPoint[]): ResultPoint[];
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;
             alphaMethod(arg: AlphaStruct): AlphaStruct;

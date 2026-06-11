@@ -11,30 +11,14 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::crabytest::bridging")]
 pub mod bridging {
     #[derive(Clone)]
-    struct NullableString {
+    struct NullableSubObject {
         null: bool,
-        val: String,
-    }
-
-    #[derive(Clone)]
-    struct TestObject {
-        foo: String,
-        bar: f64,
-        baz: bool,
-        sub: NullableSubObject,
-        camel_case: f64,
-        pascal_case: f64,
-        snake_case: f64,
+        val: SubObject,
     }
 
     #[derive(Clone)]
     struct ProgressEvent {
         progress: f64,
-    }
-
-    #[derive(Clone)]
-    struct MyModuleError {
-        reason: String,
     }
 
     #[derive(Clone)]
@@ -45,9 +29,32 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
-    struct NullableSubObject {
+    struct NullableString {
         null: bool,
-        val: SubObject,
+        val: String,
+    }
+
+    #[derive(Clone)]
+    struct ResultPoint {
+        x: f64,
+        y: f64,
+    }
+
+    #[derive(Clone)]
+    struct MyModuleError {
+        reason: String,
+    }
+
+    #[derive(Clone)]
+    struct TestObject {
+        foo: String,
+        bar: f64,
+        baz: bool,
+        sub: NullableSubObject,
+        points: Vec<ResultPoint>,
+        camel_case: f64,
+        pascal_case: f64,
+        snake_case: f64,
     }
 
     #[derive(Clone)]
@@ -101,6 +108,9 @@ pub mod bridging {
 
         #[cxx_name = "camelMethod"]
         fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<()>;
+
+        #[cxx_name = "customStructArrayMethod"]
+        fn craby_test_custom_struct_array_method(it_: &mut CrabyTest, arg: Vec<ResultPoint>) -> Result<Vec<ResultPoint>>;
 
         #[cxx_name = "enumMethod"]
         fn craby_test_enum_method(it_: &mut CrabyTest, arg_0: MyEnum, arg_1: SwitchState) -> Result<String>;
@@ -230,6 +240,13 @@ fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, any
 fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.camel_method();
+        ret
+    })
+}
+
+fn craby_test_custom_struct_array_method(it_: &mut CrabyTest, arg: Vec<ResultPoint>) -> Result<Vec<ResultPoint>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.custom_struct_array_method(arg);
         ret
     })
 }
