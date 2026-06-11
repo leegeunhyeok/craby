@@ -340,7 +340,7 @@ dependencies = [
 
 [[package]]
 name = "craby"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "craby_macro",
@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "craby_build"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "craby_codegen",
@@ -363,7 +363,7 @@ dependencies = [
 
 [[package]]
 name = "craby_cli"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -388,7 +388,7 @@ dependencies = [
 
 [[package]]
 name = "craby_codegen"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "craby_common",
@@ -407,7 +407,7 @@ dependencies = [
 
 [[package]]
 name = "craby_common"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "convert_case",
@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "craby_macro"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1176,7 +1176,7 @@ dependencies = [
 
 [[package]]
 name = "napi_craby_cli"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "craby_cli",
  "log",
@@ -2863,7 +2863,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "xtask"
-version = "0.1.0-rc.6"
+version = "0.1.0-rc.7"
 dependencies = [
  "anyhow",
  "craby_build",
