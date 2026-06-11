@@ -21,21 +21,27 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::testmodule::bridging")]
 pub mod bridging {
     #[derive(Clone)]
-    struct ResultPoint {
-        x: f64,
-        y: f64,
-    }
-
-    #[derive(Clone)]
     struct NullableString {
         null: bool,
         val: String,
     }
 
     #[derive(Clone)]
+    struct ResultPoint {
+        x: f64,
+        y: f64,
+    }
+
+    #[derive(Clone)]
     struct NullableSubObject {
         null: bool,
         val: SubObject,
+    }
+
+    #[derive(Clone)]
+    struct AlphaStruct {
+        name: NullableString,
+        value: NullableNumber,
     }
 
     #[derive(Clone)]
@@ -79,6 +85,9 @@ pub mod bridging {
 
         #[cxx_name = "createCrabyTest"]
         fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest>;
+
+        #[cxx_name = "alphaMethod"]
+        fn craby_test_alpha_method(it_: &mut CrabyTest, arg: AlphaStruct) -> Result<AlphaStruct>;
 
         #[cxx_name = "arrayBufferMethod"]
         fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>>;
@@ -144,6 +153,13 @@ pub mod bridging {
 fn create_craby_test(id: usize, data_path: &str) -> Box<CrabyTest> {
     let ctx = Context::new(id, data_path);
     Box::new(CrabyTest::new(ctx))
+}
+
+fn craby_test_alpha_method(it_: &mut CrabyTest, arg: AlphaStruct) -> Result<AlphaStruct, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.alpha_method(arg);
+        ret
+    })
 }
 
 fn craby_test_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
@@ -251,7 +267,7 @@ unsafe fn drop_signal(signal: *mut CrabyTestSignal) {
 }
 
 ./crates/lib/src/generated.rs
-// Hash: 3290f185ee972a90
+// Hash: 305e62348fa7d676
 #[rustfmt::skip]
 use craby::prelude::*;
 
@@ -270,6 +286,7 @@ pub trait CrabyTestSpec {
             }
         }
     }
+    fn alpha_method(&mut self, arg: AlphaStruct) -> AlphaStruct;
     fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer;
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
     fn boolean_method(&mut self, arg: Boolean) -> Boolean;
@@ -288,6 +305,15 @@ pub trait CrabyTestSpec {
 
 pub enum CrabyTestSignal {
     OnSignal,
+}
+
+impl Default for AlphaStruct {
+    fn default() -> Self {
+        AlphaStruct {
+            name: NullableString::default(),
+            value: NullableNumber::default()
+        }
+    }
 }
 
 impl Default for NullableSubObject {
@@ -426,6 +452,10 @@ pub struct CrabyTest {
 
 #[craby_module]
 impl CrabyTestSpec for CrabyTest {
+    fn alpha_method(&mut self, arg: AlphaStruct) -> AlphaStruct {
+        unimplemented!();
+    }
+
     fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer {
         unimplemented!();
     }

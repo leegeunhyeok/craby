@@ -72,6 +72,12 @@ pub fn calc_deps_order(schema: &Schema) -> Result<Vec<String>, anyhow::Error> {
                     let rs_type = nullable.as_rs_bridge_type()?.into_code();
                     dependencies.entry(rs_type.clone()).or_insert(vec![]);
 
+                    // The struct must be emitted after its nullable field type
+                    dependencies
+                        .get_mut(&alias_spec.name)
+                        .unwrap()
+                        .push(rs_type.clone());
+
                     match &**type_annotation {
                         TypeAnnotation::Object(ObjectTypeAnnotation {
                             name: alias_name, ..

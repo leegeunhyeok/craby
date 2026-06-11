@@ -25,6 +25,11 @@ pub fn get_codegen_context() -> CodegenContext {
             c: boolean;
         };
 
+        export type AlphaStruct = {
+            name: string | null;
+            value: number | null;
+        };
+
         export interface ResultPoint {
             x: number;
             y: number;
@@ -53,6 +58,7 @@ pub fn get_codegen_context() -> CodegenContext {
             customStructArrayMethod(arg: ResultPoint[]): ResultPoint[];
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
             nullableMethod(arg: number | null): MaybeNumber;
+            alphaMethod(arg: AlphaStruct): AlphaStruct;
             promiseMethod(arg: number): Promise<number>;
             promiseStringMethod(path: string): Promise<number>;
             camelMethod(firstArg: number, secondArg: number): number;
