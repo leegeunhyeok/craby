@@ -77,8 +77,8 @@ The NAPI bindings tests load the native binary against an actual Metro bundle.
 **Start the Metro bundler from one of the example apps first**, then run the tests:
 
 ```bash
-# Terminal 1 — start Metro (use either 0.76 or 0.80)
-cd examples/0.76   # or examples/0.80
+# Terminal 1 — start Metro (use 0.76, 0.80, or 0.87)
+cd examples/0.87
 yarn start
 
 # Terminal 2 — run Vitest
@@ -120,8 +120,9 @@ E2E testing runs the full workflow on a real React Native app.
 
 ### Running with sample apps
 
-Test against both React Native versions:
+Test against all supported React Native versions:
 
+- `examples/0.87` — React Native 0.87
 - `examples/0.80` — React Native 0.80
 - `examples/0.76` — React Native 0.76
 
@@ -161,7 +162,7 @@ Or build manually via Android Studio.
 
 ### Important notes
 
-- Test on **both** React Native versions (0.76 and 0.80)
+- Test on **all supported** React Native versions (0.76, 0.80, and 0.87)
 - Test on **both** iOS and Android
 - All tests must pass before submitting a PR
 

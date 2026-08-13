@@ -115,13 +115,11 @@ impl AndroidTemplate {
     }
 
     /// Generates the Android.manifest.
-    fn manifest_xml(&self, ctx: &CodegenContext) -> String {
+    fn manifest_xml(&self, _: &CodegenContext) -> String {
         formatdoc! {
             r#"
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="{package_name}">
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             </manifest>"#,
-            package_name = ctx.android_package_name,
         }
     }
 
@@ -134,25 +132,19 @@ impl AndroidTemplate {
               return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
             }}
 
-            buildscript {{
-              ext.getExtOrDefault = {{name ->
-                return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['{pascal_name}_' + name]
-              }}
-
-              repositories {{
-                google()
-                mavenCentral()
-              }}
-
-              dependencies {{
-                classpath "com.android.tools.build:gradle:8.7.2"
-                // noinspection DifferentKotlinGradleVersion
-                classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${{getExtOrDefault('kotlinVersion')}}"
-              }}
+            def getExtOrDefault(name) {{
+              return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['{pascal_name}_' + name]
             }}
 
             apply plugin: "com.android.library"
-            apply plugin: "kotlin-android"
+
+            def agpMajorVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0].toInteger()
+            def builtInKotlinEnabled = agpMajorVersion >= 9 &&
+              (project.findProperty("android.builtInKotlin") ?: "true").toString().toBoolean()
+            if (!builtInKotlinEnabled) {{
+              apply plugin: "kotlin-android"
+            }}
+
             apply plugin: "com.facebook.react"
 
             def getExtOrIntegerDefault(name) {{
@@ -162,11 +154,12 @@ impl AndroidTemplate {
             android {{
               namespace "{package_name}"
 
-              compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+              compileSdk getExtOrIntegerDefault("compileSdkVersion")
+              ndkVersion getExtOrDefault("ndkVersion")
 
               defaultConfig {{
-                minSdkVersion getExtOrIntegerDefault("minSdkVersion")
-                targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+                minSdk getExtOrIntegerDefault("minSdkVersion")
+                targetSdk getExtOrIntegerDefault("targetSdkVersion")
 
                 externalNativeBuild {{
                   cmake {{
@@ -211,8 +204,8 @@ impl AndroidTemplate {
                 }}
               }}
 
-              lintOptions {{
-                disable "GradleCompatible"
+              lint {{
+                disable += "GradleCompatible"
               }}
 
               compileOptions {{
@@ -230,7 +223,6 @@ impl AndroidTemplate {
 
             dependencies {{
               implementation "com.facebook.react:react-android"
-              implementation "com.facebook.react:hermes-engine"
               implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
             }}
 
@@ -249,10 +241,10 @@ impl AndroidTemplate {
     fn grable_props(&self, ctx: &CodegenContext) -> String {
         formatdoc! {
             r#"
-            {pascal_name}_kotlinVersion=2.0.21
+            {pascal_name}_kotlinVersion=2.2.0
             {pascal_name}_minSdkVersion=24
-            {pascal_name}_targetSdkVersion=34
-            {pascal_name}_compileSdkVersion=35
+            {pascal_name}_targetSdkVersion=36
+            {pascal_name}_compileSdkVersion=37
             {pascal_name}_ndkVersion=27.1.12297006"#,
             pascal_name = pascal_case(&ctx.project_name)
         }

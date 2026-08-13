@@ -1,8 +1,10 @@
 /**
  * @see docs https://github.com/react-native-community/cli/blob/main/docs/dependencies.md
- * @type {import('@react-native-community/cli-types').UserDependencyConfig}
+ * @type {import('@react-native-community/cli-types').UserDependencyConfig & {
+ *   spm: unknown
+ * }}
  */
-module.exports = {
+const config = {
   dependency: {
     platforms: {
       android: {
@@ -21,4 +23,15 @@ module.exports = {
       ios: {},
     },
   },
+
+  /**
+   * React Native 0.87+ reads this metadata only when the consuming app opts into SwiftPM.
+   * Declaring it does not enable SwiftPM or affect CocoaPods consumers.
+   */
+  spm: {
+    name: '{{ pascal_name }}',
+    scaffold: false,
+  },
 };
+
+module.exports = config;

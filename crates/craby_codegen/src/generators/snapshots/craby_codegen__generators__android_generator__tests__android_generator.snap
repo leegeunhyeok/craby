@@ -77,8 +77,7 @@ target_compile_definitions(cxx-test-module PRIVATE
 )
 
 ./android/src/main/AndroidManifest.xml
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="rs.craby.testmodule">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 </manifest>
 
 ./android/build.gradle
@@ -87,25 +86,19 @@ def reactNativeArchitectures() {
   return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
 }
 
-buildscript {
-  ext.getExtOrDefault = {name ->
-    return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['TestModule_' + name]
-  }
-
-  repositories {
-    google()
-    mavenCentral()
-  }
-
-  dependencies {
-    classpath "com.android.tools.build:gradle:8.7.2"
-    // noinspection DifferentKotlinGradleVersion
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
-  }
+def getExtOrDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['TestModule_' + name]
 }
 
 apply plugin: "com.android.library"
-apply plugin: "kotlin-android"
+
+def agpMajorVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0].toInteger()
+def builtInKotlinEnabled = agpMajorVersion >= 9 &&
+  (project.findProperty("android.builtInKotlin") ?: "true").toString().toBoolean()
+if (!builtInKotlinEnabled) {
+  apply plugin: "kotlin-android"
+}
+
 apply plugin: "com.facebook.react"
 
 def getExtOrIntegerDefault(name) {
@@ -115,11 +108,12 @@ def getExtOrIntegerDefault(name) {
 android {
   namespace "rs.craby.testmodule"
 
-  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+  compileSdk getExtOrIntegerDefault("compileSdkVersion")
+  ndkVersion getExtOrDefault("ndkVersion")
 
   defaultConfig {
-    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
-    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    minSdk getExtOrIntegerDefault("minSdkVersion")
+    targetSdk getExtOrIntegerDefault("targetSdkVersion")
 
     externalNativeBuild {
       cmake {
@@ -164,8 +158,8 @@ android {
     }
   }
 
-  lintOptions {
-    disable "GradleCompatible"
+  lint {
+    disable += "GradleCompatible"
   }
 
   compileOptions {
@@ -183,7 +177,6 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 
 dependencies {
   implementation "com.facebook.react:react-android"
-  implementation "com.facebook.react:hermes-engine"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
 
@@ -194,10 +187,10 @@ react {
 }
 
 ./android/gradle.properties
-TestModule_kotlinVersion=2.0.21
+TestModule_kotlinVersion=2.2.0
 TestModule_minSdkVersion=24
-TestModule_targetSdkVersion=34
-TestModule_compileSdkVersion=35
+TestModule_targetSdkVersion=36
+TestModule_compileSdkVersion=37
 TestModule_ndkVersion=27.1.12297006
 
 ./android/src/main/java/rs/craby/testmodule/TestModulePackage.kt

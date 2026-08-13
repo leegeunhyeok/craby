@@ -18,6 +18,13 @@ Craby-built modules require a minimum React Native version of:
 
 - `>= 0.76.0` (**with New Architecture enabled**)
 
+### React Native 0.87
+
+React Native 0.87 adds preview support for Swift Package Manager (SwiftPM) and uses Android Gradle Plugin 9. See the official [release](https://github.com/facebook/react-native/releases/tag/v0.87.0) and [changelog](https://github.com/facebook/react-native/blob/v0.87.0/CHANGELOG.md) when upgrading.
+
+- **iOS**: SwiftPM is optional and must be enabled by the consuming app. Craby provides the required `Package.swift` and autolinking metadata; see [Step 5](#step-5-sync-with-native-projects).
+- **Android**: Keep the React Native 0.87 app template's `android.builtInKotlin=false` and `android.newDsl=false` compatibility properties. Craby detects AGP 9 automatically, so no module-level Gradle configuration is required.
+
 ## Prerequisites
 
 <Callout title="warning macOS Required" type="warning">
@@ -28,7 +35,7 @@ Before you begin, make sure you have the following installed:
 
 - **macOS**: Required for building iOS targets
 - **XCode 12+**: [Download](https://developer.apple.com/xcode)
-- **Node.js 18+**: [Download](https://nodejs.org/)
+- **Node.js 18+**: React Native 0.87 projects require Node.js 22.13 or later. [Download](https://nodejs.org/)
 - **Rust 1.82+**: Install via [rustup](https://rustup.rs/)
 - **Android NDK**: [Download](https://developer.android.com/ndk/downloads)
 
@@ -117,6 +124,7 @@ After scaffolding or setup, your project will have this structure:
     </Folder>
     <File name="Cargo.toml" icon={<TomlIcon fill="currentColor" />} />
     <File name="craby.toml" icon={<TomlIcon fill="currentColor" />} />
+    <File name="Package.swift" />
     <File name="rust-toolchain.toml" icon={<TomlIcon fill="currentColor" />} />
     <File name="package.json" icon={<NodeJsIcon fill="currentColor" />} />
   </Folder>
@@ -216,11 +224,32 @@ npx crabygen build
 
 ### Step 5: Sync with Native Projects
 
-After building the native binaries, install CocoaPods dependencies for iOS:
+After building the native binaries, integrate the iOS dependencies using either CocoaPods or React Native 0.87+ Swift Package Manager support:
 
-```bash
-cd ios && pod install
-```
+<Tabs items={['CocoaPods', 'Swift Package Manager']}>
+  <Tab value="CocoaPods">
+    ```bash
+    cd ios && pod install
+    ```
+  </Tab>
+  <Tab value="Swift Package Manager">
+    ```bash
+    cd ios
+    HERMES_VERSION="$(node --print "require('react-native/package.json').dependencies['hermes-compiler']")" \
+      npx react-native spm add --deintegrate
+    ```
+
+    Swift Package Manager support is a preview in React Native 0.87; CocoaPods remains the default.
+    Run this command in a React Native 0.87+ iOS project with Xcode 16 or later.
+    Craby generates and publishes the module's `Package.swift`; React Native discovers it through
+    `react-native.config.js` and links the XCFramework produced by `crabygen build`. The SPM metadata
+    is exposed only to React Native 0.87 or later, so older React Native CLI versions continue using
+    CocoaPods unchanged. On a fresh clone or CI checkout, run `npx react-native spm` once before the
+    first Xcode build. Passing React Native's pinned `hermes-compiler` version keeps the downloaded
+    SwiftPM Hermes runtime compatible with Release bundles. See React Native's [SwiftPM command reference](https://github.com/facebook/react-native/blob/v0.87.0/packages/react-native/scripts/spm/__doc__/spm-scripts.md)
+    for more details.
+  </Tab>
+</Tabs>
 
 For Android, Gradle will automatically sync when you build the React Native app.
 

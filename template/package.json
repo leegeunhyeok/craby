@@ -29,6 +29,7 @@
     "ios",
     "cpp",
     "*.podspec",
+    "Package.swift",
     "react-native.config.js",
     "!ios/build",
     "!android/build",
@@ -64,11 +65,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.7",
-    "@react-native-community/cli-types": "^20.0.2",
-    "@types/react": "^19.0.0",
+    "@react-native-community/cli-types": "^20.2.0",
+    "@types/react": "^19.2.0",
     "crabygen": "{{ pkg_version }}",
-    "react": "19.1.1",
-    "react-native": "0.82.1",
+    "react": "19.2.3",
+    "react-native": "0.87.0",
     "tsdown": "^0.15.10",
     "typescript": "^5.9.3"
   },
