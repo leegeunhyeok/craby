@@ -76,7 +76,8 @@ pub mod android {
 
     use crate::platform::android::path::{ndk_clang_path, ndk_llvm_ar_path};
 
-    /// See https://github.com/facebook/react-native/blob/v0.76.0/packages/react-native/gradle/libs.versions.toml
+    /// Keep API 23 for compatibility with the oldest supported React Native version (0.76).
+    /// Binaries built against API 23 remain compatible with newer apps whose minSdk is higher.
     pub const MIN_SDK_VERSION: u8 = 23;
 
     #[derive(Debug, Clone, Copy)]

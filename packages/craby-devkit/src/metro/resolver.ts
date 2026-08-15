@@ -31,6 +31,7 @@ export interface CustomResolutionContext {
   sourceExts: string[];
   originModulePath: string;
   preferNativePlatform?: boolean;
+  resolveRequest?: CustomResolver;
 }
 
 const DEFAULT_ROOT_MODULES = ['react', 'react-native'];
@@ -83,7 +84,17 @@ export function createResolver(options: CreateResolverOptions): CustomResolver {
       };
     }
 
-    return resolve;
+    return function resolveWithFallback(context: CustomResolutionContext, request: string, platform: string | null) {
+      try {
+        return resolve(context, request);
+      } catch (error) {
+        if (context.resolveRequest == null) {
+          throw error;
+        }
+
+        return context.resolveRequest(context, request, platform);
+      }
+    };
   }
 
   return function resolve(context: CustomResolutionContext, request: string, platform: string | null) {

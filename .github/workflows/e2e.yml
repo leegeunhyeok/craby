@@ -54,6 +54,9 @@ jobs:
 
           - version: '0.80'
             app-identifier: 'com.craby80'
+
+          - version: '0.87'
+            app-identifier: 'com.craby87'
     runs-on: ubuntu-latest
     name: E2E Android - react-native@${{ matrix.react-native.version }}
     needs:
@@ -103,6 +106,10 @@ jobs:
         run: yarn install --immutable
       - name: Prepare dependencies
         run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
+      - name: Validate native module configuration
+        working-directory: examples/${{ matrix.react-native.version }}
+        run: |
+          node -e "const config = require('../craby-test/react-native.config.js'); if (config.spm?.name !== 'CrabyTest' || config.spm?.scaffold !== false) throw new Error('Unexpected SPM metadata');"
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v4
       - name: AVD cache
@@ -152,11 +159,21 @@ jobs:
           - version: '0.76'
             scheme: 'Craby76'
             app-identifier: 'org.reactjs.native.example.Craby76'
+            use_spm: false
+            runner: macos-latest
 
           - version: '0.80'
             scheme: 'Craby80'
             app-identifier: 'org.reactjs.native.example.Craby80'
-    runs-on: macos-latest
+            use_spm: false
+            runner: macos-15
+
+          - version: '0.87'
+            scheme: 'Craby87'
+            app-identifier: 'com.craby87'
+            use_spm: true
+            runner: macos-latest
+    runs-on: ${{ matrix.react-native.runner }}
     name: E2E iOS - react-native@${{ matrix.react-native.version }}
     needs:
       - build
@@ -183,12 +200,31 @@ jobs:
       - name: Prepare dependencies
         run: yarn workspaces foreach --all --topological-dev --include "{@craby/devkit,craby-modules,test-suites}" run build
       - name: Install CocoaPods dependencies
+        if: ${{ !matrix.react-native.use_spm }}
         run: pod install
         working-directory: examples/${{ matrix.react-native.version }}/ios
-      - name: Build iOS app - ${{ matrix.react-native.version }}
+      - name: Configure Swift Package Manager
+        if: ${{ matrix.react-native.use_spm }}
+        run: |
+          HERMES_VERSION="$(node --print "require('react-native/package.json').dependencies['hermes-compiler']")" \
+            npx react-native spm add --deintegrate --yes
+        working-directory: examples/${{ matrix.react-native.version }}/ios
+      - name: Build CocoaPods iOS app - ${{ matrix.react-native.version }}
+        if: ${{ !matrix.react-native.use_spm }}
         run: |
           xcodebuild \
             -workspace ${{ matrix.react-native.scheme }}.xcworkspace \
+            -scheme ${{ matrix.react-native.scheme }} \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath "$HOME/DerivedData" \
+            -quiet
+        working-directory: examples/${{ matrix.react-native.version }}/ios
+      - name: Build SwiftPM iOS app - ${{ matrix.react-native.version }}
+        if: ${{ matrix.react-native.use_spm }}
+        run: |
+          xcodebuild \
+            -project ${{ matrix.react-native.scheme }}.xcodeproj \
             -scheme ${{ matrix.react-native.scheme }} \
             -configuration Release \
             -sdk iphonesimulator \
