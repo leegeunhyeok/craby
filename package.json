@@ -23,5 +23,5 @@
     "typescript": "^5.9.3",
     "zx": "^8.8.4"
   },
-  "packageManager": "yarn@4.12.0"
+  "packageManager": "yarn@4.18.0"
 }
