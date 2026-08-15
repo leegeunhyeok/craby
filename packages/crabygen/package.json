@@ -1,6 +1,6 @@
 {
   "name": "crabygen",
-  "version": "0.1.0-rc.7",
+  "version": "0.1.0-rc.8",
   "description": "CLI tool for Craby",
   "type": "module",
   "bin": {

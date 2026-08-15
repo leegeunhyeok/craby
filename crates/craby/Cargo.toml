@@ -8,5 +8,5 @@ license = "MIT"
 repository = "https://github.com/leegeunhyeok/craby"
 
 [dependencies]
-craby_macro = { version = "0.1.0-rc.7", path = "../craby_macro" }
+craby_macro = { version = "0.1.0-rc.8", path = "../craby_macro" }
 anyhow      = { workspace = true }
