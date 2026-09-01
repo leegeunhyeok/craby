@@ -61,7 +61,7 @@ body:
       description: Please provide the versions of relevant packages
       placeholder: |
         react-native: 0.xx.x
-        craby-module: 0.x.x
+        craby-modules: 0.x.x
         crabygen: 0.x.x
   - type: textarea
     id: logs
