@@ -12,12 +12,19 @@ Here's a simple storage module that maintains state:
 
 ```rust title="storage_impl.rs"
 struct Storage {
-    id: usize,
+    ctx: Context,
     data: Option<Number>,
 }
 
 #[craby_module]
 impl StorageSpec for Storage {
+    fn new(ctx: Context) -> Self {
+        Self {
+            ctx,
+            data: None,
+        }
+    }
+
     fn set_data(&mut self, data: Number) -> Void {
         self.data = Some(data);
     }

@@ -137,7 +137,7 @@ cd examples/<version>
 yarn start
 ```
 
-#### 2. iOS
+#### 2. iOS — React Native 0.76 and 0.80
 
 ```bash
 yarn pod:install   # Install CocoaPods dependencies
@@ -145,6 +145,16 @@ yarn ios           # Build and launch on simulator
 ```
 
 Or build manually via Xcode using `examples/<version>/ios/*.xcworkspace`.
+
+For React Native 0.87, configure SwiftPM before building:
+
+```bash
+cd examples/0.87/ios
+HERMES_VERSION="$(node --print "require('react-native/package.json').dependencies['hermes-compiler']")" \
+  npx react-native spm add --deintegrate --yes
+```
+
+Then build the `Craby87` scheme from `Craby87.xcodeproj` with Xcode 16 or later.
 
 #### 3. Android
 

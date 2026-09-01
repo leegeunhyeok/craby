@@ -68,7 +68,7 @@ Craby ensures type consistency across the entire stack:
 With Craby, you focus on what matters—your implementation:
 
 ```typescript title="NativeCalculator.ts"
-import { NativeModuleRegistry, type NativeModule } from 'craby-module';
+import { NativeModuleRegistry, type NativeModule } from 'craby-modules';
 
 // Define your module like this!
 interface Spec extends NativeModule {
@@ -82,7 +82,7 @@ export default NativeModuleRegistry.getEnforcing<Spec>('Calculator');
 #[craby_module]
 impl CalculatorSpec for Calculator {
     fn add(&mut self, a: Number, b: Number) -> Number {
-        // Focus on what matters!
+        a + b
     }
 }
 ```

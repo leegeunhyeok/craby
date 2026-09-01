@@ -113,8 +113,8 @@ const prime = await HeavyCompute.calculatePrime(10000);
 console.log('10000th prime:', prime);
 
 // Or with promise chaining
-HeavyCompute.sortLargeArray([5, 2, 9, 1, 7])
-  .then((sorted) => console.log('Sorted:', sorted))
+HeavyCompute.computeHash('hello')
+  .then((hash) => console.log('Hash:', hash))
   .catch((error) => console.error('Error:', error));
 ```
 
@@ -154,7 +154,7 @@ Sync methods typically use the `throw` macro (alias for `panic!`) for errors:
   <Tab value="TypeScript">
     ```typescript
     try {
-      const result = Calculator.divide(123);
+      const result = Calculator.divide(123, 0);
       console.log(result);
     } catch (error) {
       console.error('Failed:', error);

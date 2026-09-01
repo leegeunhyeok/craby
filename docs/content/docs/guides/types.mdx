@@ -84,7 +84,7 @@ Strings are UTF-8 encoded and automatically converted between languages.
             format!("Hello, {}!", name)
         }
 
-        fn greet(&mut self, names: Array<String>) -> String {
+        fn greet_many(&mut self, names: Array<String>) -> String {
             format!("Hello, {}!", names.join(", "))
         }
     }
@@ -221,7 +221,8 @@ Arrays map to `std::vec::Vec<T>` in Rust and are wrapped in the `Array<T>` type.
         }
 
         fn reverse(&mut self, mut items: Array<String>) -> Array<String> {
-            items.reverse()
+            items.reverse();
+            items
         }
     }
     ```

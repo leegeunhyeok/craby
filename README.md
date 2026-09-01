@@ -8,16 +8,25 @@ Type-safe Rust for React Native—auto generated, integrated with pure C++ Turbo
 
 </div>
 
-> [!NOTE]
-> This project is under development
->
-> Follow [this issue](https://github.com/leegeunhyeok/craby/issues/1) for updates on the upcoming stable release.
-
 ## Overview
 
 Craby is a type-safe Rust development tool for React Native. It automatically generates Rust/C++ bindings from TypeScript schemas and integrates directly with **pure C++ TurboModule**, bypassing platform-specific layers like `ObjCTurboModule` and `JavaTurboModule`.
 
-[Documentation](https://craby.rs)
+## Requirements
+
+- React Native 0.76 or later with the New Architecture enabled
+- Node.js 18 or later (React Native 0.87 requires Node.js 22.13 or later)
+- Rust 1.90 or later
+- macOS with Xcode 15.1 or later for iOS builds
+- Android NDK for Android builds
+
+## Getting Started
+
+```bash
+npx crabygen init <package-name>
+```
+
+Visit the [documentation](https://craby.rs) for installation, build, CocoaPods, and Swift Package Manager guides.
 
 ## License
 

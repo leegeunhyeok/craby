@@ -31,10 +31,12 @@ export interface MyModuleError {
 }
 
 export interface Spec extends NativeModule {
+  startProcess(): Promise<void>;
+
   // Signal definitions
   onStarted: Signal;
   onFinished: Signal;
-  // Regular methods with payload
+  // Signals with payload
   onProgress: Signal<ProgressEvent>;
   onError: Signal<MyModuleError>;
 }
@@ -71,7 +73,8 @@ impl MyModuleSpec for MyModule {
             reason: "Processing failed".to_string(),
         }));
         
-        self.emit(MyModuleSignal::onFinished)
+        self.emit(MyModuleSignal::OnFinished);
+        promise::resolve(())
     }
 }
 ```
@@ -83,8 +86,8 @@ Craby automatically generates a Signal enum for your module. Signals with payloa
 ```rust title="generated.rs"
 // Auto-generated
 pub enum MyModuleSignal {
-    onStarted,
-    onFinished,
+    OnStarted,
+    OnFinished,
     OnProgress(ProgressEvent),
     OnError(MyModuleError),
 }
@@ -95,7 +98,7 @@ pub enum MyModuleSignal {
 Subscribe to signals by calling the signal property as a function with a callback. The callback receives the payload data (if any):
 
 ```typescript
-import { ProcessModule } from 'your-module';
+import { MyModule } from 'your-module';
 
 // Add a listener
 const cleanup = MyModule.onStarted(() => {

@@ -14,9 +14,9 @@ Every Craby module receives a context (`ctx`) that includes `data_path`:
 
 ```rust title="my_module_impl.rs"
 #[craby_module]
-impl MyModule {
-    fn get_file_path(&self) -> String {
-        // `self.ctx.data_path` is application's data path
+impl MyModuleSpec for MyModule {
+    fn get_data_path(&mut self) -> String {
+        // `self.ctx.data_path` is the application's data path
         self.ctx.data_path.clone()
     }
 }
@@ -32,6 +32,16 @@ The `data_path` points to the application's designated data storage directory, w
 Here's a complete example of a module that reads and writes data:
 
 ```rust title="storage_impl.rs"
+struct Storage {
+    ctx: Context,
+}
+
+impl Storage {
+    fn data_file_path(&self) -> std::path::PathBuf {
+        std::path::PathBuf::from(&self.ctx.data_path).join("storage.txt")
+    }
+}
+
 #[craby_module]
 impl StorageSpec for Storage {
     fn get_data_path(&mut self) -> String {
@@ -39,11 +49,11 @@ impl StorageSpec for Storage {
     }
 
     fn write_data(&mut self, value: &str) -> Boolean {
-        std::fs::write(self.get_file_path(), value).is_ok()
+        std::fs::write(self.data_file_path(), value).is_ok()
     }
 
     fn read_data(&mut self) -> Nullable<String> {
-        match std::fs::read_to_string(self.get_file_path()) {
+        match std::fs::read_to_string(self.data_file_path()) {
             Ok(data) => Nullable::<String>::some(data),
             Err(_) => Nullable::<String>::none(),
         }
