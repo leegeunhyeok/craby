@@ -35,7 +35,7 @@ interface NativeModuleRegistry {
 export const NativeModuleRegistry: NativeModuleRegistry = {
   get<T extends NativeModule>(moduleName: string): T | null {
     prepareJNI(moduleName);
-    return TurboModuleRegistry.get<T>(moduleName);
+    return TurboModuleRegistry.get<T>(moduleName) ?? null;
   },
   getEnforcing<T extends NativeModule>(moduleName: string): T {
     prepareJNI(moduleName);

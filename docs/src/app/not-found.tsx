@@ -1,21 +1,17 @@
+import { cn } from 'cnfast';
 import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import { cn } from 'fumadocs-ui/utils/cn';
 import Link from 'next/link';
+import { CrabyDocsLayout } from '@/components/docs-layout';
 import { HomeNavBar } from '@/components/navbar';
-import { Sidebar } from '@/components/sidebar';
 import { source } from '@/lib/source';
 
 export default function NotFoundPage() {
   return (
-    <DocsLayout
+    <CrabyDocsLayout
       tree={source.pageTree}
+      mobileSidebar
       nav={{ component: <HomeNavBar /> }}
-      sidebar={{
-        collapsible: false,
-        className: '!ps-0',
-        component: <Sidebar mobileOnly />,
-      }}
+      sidebar={{ collapsible: false, className: '!ps-0' }}
       containerProps={{ className: '!px-4 pt-4 md:!px-12 md:pt-[42px] lg:pt-[56px] lg:items-center' }}
       searchToggle={{ enabled: false }}
       themeSwitch={{ enabled: false }}
@@ -34,7 +30,7 @@ export default function NotFoundPage() {
           Return to Home
         </Link>
       </div>
-    </DocsLayout>
+    </CrabyDocsLayout>
   );
 }
 

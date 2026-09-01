@@ -1,66 +1,50 @@
+'use client';
+
+import { cn } from 'cnfast';
+import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import {
   Sidebar as SidebarBase,
-  SidebarContent,
-  SidebarContentMobile,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarPageTree,
+  type SidebarProps as SidebarBaseProps,
+  SidebarProvider,
   SidebarTrigger,
-  SidebarViewport,
-} from 'fumadocs-ui/components/layout/sidebar';
-import { ThemeToggle } from 'fumadocs-ui/components/layout/theme-toggle';
-import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { BaseLinkItem } from 'fumadocs-ui/layouts/links';
-import { cn } from 'fumadocs-ui/utils/cn';
-import { XIcon } from 'lucide-react';
+  useSidebar,
+} from 'fumadocs-ui/layouts/docs/slots/sidebar';
+import Link from 'next/link';
 import { GitHubIcon } from '@/components/icons/github';
 
-interface SidebarProps {
+interface SidebarProps extends SidebarBaseProps {
   mobileOnly?: boolean;
 }
 
-export function Sidebar(props: SidebarProps) {
-  const viewport = (
-    <SidebarViewport>
-      <SidebarPageTree />
-    </SidebarViewport>
+export function Sidebar({ mobileOnly, className, ...props }: SidebarProps) {
+  const footer = (
+    <Link
+      href="https://github.com/leegeunhyeok/craby"
+      target="_blank"
+      className={cn(buttonVariants({ size: 'icon-sm', color: 'ghost' }))}
+      aria-label="GitHub"
+    >
+      <GitHubIcon fill="currentColor" />
+    </Link>
   );
 
-  const mobile = (
-    <SidebarContentMobile>
-      <SidebarHeader>
-        <div className="flex items-center justify-between gap-1.5 pl-2 text-fd-muted-foreground">
-          <ThemeToggle className="p-0" mode="light-dark" />
-          <SidebarTrigger
-            className={cn(
-              buttonVariants({
-                color: 'ghost',
-                size: 'icon-sm',
-                className: 'p-2',
-              }),
-            )}
-          >
-            <XIcon />
-          </SidebarTrigger>
-        </div>
-      </SidebarHeader>
-      {viewport}
-      <SidebarFooter className="border-none">
-        <BaseLinkItem
-          item={{
-            url: 'https://github.com/leegeunhyeok/craby',
-            external: true,
-          }}
-          className={cn(buttonVariants({ size: 'icon', color: 'ghost' }))}
-          aria-label="GitHub"
-        >
-          <GitHubIcon fill="currentColor" />
-        </BaseLinkItem>
-      </SidebarFooter>
-    </SidebarContentMobile>
+  return (
+    <SidebarBase {...props} className={cn(className, mobileOnly && 'hidden')} collapsible={false} footer={footer} />
   );
-
-  const content = <SidebarContent className="bg-fd-background">{viewport}</SidebarContent>;
-
-  return <SidebarBase Mobile={mobile} Content={props.mobileOnly ? null : content} />;
 }
+
+function MobileSidebar(props: SidebarBaseProps) {
+  return <Sidebar {...props} mobileOnly />;
+}
+
+export const sidebarSlots = {
+  provider: SidebarProvider,
+  root: Sidebar,
+  trigger: SidebarTrigger,
+  useSidebar,
+};
+
+export const mobileSidebarSlots = {
+  ...sidebarSlots,
+  root: MobileSidebar,
+};

@@ -2,6 +2,11 @@
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 
+@utility -inset-s-* {
+  inset-inline-start: --spacing(--value(integer) * -1);
+  inset-inline-start: calc(--value([percentage], [length]) * -1);
+}
+
 :root {
   --fd-nav-height: 56px !important;
 }

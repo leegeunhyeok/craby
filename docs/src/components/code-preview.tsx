@@ -1,8 +1,8 @@
 'use client';
 
+import { cn } from 'cnfast';
 import { type AnnotationHandler, type HighlightedCode, highlight, InnerToken, Pre } from 'codehike/code';
 import dedent from 'dedent';
-import { cn } from 'fumadocs-ui/utils/cn';
 import { use, useEffect, useMemo, useRef, useState } from 'react';
 import { CircularProgress } from './circular-progress';
 import { RustIcon } from './icons/rust';

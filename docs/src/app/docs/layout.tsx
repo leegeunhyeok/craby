@@ -1,18 +1,17 @@
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { CrabyDocsLayout } from '@/components/docs-layout';
 import { DocsNavBar } from '@/components/navbar';
-import { Sidebar } from '@/components/sidebar';
 import { source } from '@/lib/source';
 
 export default function Layout({ children }: LayoutProps<'/docs'>) {
   return (
-    <DocsLayout
+    <CrabyDocsLayout
       tree={source.pageTree}
       nav={{ component: <DocsNavBar /> }}
-      sidebar={{ collapsible: false, className: 'bg-fd-background md:-mt-6', component: <Sidebar /> }}
+      sidebar={{ collapsible: false, className: 'bg-fd-background md:-mt-6' }}
       searchToggle={{ enabled: false }}
       themeSwitch={{ enabled: false }}
     >
       {children}
-    </DocsLayout>
+    </CrabyDocsLayout>
   );
 }

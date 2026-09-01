@@ -1,5 +1,5 @@
+import { cn } from 'cnfast';
 import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { cn } from 'fumadocs-ui/utils/cn';
 import Link from 'next/link';
 import { type PropsWithChildren, Suspense } from 'react';
 import { CodePreview, CodePreviewFallback } from '@/components/code-preview';

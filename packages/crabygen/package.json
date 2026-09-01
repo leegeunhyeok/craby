@@ -30,14 +30,17 @@
   },
   "homepage": "https://github.com/leegeunhyeok/craby#readme",
   "dependencies": {
-    "@commander-js/extra-typings": "^14.0.0",
+    "@commander-js/extra-typings": "^13.1.0",
     "@craby/cli-bindings": "workspace:*",
-    "commander": "^14.0.1",
+    "commander": "^13.1.0",
     "es-toolkit": "^1.39.10"
   },
   "devDependencies": {
     "@types/node": "^22",
     "tsdown": "^0.17.0-beta.4",
     "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
