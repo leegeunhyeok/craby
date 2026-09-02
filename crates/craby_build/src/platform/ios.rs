@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    path::PathBuf,
-    process::Command,
-};
+use std::{fs, path::PathBuf, process::Command};
 
 use crate::{
     cargo::artifact::{ArtifactType, Artifacts},

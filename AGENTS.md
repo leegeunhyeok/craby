@@ -40,7 +40,7 @@ craby/
 
 - **Rust nightly** — toolchain pinned in `rust-toolchain.toml`
 - **Yarn Berry** — `node-modules` linker (PnP disabled for RN compat)
-- **Biome** — TypeScript lint/format
+- **Oxlint + Oxfmt** — TypeScript lint/format
 - **Clippy + rustfmt** — Rust lint/format
 - **insta** — snapshot testing for all codegen output (`cargo insta review --workspace` after changes)
 - **Conventional Commits** — `feat:`, `fix:`, `chore:`, etc.

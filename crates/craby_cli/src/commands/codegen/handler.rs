@@ -15,7 +15,11 @@ use craby_codegen::{
     },
     types::CodegenContext,
 };
-use craby_common::{config::load_config, constants::{crate_dir, craby_tmp_dir, impl_mod_name}, env::is_initialized};
+use craby_common::{
+    config::load_config,
+    constants::{craby_tmp_dir, crate_dir, impl_mod_name},
+    env::is_initialized,
+};
 use log::{debug, info, warn};
 use owo_colors::OwoColorize;
 

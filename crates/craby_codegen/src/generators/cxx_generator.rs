@@ -192,7 +192,7 @@ impl CxxTemplate {
             } else {
                 None
             };
-            
+
             let register_stmt = if let Some(ref signal_enum) = signal_enum_name {
                 formatdoc! {
                     r#"
@@ -298,12 +298,18 @@ impl CxxTemplate {
             } else {
                 None
             };
-            
-            method_defs.insert(0, if let Some(ref signal_enum) = signal_enum_name {
-              format!("void emit(std::string name, bridging::{}* signal);", signal_enum)
-            } else {
-                "void emit(std::string name);".to_string()
-            });
+
+            method_defs.insert(
+                0,
+                if let Some(ref signal_enum) = signal_enum_name {
+                    format!(
+                        "void emit(std::string name, bridging::{}* signal);",
+                        signal_enum
+                    )
+                } else {
+                    "void emit(std::string name);".to_string()
+                },
+            );
 
             // Generate payload extraction conditions dynamically
             let payload_extraction = if signal_enum_name.is_some() {
@@ -323,7 +329,7 @@ impl CxxTemplate {
                         })
                     })
                     .collect();
-                
+
                 if !conditions.is_empty() {
                     // Replace first "else if" with "if"
                     if let Some(first) = conditions.first_mut() {
@@ -444,7 +450,6 @@ impl CxxTemplate {
                     }
                 }
             );
-
 
             (register_stmt, unregister_stmt)
         } else {
@@ -988,15 +993,15 @@ impl CxxTemplate {
     /// } // namespace craby
     /// ```
     fn cxx_signals(&self, project_name: &str, schemas: &[Schema]) -> Result<String, anyhow::Error> {
-      let flat_name = flat_case(project_name);
-      
-      // Find schema with first signal
-      let signal_schema = schemas.iter().find(|s| !s.signals.is_empty());
-      let signal_enum = signal_schema.map(|s| format!("{}Signal", s.module_name));
-      let cxx_mod = signal_schema.map(|s| format!("Cxx{}", pascal_case(&s.module_name)));
-      
-      Ok(formatdoc! {
-          r#"
+        let flat_name = flat_case(project_name);
+
+        // Find schema with first signal
+        let signal_schema = schemas.iter().find(|s| !s.signals.is_empty());
+        let signal_enum = signal_schema.map(|s| format!("{}Signal", s.module_name));
+        let cxx_mod = signal_schema.map(|s| format!("Cxx{}", pascal_case(&s.module_name)));
+
+        Ok(formatdoc! {
+            r#"
           #pragma once
 
           #include "rust/cxx.h"
@@ -1042,10 +1047,10 @@ impl CxxTemplate {
           }} // namespace signals
           }} // namespace {flat_name}
           }} // namespace craby"#,
-          flat_name = flat_name,
-          forward_declarations = if let (Some(ref enum_name), Some(ref mod_name)) = (&signal_enum, &cxx_mod) {
-              formatdoc! {
-                  r#"
+            flat_name = flat_name,
+            forward_declarations = if let (Some(ref enum_name), Some(ref mod_name)) = (&signal_enum, &cxx_mod) {
+                formatdoc! {
+                    r#"
                   namespace craby {{
                   namespace {flat_name} {{
                   namespace bridging {{
@@ -1056,24 +1061,24 @@ impl CxxTemplate {
                   }}
                   }}
                   }}"#,
-                  enum_name = enum_name,
-                  mod_name = mod_name,
-                  flat_name = flat_name
-              }
-          } else {
-              String::new()
-          },
-          signal_delegate_typedef = if signal_enum.is_some() {
-              formatdoc! {
-                  r#"
-                  using Delegate = std::function<void(const std::string& signalName, void* signal)>;"#
-              }
-          } else {
-              String::new()
-          },
-          emit_impl = if let Some(ref enum_name) = signal_enum {
-              formatdoc! {
-                  r#"
+                    enum_name = enum_name,
+                    mod_name = mod_name,
+                    flat_name = flat_name
+                }
+            } else {
+                String::new()
+            },
+            signal_delegate_typedef = if signal_enum.is_some() {
+                formatdoc! {
+                    r#"
+                    using Delegate = std::function<void(const std::string& signalName, void* signal)>;"#
+                }
+            } else {
+                String::new()
+            },
+            emit_impl = if let Some(ref enum_name) = signal_enum {
+                formatdoc! {
+                    r#"
                   void emit(uintptr_t id, rust::Str name, craby::{flat_name}::bridging::{enum_name}* signal) const {{
                       std::lock_guard<std::mutex> lock(mutex_);
                       auto it = delegates_.find(id);
@@ -1081,33 +1086,33 @@ impl CxxTemplate {
                         it->second(std::string(name), reinterpret_cast<void*>(signal));
                       }}
                     }}"#,
-                  enum_name = enum_name,
-                  flat_name = flat_name
-              }
-          } else {
-              String::new()
-          },
-          register_delegate_impl = if signal_enum.is_some() {
-              formatdoc! {
-                  r#"
+                    enum_name = enum_name,
+                    flat_name = flat_name
+                }
+            } else {
+                String::new()
+            },
+            register_delegate_impl = if signal_enum.is_some() {
+                formatdoc! {
+                    r#"
                   void registerDelegate(uintptr_t id, Delegate delegate) const {{
                       std::lock_guard<std::mutex> lock(mutex_);
                       delegates_.insert_or_assign(id, delegate);
                     }}"#
-              }
-          } else {
-              String::new()
-          },
-          delegates_map = if signal_enum.is_some() {
-              formatdoc! {
-                  r#"
-                  mutable std::unordered_map<uintptr_t, Delegate> delegates_;"#
-              }
-          } else {
-              String::new()
-          },
-      })
-  }
+                }
+            } else {
+                String::new()
+            },
+            delegates_map = if signal_enum.is_some() {
+                formatdoc! {
+                    r#"
+                    mutable std::unordered_map<uintptr_t, Delegate> delegates_;"#
+                }
+            } else {
+                String::new()
+            },
+        })
+    }
 }
 
 impl Template for CxxTemplate {

@@ -324,7 +324,8 @@ impl Method {
                 // Remove them from the outer scope so the generated code stays clean.
                 for arg in &string_args {
                     let str_var = format!("{arg}$raw");
-                    let decl = format!("auto {arg} = rust::Str({str_var}.data(), {str_var}.size());");
+                    let decl =
+                        format!("auto {arg} = rust::Str({str_var}.data(), {str_var}.size());");
                     args_decls.retain(|d| d != &decl);
                 }
 
@@ -364,7 +365,9 @@ impl Method {
                 // Reconstruct rust::Str from the captured std::string inside the lambda.
                 let inner_str_decls: String = string_args
                     .iter()
-                    .map(|arg| format!("auto {arg} = rust::Str({arg}$raw.data(), {arg}$raw.size());\n"))
+                    .map(|arg| {
+                        format!("auto {arg} = rust::Str({arg}$raw.data(), {arg}$raw.size());\n")
+                    })
                     .collect();
                 let bind_args = bind_args.join(", ");
                 let ret_stmts = indent_str(&format!("{inner_str_decls}{ret_stmts}"), 4);

@@ -45,7 +45,8 @@
   "scripts": {
     "prepack": "yarn build",
     "typecheck": "tsc --noEmit",
-    "lint": "biome check",
+    "lint": "oxlint --deny-warnings src && oxfmt --check src",
+    "lint:fix": "oxlint --fix src && oxfmt --write src",
     "build": "craby build && tsdown",
     "clean": "craby clean"
   },
@@ -64,10 +65,11 @@
     "craby-modules": "{{ pkg_version }}"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.7",
     "@react-native-community/cli-types": "^20.2.0",
     "@types/react": "^19.2.0",
     "crabygen": "{{ pkg_version }}",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0",
     "react": "19.2.3",
     "react-native": "0.87.0",
     "tsdown": "^0.15.10",

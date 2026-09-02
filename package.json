@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "prepare": "yarn workspaces foreach --all --topological-dev --exclude craby-0.80 run build",
-    "lint:all": "biome check",
-    "lint:fix": "biome check --write",
+    "lint:all": "oxlint --deny-warnings packages/*/src examples/*/src docs/src && oxfmt --check packages/*/src examples/*/src docs/src",
+    "lint:fix": "oxlint --fix packages/*/src examples/*/src docs/src && oxfmt --write packages/*/src examples/*/src docs/src",
     "e2e": "maestro test .maestro",
     "e2e:android": "MAESTRO_APP_ID=com.craby80 yarn e2e",
     "e2e:ios": "MAESTRO_APP_ID=org.reactjs.native.example.Craby80 yarn e2e",
@@ -17,8 +17,9 @@
     "docs:build": "yarn workspace docs build"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
     "@types/node": "^22",
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "zx": "^8.8.5"

@@ -180,7 +180,7 @@ Or build manually via Android Studio.
 
 Run these locally before opening a PR.
 
-### TypeScript (Biome)
+### TypeScript (Oxlint + Oxfmt)
 
 ```bash
 yarn lint:all    # Lint + format check

@@ -39,7 +39,6 @@ pub fn render_template(
             debug!("Processing {:?}", target_path);
             let content = fs::read_to_string(&target_path)?;
             let rendered = reg.render_template(&content, template_data)?;
-            let rendered = custom_render(&target_path, &rendered).unwrap_or(rendered);
 
             if let Some(parent) = target_path.parent() {
                 fs::create_dir_all(parent)?;
@@ -114,16 +113,6 @@ fn replace_path(
         }
 
         PathBuf::from(result)
-    }
-}
-
-/// Custom render rules for specific files
-fn custom_render(path: &Path, content: &str) -> Option<String> {
-    let base_name = path.file_name().unwrap().to_string_lossy().to_string();
-
-    match base_name.as_str() {
-        "biome.json" => Some(content.replace("\"root\": false", "\"root\": true")),
-        _ => None,
     }
 }
 
