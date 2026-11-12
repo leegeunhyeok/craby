@@ -1,5 +1,6 @@
 import CalculatorModule from './NativeCalculator';
 import CrabyTestModule, {
+  type BufferObject,
   MyEnum,
   type MyModuleError,
   type ProgressEvent,
@@ -9,5 +10,5 @@ import CrabyTestModule, {
   type TestObject,
 } from './NativeCrabyTest';
 
-export type { TestObject, SubObject, ProgressEvent, MyModuleError, ResultPoint };
+export type { TestObject, SubObject, ProgressEvent, MyModuleError, ResultPoint, BufferObject };
 export { MyEnum, SwitchState, CrabyTestModule, CalculatorModule };

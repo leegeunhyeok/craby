@@ -48,6 +48,17 @@ pub struct CxxMethod {
 }
 
 impl TypeAnnotation {
+    fn needs_cxx_move(&self) -> bool {
+        match self {
+            TypeAnnotation::String
+            | TypeAnnotation::ArrayBuffer
+            | TypeAnnotation::Array(..)
+            | TypeAnnotation::Object(..) => true,
+            TypeAnnotation::Nullable(inner) => inner.needs_cxx_move(),
+            _ => false,
+        }
+    }
+
     /// Converts TypeAnnotation to C++ type representation.
     ///
     /// # Generated Code Examples
@@ -312,7 +323,15 @@ impl Method {
             } else {
                 param.type_annotation.as_cxx_from_js(cxx_ns, &arg_ref)?.expr
             };
-            args.push(arg_var.clone());
+            args.push(
+                if !matches!(param.type_annotation, TypeAnnotation::String)
+                    && param.type_annotation.needs_cxx_move()
+                {
+                    format!("std::move({arg_var})")
+                } else {
+                    arg_var.clone()
+                },
+            );
             args_decls.push(format!("auto {arg_var} = {from_js};"));
         }
 
@@ -335,11 +354,14 @@ impl Method {
                 // For string args, capture `arg$raw` (std::string) instead of `arg` (rust::Str).
                 // rust::Str is a non-owning reference; if arg$raw is destroyed before the lambda
                 // executes, arg becomes a dangling pointer with garbage bytes.
-                for arg in &args {
-                    if string_args.contains(arg) {
-                        bind_args.push(format!("{arg}$raw"));
+                for (idx, param) in self.params.iter().enumerate() {
+                    let arg = cxx_arg_var(idx);
+                    if string_args.contains(&arg) {
+                        bind_args.push(format!("{arg}$raw = std::move({arg}$raw)"));
+                    } else if param.type_annotation.needs_cxx_move() {
+                        bind_args.push(format!("{arg} = std::move({arg})"));
                     } else {
-                        bind_args.push(arg.clone());
+                        bind_args.push(arg);
                     }
                 }
 
@@ -357,7 +379,7 @@ impl Method {
                     formatdoc! {
                         r#"
                         auto ret = {cxx_ns}::bridging::{fn_name}({fn_args});
-                        promise.resolve(ret);
+                        promise.resolve(std::move(ret));
                         "#,
                     }
                 };
@@ -416,7 +438,7 @@ impl Method {
                     {ret_stmts}
 
                     return {to_js};"#,
-                    to_js = self.ret_type.as_cxx_to_js("ret")?.expr,
+                    to_js = self.ret_type.as_cxx_to_js("std::move(ret)")?.expr,
                 }
             }
         };
@@ -772,7 +794,11 @@ pub mod template {
 
                 get_props.push(get_prop);
                 from_js_stmts.push(from_js_stmt);
-                from_js_ident.push(converted_ident);
+                from_js_ident.push(if prop.type_annotation.needs_cxx_move() {
+                    format!("std::move({converted_ident})")
+                } else {
+                    converted_ident
+                });
                 set_props.push(set_prop);
                 to_js_stmts.push(to_js_stmt);
             }
@@ -1025,6 +1051,11 @@ pub mod template {
             let origin_namespace = type_annotation.as_cxx_type(cxx_ns)?;
             let default_value = type_annotation.as_cxx_default_val(cxx_ns)?;
             let nullable_type_namespace = nullable_type_annotation.as_cxx_type(cxx_ns)?;
+            let val = if type_annotation.needs_cxx_move() {
+                "std::move(val)"
+            } else {
+                "val"
+            };
 
             let from_js_impl = formatdoc! {
                 r#"
@@ -1033,7 +1064,7 @@ pub mod template {
                 }}
 
                 auto val = react::bridging::fromJs<{origin_namespace}>(rt, value, callInvoker);
-                auto ret = {nullable_type_namespace}{{false, val}};
+                auto ret = {nullable_type_namespace}{{false, {val}}};
 
                 return ret;"#,
             };

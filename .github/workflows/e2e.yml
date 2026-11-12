@@ -67,11 +67,16 @@ jobs:
         run: |
           df -h
           echo "Removing large packages"
-          sudo apt-get remove -y '^dotnet-.*'
-          sudo apt-get remove -y 'php.*'
-          sudo apt-get remove -y '^mongodb-.*'
-          sudo apt-get remove -y '^mysql-.*'
-          sudo apt-get remove -y azure-cli google-chrome-stable firefox powershell mono-devel libgl1-mesa-dri
+          installed_packages=$(dpkg-query -W -f='${Package}\t${db:Status-Status}\n')
+          packages=()
+          while read -r package; do
+            packages+=("$package")
+          done < <(
+            awk '$2 == "installed" && ($1 ~ /^(dotnet-|php|mongodb-|mysql-)/ || $1 ~ /^(azure-cli|google-chrome-stable|firefox|powershell|mono-devel|libgl1-mesa-dri)$/) { print $1 }' <<< "$installed_packages"
+          )
+          if ((${#packages[@]})); then
+            sudo apt-get remove -y "${packages[@]}"
+          fi
           sudo apt-get autoremove -y
           sudo apt-get clean
           echo "Removing large directories"

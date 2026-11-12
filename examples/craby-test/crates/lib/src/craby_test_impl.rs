@@ -53,6 +53,16 @@ impl CrabyTestSpec for CrabyTest {
         arg
     }
 
+    fn buffer_object_method(&mut self, mut arg: BufferObject) -> BufferObject {
+        arg.label = self.string_method(&arg.label);
+        arg.bytes = self.array_buffer_method(arg.bytes);
+        arg.values = self.array_method(arg.values);
+        if !arg.nested.null && !arg.nested.val.bytes.null {
+            arg.nested.val.bytes.val = self.array_buffer_method(arg.nested.val.bytes.val);
+        }
+        arg
+    }
+
     fn array_method(&mut self, mut arg: Array<Number>) -> Array<Number> {
         arg.extend(vec![1.0, 2.0, 3.0]);
         arg.iter_mut().for_each(|x| *x *= 2.0);
@@ -113,6 +123,16 @@ impl CrabyTestSpec for CrabyTest {
 
     fn promise_string_method(&mut self, path: &str) -> Promise<Number> {
         promise::resolve(path.len() as Number)
+    }
+
+    fn promise_array_buffer_method(&mut self, arg: Vec<u8>) -> Promise<Vec<u8>> {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        promise::resolve(self.array_buffer_method(arg))
+    }
+
+    fn promise_buffer_object_method(&mut self, arg: BufferObject) -> Promise<BufferObject> {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        promise::resolve(self.buffer_object_method(arg))
     }
 
     fn set_state(&mut self, arg: Number) -> Void {

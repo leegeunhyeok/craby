@@ -21,6 +21,39 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::testmodule::bridging")]
 pub mod bridging {
     #[derive(Clone)]
+    struct BufferObject {
+        label: String,
+        bytes: Vec<u8>,
+        values: Vec<f64>,
+        nested: NullableBufferChild,
+    }
+
+    #[derive(Clone)]
+    struct NullableNumber {
+        null: bool,
+        val: f64,
+    }
+
+    #[derive(Clone)]
+    struct NullableSubObject {
+        null: bool,
+        val: SubObject,
+    }
+
+    #[derive(Clone)]
+    struct NullableBufferChild {
+        null: bool,
+        val: BufferChild,
+    }
+
+    #[derive(Clone)]
+    struct SubObject {
+        a: NullableString,
+        b: f64,
+        c: bool,
+    }
+
+    #[derive(Clone)]
     struct NullableString {
         null: bool,
         val: String,
@@ -33,22 +66,15 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
-    struct NullableSubObject {
-        null: bool,
-        val: SubObject,
-    }
-
-    #[derive(Clone)]
     struct AlphaStruct {
         name: NullableString,
         value: NullableNumber,
     }
 
     #[derive(Clone)]
-    struct SubObject {
-        a: NullableString,
-        b: f64,
-        c: bool,
+    struct NullableArrayBuffer {
+        null: bool,
+        val: Vec<u8>,
     }
 
     #[derive(Clone)]
@@ -64,9 +90,8 @@ pub mod bridging {
     }
 
     #[derive(Clone)]
-    struct NullableNumber {
-        null: bool,
-        val: f64,
+    struct BufferChild {
+        bytes: NullableArrayBuffer,
     }
 
     enum MyEnum {
@@ -98,6 +123,9 @@ pub mod bridging {
         #[cxx_name = "booleanMethod"]
         fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool>;
 
+        #[cxx_name = "bufferObjectMethod"]
+        fn craby_test_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject>;
+
         #[cxx_name = "camelMethod"]
         fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
 
@@ -118,6 +146,12 @@ pub mod bridging {
 
         #[cxx_name = "pascalMethod"]
         fn craby_test_pascal_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64>;
+
+        #[cxx_name = "promiseArrayBufferMethod"]
+        fn craby_test_promise_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>>;
+
+        #[cxx_name = "promiseBufferObjectMethod"]
+        fn craby_test_promise_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject>;
 
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
@@ -183,6 +217,13 @@ fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, any
     })
 }
 
+fn craby_test_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.buffer_object_method(arg);
+        ret
+    })
+}
+
 fn craby_test_camel_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.camel_method(first_arg, second_arg);
@@ -232,6 +273,20 @@ fn craby_test_pascal_method(it_: &mut CrabyTest, first_arg: f64, second_arg: f64
     })
 }
 
+fn craby_test_promise_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_array_buffer_method(arg);
+        ret
+    }).and_then(|r| r)
+}
+
+fn craby_test_promise_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_buffer_object_method(arg);
+        ret
+    }).and_then(|r| r)
+}
+
 fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.promise_method(arg);
@@ -267,7 +322,7 @@ unsafe fn drop_signal(signal: *mut CrabyTestSignal) {
 }
 
 ./crates/lib/src/generated.rs
-// Hash: 305e62348fa7d676
+// Hash: a94b548b021b6212
 #[rustfmt::skip]
 use craby::prelude::*;
 
@@ -290,6 +345,7 @@ pub trait CrabyTestSpec {
     fn array_buffer_method(&mut self, arg: ArrayBuffer) -> ArrayBuffer;
     fn array_method(&mut self, arg: Array<Number>) -> Array<Number>;
     fn boolean_method(&mut self, arg: Boolean) -> Boolean;
+    fn buffer_object_method(&mut self, arg: BufferObject) -> BufferObject;
     fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
     fn custom_struct_array_method(&mut self, arg: Array<ResultPoint>) -> Array<ResultPoint>;
     fn enum_method(&mut self, arg_0: MyEnum, arg_1: SwitchState) -> String;
@@ -297,6 +353,8 @@ pub trait CrabyTestSpec {
     fn numeric_method(&mut self, arg: Number) -> Number;
     fn object_method(&mut self, arg: TestObject) -> TestObject;
     fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
+    fn promise_array_buffer_method(&mut self, arg: ArrayBuffer) -> Promise<ArrayBuffer>;
+    fn promise_buffer_object_method(&mut self, arg: BufferObject) -> Promise<BufferObject>;
     fn promise_method(&mut self, arg: Number) -> Promise<Number>;
     fn promise_string_method(&mut self, path: &str) -> Promise<Number>;
     fn snake_method(&mut self, first_arg: Number, second_arg: Number) -> Number;
@@ -305,6 +363,58 @@ pub trait CrabyTestSpec {
 
 pub enum CrabyTestSignal {
     OnSignal,
+}
+
+impl Default for NullableBufferChild {
+    fn default() -> Self {
+        NullableBufferChild {
+            null: true,
+            val: BufferChild::default(),
+        }
+    }
+}
+
+impl From<NullableBufferChild> for Nullable<BufferChild> {
+    fn from(val: NullableBufferChild) -> Self {
+        Nullable::new(if val.null { None } else { Some(val.val) })
+    }
+}
+
+impl From<Nullable<BufferChild>> for NullableBufferChild {
+    fn from(val: Nullable<BufferChild>) -> Self {
+        let val = val.into_value();
+        let null = val.is_none();
+        NullableBufferChild {
+            val: val.unwrap_or(BufferChild::default()),
+            null,
+        }
+    }
+}
+
+impl Default for NullableArrayBuffer {
+    fn default() -> Self {
+        NullableArrayBuffer {
+            null: true,
+            val: Vec::default(),
+        }
+    }
+}
+
+impl From<NullableArrayBuffer> for Nullable<ArrayBuffer> {
+    fn from(val: NullableArrayBuffer) -> Self {
+        Nullable::new(if val.null { None } else { Some(val.val) })
+    }
+}
+
+impl From<Nullable<ArrayBuffer>> for NullableArrayBuffer {
+    fn from(val: Nullable<ArrayBuffer>) -> Self {
+        let val = val.into_value();
+        let null = val.is_none();
+        NullableArrayBuffer {
+            val: val.unwrap_or(Vec::default()),
+            null,
+        }
+    }
 }
 
 impl Default for AlphaStruct {
@@ -415,6 +525,17 @@ impl From<Nullable<Number>> for NullableNumber {
     }
 }
 
+impl Default for BufferObject {
+    fn default() -> Self {
+        BufferObject {
+            label: String::default(),
+            bytes: Vec::default(),
+            values: Vec::default(),
+            nested: NullableBufferChild::default()
+        }
+    }
+}
+
 impl Default for ResultPoint {
     fn default() -> Self {
         ResultPoint {
@@ -436,6 +557,14 @@ impl Default for SubObject {
             a: NullableString::default(),
             b: 0.0,
             c: false
+        }
+    }
+}
+
+impl Default for BufferChild {
+    fn default() -> Self {
+        BufferChild {
+            bytes: NullableArrayBuffer::default()
         }
     }
 }
@@ -468,6 +597,10 @@ impl CrabyTestSpec for CrabyTest {
         unimplemented!();
     }
 
+    fn buffer_object_method(&mut self, arg: BufferObject) -> BufferObject {
+        unimplemented!();
+    }
+
     fn camel_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
         unimplemented!();
     }
@@ -493,6 +626,14 @@ impl CrabyTestSpec for CrabyTest {
     }
 
     fn pascal_method(&mut self, first_arg: Number, second_arg: Number) -> Number {
+        unimplemented!();
+    }
+
+    fn promise_array_buffer_method(&mut self, arg: ArrayBuffer) -> Promise<ArrayBuffer> {
+        unimplemented!();
+    }
+
+    fn promise_buffer_object_method(&mut self, arg: BufferObject) -> Promise<BufferObject> {
         unimplemented!();
     }
 

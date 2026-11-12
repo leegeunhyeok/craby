@@ -33,6 +33,7 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["arrayBufferMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayBufferMethod};
   methodMap_["arrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::arrayMethod};
   methodMap_["booleanMethod"] = MethodMetadata{1, &CxxCrabyTestModule::booleanMethod};
+  methodMap_["bufferObjectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::bufferObjectMethod};
   methodMap_["camelMethod"] = MethodMetadata{0, &CxxCrabyTestModule::camelMethod};
   methodMap_["customStructArrayMethod"] = MethodMetadata{1, &CxxCrabyTestModule::customStructArrayMethod};
   methodMap_["enumMethod"] = MethodMetadata{2, &CxxCrabyTestModule::enumMethod};
@@ -42,6 +43,8 @@ CxxCrabyTestModule::CxxCrabyTestModule(
   methodMap_["numericMethod"] = MethodMetadata{1, &CxxCrabyTestModule::numericMethod};
   methodMap_["objectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::objectMethod};
   methodMap_["PascalMethod"] = MethodMetadata{0, &CxxCrabyTestModule::pascalMethod};
+  methodMap_["promiseArrayBufferMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseArrayBufferMethod};
+  methodMap_["promiseBufferObjectMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseBufferObjectMethod};
   methodMap_["promiseMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseMethod};
   methodMap_["promiseStringMethod"] = MethodMetadata{1, &CxxCrabyTestModule::promiseStringMethod};
   methodMap_["readData"] = MethodMetadata{0, &CxxCrabyTestModule::readData};
@@ -158,9 +161,9 @@ jsi::Value CxxCrabyTestModule::arrayBufferMethod(jsi::Runtime &rt,
     }
 
     auto arg0 = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, args[0], callInvoker);
-    auto ret = craby::crabytest::bridging::arrayBufferMethod(*it_, arg0);
+    auto ret = craby::crabytest::bridging::arrayBufferMethod(*it_, std::move(arg0));
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -182,9 +185,9 @@ jsi::Value CxxCrabyTestModule::arrayMethod(jsi::Runtime &rt,
     }
 
     auto arg0 = react::bridging::fromJs<rust::Vec<double>>(rt, args[0], callInvoker);
-    auto ret = craby::crabytest::bridging::arrayMethod(*it_, arg0);
+    auto ret = craby::crabytest::bridging::arrayMethod(*it_, std::move(arg0));
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -208,7 +211,31 @@ jsi::Value CxxCrabyTestModule::booleanMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<bool>(rt, args[0], callInvoker);
     auto ret = craby::crabytest::bridging::booleanMethod(*it_, arg0);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::bufferObjectMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<craby::crabytest::bridging::BufferObject>(rt, args[0], callInvoker);
+    auto ret = craby::crabytest::bridging::bufferObjectMethod(*it_, std::move(arg0));
+
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -253,9 +280,9 @@ jsi::Value CxxCrabyTestModule::customStructArrayMethod(jsi::Runtime &rt,
     }
 
     auto arg0 = react::bridging::fromJs<rust::Vec<craby::crabytest::bridging::ResultPoint>>(rt, args[0], callInvoker);
-    auto ret = craby::crabytest::bridging::customStructArrayMethod(*it_, arg0);
+    auto ret = craby::crabytest::bridging::customStructArrayMethod(*it_, std::move(arg0));
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -280,7 +307,7 @@ jsi::Value CxxCrabyTestModule::enumMethod(jsi::Runtime &rt,
     auto arg1 = react::bridging::fromJs<craby::crabytest::bridging::SwitchState>(rt, args[1], callInvoker);
     auto ret = craby::crabytest::bridging::enumMethod(*it_, arg0, arg1);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -303,7 +330,7 @@ jsi::Value CxxCrabyTestModule::getDataPath(jsi::Runtime &rt,
 
     auto ret = craby::crabytest::bridging::getDataPath(*it_);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -326,7 +353,7 @@ jsi::Value CxxCrabyTestModule::getState(jsi::Runtime &rt,
 
     auto ret = craby::crabytest::bridging::getState(*it_);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -350,7 +377,7 @@ jsi::Value CxxCrabyTestModule::nullableMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<craby::crabytest::bridging::NullableNumber>(rt, args[0], callInvoker);
     auto ret = craby::crabytest::bridging::nullableMethod(*it_, arg0);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -374,7 +401,7 @@ jsi::Value CxxCrabyTestModule::numericMethod(jsi::Runtime &rt,
     auto arg0 = react::bridging::fromJs<double>(rt, args[0], callInvoker);
     auto ret = craby::crabytest::bridging::numericMethod(*it_, arg0);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -396,9 +423,9 @@ jsi::Value CxxCrabyTestModule::objectMethod(jsi::Runtime &rt,
     }
 
     auto arg0 = react::bridging::fromJs<craby::crabytest::bridging::TestObject>(rt, args[0], callInvoker);
-    auto ret = craby::crabytest::bridging::objectMethod(*it_, arg0);
+    auto ret = craby::crabytest::bridging::objectMethod(*it_, std::move(arg0));
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -429,6 +456,76 @@ jsi::Value CxxCrabyTestModule::pascalMethod(jsi::Runtime &rt,
   }
 }
 
+jsi::Value CxxCrabyTestModule::promiseArrayBufferMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, args[0], callInvoker);
+    react::AsyncPromise<rust::Vec<uint8_t>> promise(rt, callInvoker);
+
+    thisModule.threadPool_->enqueue([it_, promise, arg0 = std::move(arg0)]() mutable {
+      try {
+        auto ret = craby::crabytest::bridging::promiseArrayBufferMethod(*it_, std::move(arg0));
+        promise.resolve(std::move(ret));
+      } catch (const jsi::JSError &err) {
+        promise.reject(err.getMessage());
+      } catch (const std::exception &err) {
+        promise.reject(craby::crabytest::utils::errorMessage(err));
+      }
+    });
+
+    return react::bridging::toJs(rt, promise);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
+  }
+}
+
+jsi::Value CxxCrabyTestModule::promiseBufferObjectMethod(jsi::Runtime &rt,
+                                react::TurboModule &turboModule,
+                                const jsi::Value args[],
+                                size_t count) {
+  auto &thisModule = static_cast<CxxCrabyTestModule &>(turboModule);
+  auto callInvoker = thisModule.callInvoker_;
+  auto it_ = thisModule.module_;
+
+  try {
+    if (1 != count) {
+      throw jsi::JSError(rt, "Expected 1 argument");
+    }
+
+    auto arg0 = react::bridging::fromJs<craby::crabytest::bridging::BufferObject>(rt, args[0], callInvoker);
+    react::AsyncPromise<craby::crabytest::bridging::BufferObject> promise(rt, callInvoker);
+
+    thisModule.threadPool_->enqueue([it_, promise, arg0 = std::move(arg0)]() mutable {
+      try {
+        auto ret = craby::crabytest::bridging::promiseBufferObjectMethod(*it_, std::move(arg0));
+        promise.resolve(std::move(ret));
+      } catch (const jsi::JSError &err) {
+        promise.reject(err.getMessage());
+      } catch (const std::exception &err) {
+        promise.reject(craby::crabytest::utils::errorMessage(err));
+      }
+    });
+
+    return react::bridging::toJs(rt, promise);
+  } catch (const jsi::JSError &err) {
+    throw err;
+  } catch (const std::exception &err) {
+    throw jsi::JSError(rt, craby::crabytest::utils::errorMessage(err));
+  }
+}
+
 jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
                                 react::TurboModule &turboModule,
                                 const jsi::Value args[],
@@ -448,7 +545,7 @@ jsi::Value CxxCrabyTestModule::promiseMethod(jsi::Runtime &rt,
     thisModule.threadPool_->enqueue([it_, promise, arg0]() mutable {
       try {
         auto ret = craby::crabytest::bridging::promiseMethod(*it_, arg0);
-        promise.resolve(ret);
+        promise.resolve(std::move(ret));
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
       } catch (const std::exception &err) {
@@ -480,11 +577,11 @@ jsi::Value CxxCrabyTestModule::promiseStringMethod(jsi::Runtime &rt,
     auto arg0$raw = args[0].asString(rt).utf8(rt);
     react::AsyncPromise<double> promise(rt, callInvoker);
 
-    thisModule.threadPool_->enqueue([it_, promise, arg0$raw]() mutable {
+    thisModule.threadPool_->enqueue([it_, promise, arg0$raw = std::move(arg0$raw)]() mutable {
       try {
         auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
         auto ret = craby::crabytest::bridging::promiseStringMethod(*it_, arg0);
-        promise.resolve(ret);
+        promise.resolve(std::move(ret));
       } catch (const jsi::JSError &err) {
         promise.reject(err.getMessage());
       } catch (const std::exception &err) {
@@ -515,7 +612,7 @@ jsi::Value CxxCrabyTestModule::readData(jsi::Runtime &rt,
 
     auto ret = craby::crabytest::bridging::readData(*it_);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -587,7 +684,7 @@ jsi::Value CxxCrabyTestModule::stringMethod(jsi::Runtime &rt,
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
     auto ret = craby::crabytest::bridging::stringMethod(*it_, arg0);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -646,7 +743,7 @@ jsi::Value CxxCrabyTestModule::writeData(jsi::Runtime &rt,
     auto arg0 = rust::Str(arg0$raw.data(), arg0$raw.size());
     auto ret = craby::crabytest::bridging::writeData(*it_, arg0);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

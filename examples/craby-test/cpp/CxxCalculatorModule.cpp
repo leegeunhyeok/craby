@@ -65,7 +65,7 @@ jsi::Value CxxCalculatorModule::add(jsi::Runtime &rt,
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
     auto ret = craby::crabytest::bridging::add(*it_, arg0, arg1);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -90,7 +90,7 @@ jsi::Value CxxCalculatorModule::divide(jsi::Runtime &rt,
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
     auto ret = craby::crabytest::bridging::divide(*it_, arg0, arg1);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -115,7 +115,7 @@ jsi::Value CxxCalculatorModule::multiply(jsi::Runtime &rt,
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
     auto ret = craby::crabytest::bridging::multiply(*it_, arg0, arg1);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {
@@ -140,7 +140,7 @@ jsi::Value CxxCalculatorModule::subtract(jsi::Runtime &rt,
     auto arg1 = react::bridging::fromJs<double>(rt, args[1], callInvoker);
     auto ret = craby::crabytest::bridging::subtract(*it_, arg0, arg1);
 
-    return react::bridging::toJs(rt, ret);
+    return react::bridging::toJs(rt, std::move(ret));
   } catch (const jsi::JSError &err) {
     throw err;
   } catch (const std::exception &err) {

@@ -625,6 +625,7 @@ impl CxxTemplate {
             #include <variant>
             #include <iterator>
             #include <algorithm>
+            #include <utility>
 
             using namespace facebook;
 
@@ -703,9 +704,13 @@ impl CxxTemplate {
                 return vec;
               }}
 
-              static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {{
+              static jsi::Value toJs(jsi::Runtime& rt, rust::Vec<uint8_t>&& vec) {{
                 auto buffer = std::make_shared<{flat_name}::RustVecBuffer>(std::move(vec));
                 return jsi::ArrayBuffer(rt, buffer);
+              }}
+
+              static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {{
+                return toJs(rt, rust::Vec<uint8_t>(vec));
               }}
             }};
 

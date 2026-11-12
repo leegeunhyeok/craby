@@ -35,6 +35,17 @@ pub fn get_codegen_context() -> CodegenContext {
             y: number;
         }
 
+        export interface BufferChild {
+            bytes: ArrayBuffer | null;
+        }
+
+        export interface BufferObject {
+            label: string;
+            bytes: ArrayBuffer;
+            values: number[];
+            nested: BufferChild | null;
+        }
+
         export type MaybeNumber = number | null;
 
         export enum MyEnum {
@@ -54,6 +65,7 @@ pub fn get_codegen_context() -> CodegenContext {
             stringMethod(arg: string): string;
             objectMethod(arg: TestObject): TestObject;
             arrayBufferMethod(arg: ArrayBuffer): ArrayBuffer;
+            bufferObjectMethod(arg: BufferObject): BufferObject;
             arrayMethod(arg: number[]): number[];
             customStructArrayMethod(arg: ResultPoint[]): ResultPoint[];
             enumMethod(arg0: MyEnum, arg1: SwitchState): string;
@@ -61,6 +73,8 @@ pub fn get_codegen_context() -> CodegenContext {
             alphaMethod(arg: AlphaStruct): AlphaStruct;
             promiseMethod(arg: number): Promise<number>;
             promiseStringMethod(path: string): Promise<number>;
+            promiseArrayBufferMethod(arg: ArrayBuffer): Promise<ArrayBuffer>;
+            promiseBufferObjectMethod(arg: BufferObject): Promise<BufferObject>;
             camelMethod(firstArg: number, secondArg: number): number;
             PascalMethod(FirstArg: number, SecondArg: number): number;
             snakeMethod(first_arg: number, second_arg: number): number;
