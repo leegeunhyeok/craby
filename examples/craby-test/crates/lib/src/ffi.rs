@@ -11,14 +11,33 @@ use bridging::*;
 #[cxx::bridge(namespace = "craby::crabytest::bridging")]
 pub mod bridging {
     #[derive(Clone)]
+    struct BufferObject {
+        label: String,
+        bytes: Vec<u8>,
+        values: Vec<f64>,
+        nested: NullableBufferChild,
+    }
+
+    #[derive(Clone)]
+    struct BufferChild {
+        bytes: NullableArrayBuffer,
+    }
+
+    #[derive(Clone)]
+    struct ProgressEvent {
+        progress: f64,
+    }
+
+    #[derive(Clone)]
     struct NullableSubObject {
         null: bool,
         val: SubObject,
     }
 
     #[derive(Clone)]
-    struct ProgressEvent {
-        progress: f64,
+    struct NullableBufferChild {
+        null: bool,
+        val: BufferChild,
     }
 
     #[derive(Clone)]
@@ -38,6 +57,12 @@ pub mod bridging {
     struct ResultPoint {
         x: f64,
         y: f64,
+    }
+
+    #[derive(Clone)]
+    struct NullableArrayBuffer {
+        null: bool,
+        val: Vec<u8>,
     }
 
     #[derive(Clone)]
@@ -106,6 +131,9 @@ pub mod bridging {
         #[cxx_name = "booleanMethod"]
         fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool>;
 
+        #[cxx_name = "bufferObjectMethod"]
+        fn craby_test_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject>;
+
         #[cxx_name = "camelMethod"]
         fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<()>;
 
@@ -132,6 +160,12 @@ pub mod bridging {
 
         #[cxx_name = "pascalMethod"]
         fn craby_test_pascal_method(it_: &mut CrabyTest) -> Result<()>;
+
+        #[cxx_name = "promiseArrayBufferMethod"]
+        fn craby_test_promise_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>>;
+
+        #[cxx_name = "promiseBufferObjectMethod"]
+        fn craby_test_promise_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject>;
 
         #[cxx_name = "promiseMethod"]
         fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64>;
@@ -237,6 +271,13 @@ fn craby_test_boolean_method(it_: &mut CrabyTest, arg: bool) -> Result<bool, any
     })
 }
 
+fn craby_test_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.buffer_object_method(arg);
+        ret
+    })
+}
+
 fn craby_test_camel_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
     craby::catch_panic!({
         let ret = it_.camel_method();
@@ -298,6 +339,20 @@ fn craby_test_pascal_method(it_: &mut CrabyTest) -> Result<(), anyhow::Error> {
         let ret = it_.pascal_method();
         ret
     })
+}
+
+fn craby_test_promise_array_buffer_method(it_: &mut CrabyTest, arg: Vec<u8>) -> Result<Vec<u8>, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_array_buffer_method(arg);
+        ret
+    }).and_then(|r| r)
+}
+
+fn craby_test_promise_buffer_object_method(it_: &mut CrabyTest, arg: BufferObject) -> Result<BufferObject, anyhow::Error> {
+    craby::catch_panic!({
+        let ret = it_.promise_buffer_object_method(arg);
+        ret
+    }).and_then(|r| r)
 }
 
 fn craby_test_promise_method(it_: &mut CrabyTest, arg: f64) -> Result<f64, anyhow::Error> {

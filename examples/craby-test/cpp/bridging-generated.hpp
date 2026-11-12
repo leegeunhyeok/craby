@@ -7,6 +7,7 @@
 #include <variant>
 #include <iterator>
 #include <algorithm>
+#include <utility>
 
 using namespace facebook;
 
@@ -85,9 +86,13 @@ struct Bridging<rust::Vec<uint8_t>> {
     return vec;
   }
 
-  static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {
+  static jsi::Value toJs(jsi::Runtime& rt, rust::Vec<uint8_t>&& vec) {
     auto buffer = std::make_shared<crabytest::RustVecBuffer>(std::move(vec));
     return jsi::ArrayBuffer(rt, buffer);
+  }
+
+  static jsi::Value toJs(jsi::Runtime& rt, const rust::Vec<uint8_t>& vec) {
+    return toJs(rt, rust::Vec<uint8_t>(vec));
   }
 };
 
@@ -174,6 +179,115 @@ struct Bridging<craby::crabytest::bridging::SwitchState> {
 };
 
 template <>
+struct Bridging<craby::crabytest::bridging::NullableArrayBuffer> {
+  static craby::crabytest::bridging::NullableArrayBuffer fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::crabytest::bridging::NullableArrayBuffer{true, rust::Vec<uint8_t>()};
+    }
+
+    auto val = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, value, callInvoker);
+    auto ret = craby::crabytest::bridging::NullableArrayBuffer{false, std::move(val)};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::crabytest::bridging::NullableArrayBuffer& value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::bridging::BufferChild> {
+  static craby::crabytest::bridging::BufferChild fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$bytes = obj.getProperty(rt, "bytes");
+
+    auto _obj$bytes = react::bridging::fromJs<craby::crabytest::bridging::NullableArrayBuffer>(rt, obj$bytes, callInvoker);
+
+    craby::crabytest::bridging::BufferChild ret = {
+      std::move(_obj$bytes)
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::crabytest::bridging::BufferChild& value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$bytes = react::bridging::toJs(rt, value.bytes);
+
+    obj.setProperty(rt, "bytes", _obj$bytes);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::bridging::NullableBufferChild> {
+  static craby::crabytest::bridging::NullableBufferChild fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    if (value.isNull()) {
+      return craby::crabytest::bridging::NullableBufferChild{true, craby::crabytest::bridging::BufferChild{}};
+    }
+
+    auto val = react::bridging::fromJs<craby::crabytest::bridging::BufferChild>(rt, value, callInvoker);
+    auto ret = craby::crabytest::bridging::NullableBufferChild{false, std::move(val)};
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::crabytest::bridging::NullableBufferChild& value) {
+    if (value.null) {
+      return jsi::Value::null();
+    }
+
+    return react::bridging::toJs(rt, value.val);
+  }
+};
+
+template <>
+struct Bridging<craby::crabytest::bridging::BufferObject> {
+  static craby::crabytest::bridging::BufferObject fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
+    auto obj = value.asObject(rt);
+    auto obj$label = obj.getProperty(rt, "label");
+    auto obj$bytes = obj.getProperty(rt, "bytes");
+    auto obj$values = obj.getProperty(rt, "values");
+    auto obj$nested = obj.getProperty(rt, "nested");
+
+    auto _obj$label = react::bridging::fromJs<rust::String>(rt, obj$label, callInvoker);
+    auto _obj$bytes = react::bridging::fromJs<rust::Vec<uint8_t>>(rt, obj$bytes, callInvoker);
+    auto _obj$values = react::bridging::fromJs<rust::Vec<double>>(rt, obj$values, callInvoker);
+    auto _obj$nested = react::bridging::fromJs<craby::crabytest::bridging::NullableBufferChild>(rt, obj$nested, callInvoker);
+
+    craby::crabytest::bridging::BufferObject ret = {
+      std::move(_obj$label),
+      std::move(_obj$bytes),
+      std::move(_obj$values),
+      std::move(_obj$nested)
+    };
+
+    return ret;
+  }
+
+  static jsi::Value toJs(jsi::Runtime &rt, const craby::crabytest::bridging::BufferObject& value) {
+    jsi::Object obj = jsi::Object(rt);
+    auto _obj$label = react::bridging::toJs(rt, value.label);
+    auto _obj$bytes = react::bridging::toJs(rt, value.bytes);
+    auto _obj$values = react::bridging::toJs(rt, value.values);
+    auto _obj$nested = react::bridging::toJs(rt, value.nested);
+
+    obj.setProperty(rt, "label", _obj$label);
+    obj.setProperty(rt, "bytes", _obj$bytes);
+    obj.setProperty(rt, "values", _obj$values);
+    obj.setProperty(rt, "nested", _obj$nested);
+
+    return jsi::Value(rt, obj);
+  }
+};
+
+template <>
 struct Bridging<craby::crabytest::bridging::MyModuleError> {
   static craby::crabytest::bridging::MyModuleError fromJs(jsi::Runtime &rt, const jsi::Value& value, std::shared_ptr<CallInvoker> callInvoker) {
     auto obj = value.asObject(rt);
@@ -182,7 +296,7 @@ struct Bridging<craby::crabytest::bridging::MyModuleError> {
     auto _obj$reason = react::bridging::fromJs<rust::String>(rt, obj$reason, callInvoker);
 
     craby::crabytest::bridging::MyModuleError ret = {
-      _obj$reason
+      std::move(_obj$reason)
     };
 
     return ret;
@@ -206,7 +320,7 @@ struct Bridging<craby::crabytest::bridging::NullableString> {
     }
 
     auto val = react::bridging::fromJs<rust::String>(rt, value, callInvoker);
-    auto ret = craby::crabytest::bridging::NullableString{false, val};
+    auto ret = craby::crabytest::bridging::NullableString{false, std::move(val)};
 
     return ret;
   }
@@ -233,7 +347,7 @@ struct Bridging<craby::crabytest::bridging::SubObject> {
     auto _obj$c = react::bridging::fromJs<bool>(rt, obj$c, callInvoker);
 
     craby::crabytest::bridging::SubObject ret = {
-      _obj$a,
+      std::move(_obj$a),
       _obj$b,
       _obj$c
     };
@@ -263,7 +377,7 @@ struct Bridging<craby::crabytest::bridging::NullableSubObject> {
     }
 
     auto val = react::bridging::fromJs<craby::crabytest::bridging::SubObject>(rt, value, callInvoker);
-    auto ret = craby::crabytest::bridging::NullableSubObject{false, val};
+    auto ret = craby::crabytest::bridging::NullableSubObject{false, std::move(val)};
 
     return ret;
   }
@@ -355,11 +469,11 @@ struct Bridging<craby::crabytest::bridging::TestObject> {
     auto _obj$snakeCase = react::bridging::fromJs<double>(rt, obj$snakeCase, callInvoker);
 
     craby::crabytest::bridging::TestObject ret = {
-      _obj$foo,
+      std::move(_obj$foo),
       _obj$bar,
       _obj$baz,
-      _obj$sub,
-      _obj$points,
+      std::move(_obj$sub),
+      std::move(_obj$points),
       _obj$camelCase,
       _obj$pascalCase,
       _obj$snakeCase

@@ -38,6 +38,11 @@ public:
       const facebook::jsi::Value args[], size_t count);
 
   static facebook::jsi::Value
+  bufferObjectMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
   camelMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
@@ -79,6 +84,16 @@ public:
 
   static facebook::jsi::Value
   pascalMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  promiseArrayBufferMethod(facebook::jsi::Runtime &rt,
+      facebook::react::TurboModule &turboModule,
+      const facebook::jsi::Value args[], size_t count);
+
+  static facebook::jsi::Value
+  promiseBufferObjectMethod(facebook::jsi::Runtime &rt,
       facebook::react::TurboModule &turboModule,
       const facebook::jsi::Value args[], size_t count);
 

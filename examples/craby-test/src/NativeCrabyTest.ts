@@ -31,6 +31,17 @@ export interface ResultPoint {
   y: number;
 }
 
+export interface BufferChild {
+  bytes: ArrayBuffer | null;
+}
+
+export interface BufferObject {
+  label: string;
+  bytes: ArrayBuffer;
+  values: number[];
+  nested: BufferChild | null;
+}
+
 export type MaybeNumber = number | null;
 
 export enum MyEnum {
@@ -50,12 +61,15 @@ export interface Spec extends NativeModule {
   stringMethod(arg: string): string;
   objectMethod(arg: TestObject): TestObject;
   arrayBufferMethod(arg: ArrayBuffer): ArrayBuffer;
+  bufferObjectMethod(arg: BufferObject): BufferObject;
   arrayMethod(arg: number[]): number[];
   customStructArrayMethod(arg: ResultPoint[]): ResultPoint[];
   enumMethod(arg0: MyEnum, arg1: SwitchState): string;
   nullableMethod(arg: number | null): MaybeNumber;
   promiseMethod(arg: number): Promise<number>;
   promiseStringMethod(path: string): Promise<number>;
+  promiseArrayBufferMethod(arg: ArrayBuffer): Promise<ArrayBuffer>;
+  promiseBufferObjectMethod(arg: BufferObject): Promise<BufferObject>;
   // Stateful methods
   setState(arg: number): void;
   getState(): number;
